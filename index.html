@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>about me</title>
+    <title>eire</title>
 
     <style>
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -17,97 +21,172 @@
             font-family: Arial, sans-serif;
         }
 
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 30px;
+            background: #000;
+            border-bottom: 1px solid #222;
+        }
+
+        .logo {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .socials {
+            display: flex;
+            gap: 12px;
+        }
+
+        .socials a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .socials a:hover {
+            color: #fff;
+        }
+
+        .language {
+            color: #aaa;
+            background: #000;
+            border: 1px solid #333;
+            padding: 6px 8px;
+            border-radius: 4px;
+        }
+
         main {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 80px 30px;
+            min-height: calc(100vh - 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 30px;
+        }
+
+        .hero {
+            width: 100%;
+            max-width: 900px;
         }
 
         h1 {
-            font-size: 42px;
-            margin-bottom: 30px;
+            font-size: clamp(55px, 10vw, 110px);
+            line-height: 0.95;
+            margin: 0 0 35px;
+            letter-spacing: -5px;
         }
 
-        p {
-            font-size: 18px;
-            line-height: 1.7;
-            color: #ddd;
-        }
-
-        a {
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            border: 1px solid #fff;
             color: #fff;
+            text-decoration: none;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        footer {
+            border-top: 1px solid #222;
+            padding: 35px 30px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        footer a {
+            color: #aaa;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .nav-links {
+                order: 3;
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .socials {
+                margin-left: auto;
+            }
         }
     </style>
 </head>
 
 <body>
-    <main>
-        <h1>hey there, im eire.</h1>
 
-        <p>
-           so hi everyone, this is my personal website. here you can find some information about me, my projects, and other stuff. feel free to reach out to me if you want to collaborate or just say hi.
-            first i'd like to introduce myself.
+<nav>
+    <a class="logo" href="index.html">eire</a>
 
-            you can call me eire, eireball, eireq, irelandball, or whatever you want.
-            i would like to clarify that i am not actually irish, i am from slovakia.
-            my pronouns are mostly he/him, but i do not really care about pronouns, so you can use whatever you want.
-            in my free time i like to code and make websites, play video games, watch movies, and generally waste time on the internet.
-            i am also a hobby-vexillologist, which means that i like to study flags and vexillology in general. i am interested in the designs, history, symbolism, and sometimes questionable decisions behind different flags.
-            from movies i like american action comedies the most. examples include the naked gun and police squad, rush hour, hot shots!, jim carrey movies like ace ventura, the mask, liar liar, and many more.
-            from tv shows i like the it crowd, family guy, two and a half men, big bang theory, and many more.
-            i mostly code useless websites and website games (like this one) in my free time, but i also like to make some discord bots.
-            i also like to make some music, but i am not very good at it. i mostly make some random stuff in fl studio :)
-            from music i like basically everything, mostly dubioza kolektiv, young fathers, gorillaz, fontaines d.c., and many more.
-            i have mixed opinions about jazz.
+    <div class="nav-links">
+        <a href="https://eireq.github.io/me">intro</a>
+        <a href="https://eireq.github.io/rc">random country</a>
+        <a href="https://eireq.github.io/modes">modes.</a>
+        <a href="https://eireq.github.io/racing">racing game (soon)</a>
+        <a href="https://eireq.github.io/fq">flag quiz (soon)</a>
+        <a href="https://eireq.github.io/gravity">gravity simulator (soon)</a>
+        <a href="https://eireq.github.io/jworld">jWorld (soon)</a>
+    </div>
 
-            ## my projects
+    <div class="socials">
+        <a href="https://github.com/eireq" target="_blank">github</a>
+        <a href="https://discord.gg/zwvvbqBFPV" target="_blank">discord</a>
+        <a href="https://www.youtube.com/@%E3%81%84%E4%B8%A8" target="_blank">youtube</a>
 
-            i have made quite a lot of random projects over time, mostly websites, small games, discord bots, and other things that i thought would be funny or interesting to make.
-            some of my projects include <a href="https://eireq.github.io/modes" target="_blank">modes</a> and <a href="https://eireq.github.io/rc" target="_blank">random country</a>.
-            i am planning to make a lot more projects in the future:
-            * flag quiz
-            * arcade game where you switch lanes to avoid obstacles
-            * a website where you can make your own fictional countries and log them into a world map
-            * gravity simulator (drop objects and see how they interact with each other with different gravity settings)
+        <select class="language">
+            <option>en</option>
+            <option>sk</option>
+        </select>
+    </div>
+</nav>
 
-            you can find more of my projects on my <a href="https://github.com/eireq" target="_blank">github</a> or by looking around this website.
+<main>
+    <section class="hero">
+        <h1>hey.<br>im eire.</h1>
 
-            ## what i'm currently working on
+        <a class="button" href="about.html">about me →</a>
+    </section>
+</main>
 
-            currently, i am working on this website and also on the arcade game.
+<footer>
+    <strong>contact</strong><br><br>
+    you can contact me via
+    <a href="mailto:eireball@proton.me">email</a>.
+    <br><br>
+    © 2026 eire
+</footer>
 
-            i am also planning to make the projects mentioned above, although knowing me, there is a reasonable chance that i will start something completely different halfway through.
-
-            my favorite flags are Ireland, Slovakia, Armenia, and Saint Pierre and Miquelon, altho this list changes whenever i discover another unnecessarily good flag.
-
-            ## random facts
-
-            * i stole a license plate from a car once, and it was a very bad idea.
-            * i plan to become a hyperpolyglot!
-            * did you know platypuses do not have teats, so they sweat milk out of their skin for their babies to drink?
-            * i really like the color yellow
-            * what to put here?
-            * i really shouldnt make this section
-            * why are you still reading this? go away, i have nothing else to say.
-            * sorry for being rude
-
-            ## where you can find me
-
-            you can contact me via <a href="https://eireq.github.io/modes" target="_blank">email</a>.
-
-            you can also find me on <a href="https://discord.gg/" target="_blank">discord</a>, <a href="https://github.com/eireq" target="_blank">github</a>, <a href="https://youtube.com/your-channel" target="_blank">youtube</a>, and <a href="https://other-platform.com/your-profile" target="_blank">other platform</a>.
-
-            my username on most platforms is <strong>eireq</strong>.
-
-            if you want to talk about programming, flags, games, music, movies, or literally anything else, feel free to contact me.
-
-            thanks for visiting my website :)
-
-        </p>
-
-        <p>
-            this is another paragraph i have no idea why
-        </p>
-    </main>
 </body>
 </html>
