@@ -83,9 +83,13 @@
     $("finalDistance").textContent = `${Math.floor(result.distance)} m`;
     $("finalOvertakes").textContent = result.overtakes;
     $("finalSpeed").textContent = Math.floor(result.bestSpeed);
-
+    
     const hasName = Boolean(localStorage.getItem("laneRunnerName"));
     $("namePrompt").classList.toggle("hidden", hasName);
+
+    if (hasName) {
+      submitPendingScore();
+    }
 
     if (!hasName) {
       $("nameInput").value = "";
