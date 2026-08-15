@@ -19,11 +19,11 @@ an 8-bit arcade driving game for github pages.
 
 ## local setup
 
-1. put the folder on a static web server. opening `index.html` directly usually works, but a local server is better.
-2. edit `js/config.js`.
+1. from the repo root, run `npm install` then `npm run dev`.
+2. edit `src/games/racing/config.js`.
 3. add your supabase project url and anon/publishable key.
-4. run `supabase.sql` in the supabase sql editor.
-5. put optional music files in `assets/`:
+4. run `src/games/racing/supabase.sql` in the supabase sql editor.
+5. put optional music files in `public/games/racing/assets/`:
    - `menu.mp3`
    - `game.mp3`
    - `click.mp3`
@@ -32,7 +32,7 @@ an 8-bit arcade driving game for github pages.
 
 the browser uses the public anon/publishable key. this is normal for a supabase frontend.
 
-do not put a service-role key into `js/config.js`.
+do not put a service-role key into `src/games/racing/config.js`.
 
 the database is intentionally configured so visitors can:
 - read scores
@@ -42,9 +42,7 @@ visitors cannot update or delete scores through the supplied policies.
 
 ## github pages
 
-push the whole folder to your repository and enable github pages from the branch/folder containing `index.html`.
-
-there is no node server required.
+the vue app builds to static files. github actions deploys `dist` on push to `main`.
 
 ## important anti-cheat note
 
