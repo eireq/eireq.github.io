@@ -29,7 +29,7 @@ const router = createRouter({
     {
       path: '/games/flagquiz',
       name: 'game-flagquiz',
-      component: () => import('../views/FlagquizView.vue'),
+      component: () => import('../views/FlagQuizView.vue'),
       meta: {
         title: "eire's flag quiz",
         hideChrome: true
