@@ -15,12 +15,12 @@
         </p>
       </router-link>
 
-      <a class="game" href="#">
-        <h2>another game</h2>
+      <router-link class="game" to="/games/flagquiz">
+        <h2>flag quiz</h2>
         <p>
-          another short description goes here.
+          identify flags from around the world. how many can you get right?
         </p>
-      </a>
+      </router-link>
 
       <a class="game" href="#">
         <h2>another game</h2>

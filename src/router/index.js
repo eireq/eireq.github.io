@@ -22,7 +22,16 @@ const router = createRouter({
       name: 'game-racing',
       component: () => import('../views/GameRacingView.vue'),
       meta: {
-        title: 'lane runner',
+        title: 'eiracing :: lane runner',
+        hideChrome: true
+      }
+    },
+    {
+      path: '/games/flagquiz',
+      name: 'game-flagquiz',
+      component: () => import('../views/GameRacingView.vue'),
+      meta: {
+        title: 'eire's flag quiz',
         hideChrome: true
       }
     }
