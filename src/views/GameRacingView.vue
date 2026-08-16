@@ -20,7 +20,7 @@
             <button id="bombModeBtn" class="mode">speed bomb</button>
           </div>
 
-          <p class="hint">arrow keys / wasd to change lanes</p>
+          <p class="hint">arrow keys / wasd to change lanes (keyboard required)</p>
           <p id="savedName" class="saved-name"></p>
           <p class="hint"><router-link to="/games">← games</router-link></p>
         </div>
