@@ -90,10 +90,43 @@
       <div class="leaderboard">
         <h2>leaderboard</h2>
 
-        <p class="leaderboard-placeholder">
-          leaderboard coming soon.
+        <p v-if="leaderboardLoading" class="leaderboard-placeholder">
+            loading leaderboard...
         </p>
-      </div>
+
+        <p v-else-if="leaderboardError" class="leaderboard-placeholder">
+            {{ leaderboardError }}
+        </p>
+
+        <div v-else-if="leaderboard.length" class="leaderboard-list">
+            <div
+            v-for="(entry, index) in leaderboard"
+            :key="entry.id"
+            class="leaderboard-row"
+            :class="{ current: entry.id === leaderboard.find(row => row.name === playerName)?.id }"
+            >
+            <span class="rank">
+                #{{ index + 1 }}
+            </span>
+
+            <span class="leaderboard-name">
+                {{ entry.name }}
+            </span>
+
+            <span class="leaderboard-score">
+                {{ entry.score }}/{{ entry.total }}
+            </span>
+            </div>
+        </div>
+
+        <p v-else class="leaderboard-placeholder">
+            no scores yet.
+         </p>
+
+        <p v-if="playerPosition" class="your-position">
+            your position: <strong>#{{ playerPosition }}</strong>
+         </p>
+        </div>
 
       <button class="restart" @click="resetQuiz">
         play again →
@@ -117,6 +150,12 @@ const answer = ref('')
 const score = ref(0)
 
 const answerInput = ref(null)
+const leaderboard = ref([])
+const playerPosition = ref(null)
+const leaderboardLoading = ref(false)
+const leaderboardError = ref('')
+const scoreSubmitted = ref(false)
+const submittedScoreId = ref(null)
 
 const currentQuestion = computed(() => {
   return questions.value[currentIndex.value]
@@ -405,9 +444,68 @@ function submitAnswer() {
   })
 }
 
-function finishQuiz() {
+async function finishQuiz() {
   started.value = false
   finished.value = true
+
+  await submitScoreToLeaderboard()
+}
+
+async function submitScoreToLeaderboard() {
+  leaderboardLoading.value = true
+  leaderboardError.value = ''
+  scoreSubmitted.value = false
+
+  try {
+    if (!window.db?.ready()) {
+      leaderboardError.value = 'leaderboard is currently unavailable.'
+      return
+    }
+
+    const submitResult = await window.db.submitFlagQuizScore(
+      {
+        name: playerName.value,
+        score: score.value
+      },
+      questions.value.length
+    )
+
+    if (!submitResult.ok) {
+      leaderboardError.value = 'could not submit score.'
+      console.warn('flag quiz score submission failed:', submitResult.error)
+      return
+    }
+
+    scoreSubmitted.value = true
+    submittedScoreId.value = submitResult.row?.id || null
+
+    const leaderboardResult = await window.db.getFlagQuizLeaderboard(50)
+
+    if (!leaderboardResult.ok) {
+      leaderboardError.value = 'could not load leaderboard.'
+      console.warn('flag quiz leaderboard failed:', leaderboardResult.error)
+      return
+    }
+
+    leaderboard.value = leaderboardResult.rows
+
+    const submittedId = submitResult.row?.id
+
+    if (submittedId) {
+      const index = leaderboard.value.findIndex(
+        row => row.id === submittedId
+      )
+
+      if (index !== -1) {
+        playerPosition.value = index + 1
+      }
+    }
+  } catch (error) {
+    leaderboardError.value = 'something went wrong with the leaderboard.'
+    console.warn('flag quiz leaderboard error:', error)
+  } finally {
+    leaderboardLoading.value = false
+  }
 }
 
 function resetQuiz() {

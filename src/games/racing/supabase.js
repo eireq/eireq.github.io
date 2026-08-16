@@ -63,7 +63,56 @@ export function createDb() {
       return error
         ? { ok: false, error: error.message, rows: [] }
         : { ok: true, rows: data || [] }
-    }
+    },
+
+    async submitFlagQuizScore(score, total) {
+      if (!this.ready()) {
+      return { ok: false, error: "database not configured" }
+      }
+
+      const name = (score.name || "a guy").trim().slice(0, 30) || "a guy"
+      const safeScore = Math.max(0, Math.min(total, Math.floor(score)))
+      const safeTotal = Math.max(1, Math.floor(total))
+      const percentage = Math.round((safeScore / safeTotal) * 100)
+
+      const { data, error } = await this.client
+        .from("flag_quiz_scores")
+        .insert({
+          name,
+          score: safeScore,
+          total: safeTotal,
+          percentage
+        })
+        .select("id,name,score,total,percentage,created_at")
+        .single()
+
+        return error
+          ? { ok: false, error: error.message }
+          : { ok: true, row: data }
+        },
+
+    async getFlagQuizLeaderboard(limit = 50) {
+      if (!this.ready()) {
+      return {
+        ok: false,
+        error: "database not configured",
+        rows: []
+      }
+  }
+
+  const { data, error } = await this.client
+    .from("flag_quiz_scores")
+    .select("id,name,score,total,percentage,created_at")
+    .order("percentage", { ascending: false })
+    .order("score", { ascending: false })
+    .order("total", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(limit)
+
+  return error
+    ? { ok: false, error: error.message, rows: [] }
+    : { ok: true, rows: data || [] }
+}
   }
 
   db.init()
