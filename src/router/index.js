@@ -31,7 +31,7 @@ const router = createRouter({
       name: 'game-flagquiz',
       component: () => import('../views/GameRacingView.vue'),
       meta: {
-        title: "eire's flag quiz",,
+        title: "eire's flag quiz",
         hideChrome: true
       }
     }
