@@ -4,9 +4,9 @@
       <section id="menu" class="screen active">
         <div class="cabinet">
           <div class="scanlines"></div>
-          <p class="eyebrow">8-bit arcade driving</p>
-          <h1>lane runner</h1>
-          <p class="tagline">change lanes. dodge traffic. don't explode.</p>
+          <p class="eyebrow">eire + racing = eiracing</p>
+          <h1>eiracing :: lane runner</h1>
+          <p class="tagline">change lanes. dodge traffic. don't die.</p>
 
           <div class="menu-buttons">
             <button id="startBtn" class="primary">start</button>
