@@ -3,9 +3,9 @@
     <router-link class="logo" to="/">eire</router-link>
 
     <div class="nav-links">
-      <a href="/me">about me</a>
-      <a href="/rc">random country</a>
-      <a href="/modes">modes.</a>
+      <router-link to="/me">about me</router-link>
+      <router-link to="/rc">random country</router-link>
+      <router-link to="/modes">modes.</router-link>
       <router-link to="/games">games</router-link>
     </div>
 
