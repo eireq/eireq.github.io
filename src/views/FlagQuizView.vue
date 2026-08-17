@@ -103,7 +103,7 @@
             v-for="(entry, index) in leaderboard"
             :key="entry.id"
             class="leaderboard-row"
-            :class="{ current: entry.id === leaderboard.find(row => row.name === playerName)?.id }"
+            :class="{ current: entry.id === submittedScoreId }"
             >
             <span class="rank">
                 #{{ index + 1 }}
