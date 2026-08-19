@@ -2,6 +2,48 @@ import { createClient } from '@supabase/supabase-js'
 
 export function createDb() {
   const db = {
+    async submitFlagQuizScore(score, total) {
+    if (!this.ready()) {
+      return { ok: false, error: "database not configured" }
+    }
+
+    const name = (score.name || "a guy").trim().slice(0, 30) || "a guy"
+
+    const { data, error } = await this.client
+      .from("flag_quiz_scores")
+      .insert({
+        name,
+        score: Math.max(0, Math.floor(score.score)),
+        total: Math.max(1, Math.floor(total))
+      })
+      .select()
+      .single()
+
+    return error
+      ? { ok: false, error: error.message }
+      : { ok: true, row: data }
+    },
+
+    async getFlagQuizLeaderboard(limit = 50) {
+      if (!this.ready()) {
+        return {
+          ok: false,
+          error: "database not configured",
+          rows: []
+        }
+      }
+
+    const { data, error } = await this.client
+      .from("flag_quiz_scores")
+      .select("id,name,score,total,created_at")
+      .order("score", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(limit)
+
+    return error
+      ? { ok: false, error: error.message, rows: [] }
+      : { ok: true, rows: data || [] }
+  },
     client: null,
 
     init() {
