@@ -470,7 +470,7 @@ async function submitScoreToLeaderboard() {
       questions.value.length
     )
 
-    if (!submitResult k) {
+    if (!submitResult.ok) {
       leaderboardError.value = 'could not submit score.'
       console.warn('flag quiz score submission failed:', submitResult.error)
       return
