@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import './assets/main.css'
+import { createDb } from './games/racing/supabase.js'
 
-createApp(App).use(router).mount('#app')
+createDb()
+
+createApp(App)
+  .use(router)
+  .mount('#app')
