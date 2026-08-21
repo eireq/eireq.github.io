@@ -1,6 +1,6 @@
 <template>
   <nav>
-    <router-link class="logo" to="/">eire</router-link>
+    <a class="logo" href="/">eire</a>
 
     <div class="nav-links">
       <router-link to="/me">about me</router-link>
@@ -10,9 +10,18 @@
     </div>
 
     <div class="socials">
-      <a href="https://github.com/eireq" target="_blank" rel="noreferrer">github </a>
-      <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer">discord serv</a>
-      <a href="https://www.youtube.com/@%E3%81%84%E4%B8%A8" target="_blank" rel="noreferrer">youtube</a>
+      <a href="https://github.com/eireq" target="_blank" rel="noreferrer"
+        >github
+      </a>
+      <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer"
+        >discord serv</a
+      >
+      <a
+        href="https://www.youtube.com/@%E3%81%84%E4%B8%A8"
+        target="_blank"
+        rel="noreferrer"
+        >youtube</a
+      >
 
       <select class="language" aria-label="language">
         <option>en</option>
