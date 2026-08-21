@@ -11,7 +11,7 @@
 
     <div class="socials">
       <a href="https://github.com/eireq" target="_blank" rel="noreferrer">github </a>
-      <a href="https://discord.gg/zwvvbqBFPV" target="_blank" rel="noreferrer">discord</a>
+      <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer">discord serv</a>
       <a href="https://www.youtube.com/@%E3%81%84%E4%B8%A8" target="_blank" rel="noreferrer">youtube</a>
 
       <select class="language" aria-label="language">

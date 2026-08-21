@@ -27,3 +27,81 @@ body {
 a {
   color: inherit;
 }
+
+main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 30px;
+  line-height: 1.75;
+}
+
+ul {
+  padding-left: 25px;
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.hero {
+  width: 100%;
+  max-width: 900px;
+}
+
+.about-me .hero h1 {
+  font-size: clamp(50px, 8vw, 80px);
+  line-height: 0.95;
+  margin: 0 0 60px;
+  letter-spacing: -4px;
+}
+
+.about-me .hero h2 {
+  font-size: 26px;
+  margin: 55px 0 20px;
+  letter-spacing: -1px;
+}
+
+.about-me .hero p {
+  font-size: 18px;
+  line-height: 1.75;
+  color: #ccc;
+  margin: 0 0 22px;
+}
+
+.about-me .hero a {
+  color: #fff;
+}
+
+.about-me .hero ul {
+  padding-left: 25px;
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.about-me .hero li {
+  margin-bottom: 5px;
+}
+
+h1 {
+  font-size: clamp(55px, 10vw, 110px);
+  line-height: 0.95;
+  margin: 0 0 35px;
+  letter-spacing: -5px;
+}
+
+.button {
+  display: inline-block;
+  padding: 12px 20px;
+  border: 1px solid #fff;
+  color: #fff;
+  text-decoration: none;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.button:hover {
+  background: #fff;
+  color: #000;
+}
