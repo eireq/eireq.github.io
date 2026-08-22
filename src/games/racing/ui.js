@@ -4,228 +4,217 @@ export function createUI() {
     game: document.getElementById("game"),
     gameOver: document.getElementById("gameOver"),
     leaderboard: document.getElementById("leaderboard"),
-    nameModal: document.getElementById("nameModal")
-  }
+    nameModal: document.getElementById("nameModal"),
+  };
 
-  let selectedMode = "normal"
-  let pendingResult = null
-  let leaderboardPeriod = "global"
+  let pendingResult = null;
+  let leaderboardPeriod = "global";
 
-  const $ = id => document.getElementById(id)
+  const $ = (id) => document.getElementById(id);
 
   function show(name) {
-    Object.values(screens).forEach(s => s.classList.remove("active"))
-    screens[name].classList.add("active")
+    Object.values(screens).forEach((s) => s.classList.remove("active"));
+    screens[name].classList.add("active");
   }
 
   function playerName() {
-    return (localStorage.getItem("laneRunnerName") || "").trim() || "a guy"
+    return (localStorage.getItem("laneRunnerName") || "").trim() || "a guy";
   }
 
   function refreshName() {
-    $("savedName").textContent = `player: ${playerName()}`
+    $("savedName").textContent = `player: ${playerName()}`;
   }
 
   function startGame() {
-    window.audio.click()
-    window.audio.stopMenu()
-    window.audio.game()
-    show("game")
-    window.game.start(selectedMode)
+    window.audio.click();
+    window.audio.stopMenu();
+    window.audio.game();
+    show("game");
+    window.game.start();
   }
 
   function saveName(value) {
-    const name = value.trim().slice(0, 16)
-    localStorage.setItem("laneRunnerName", name || "a guy")
-    refreshName()
+    const name = value.trim().slice(0, 16);
+    localStorage.setItem("laneRunnerName", name || "a guy");
+    refreshName();
   }
 
   async function openLeaderboard(period = leaderboardPeriod) {
-    leaderboardPeriod = period
-    show("leaderboard")
-    $("globalTab").classList.toggle("active", period === "global")
-    $("weeklyTab").classList.toggle("active", period === "weekly")
-    $("leaderboardStatus").textContent = "loading..."
-    $("scoreList").innerHTML = ""
+    leaderboardPeriod = period;
+    show("leaderboard");
+    $("globalTab").classList.toggle("active", period === "global");
+    $("weeklyTab").classList.toggle("active", period === "weekly");
+    $("leaderboardStatus").textContent = "loading...";
+    $("scoreList").innerHTML = "";
 
-    const result = await window.db.getScores(period)
+    const result = await window.db.getScores(period);
 
     if (!result.ok) {
-      $("leaderboardStatus").textContent =
-        window.db.ready()
-          ? `database error: ${result.error}`
-          : "supabase is not configured yet. add your keys in js/config.js."
-      return
+      $("leaderboardStatus").textContent = window.db.ready()
+        ? `database error: ${result.error}`
+        : "supabase is not configured yet. add your keys in js/config.js.";
+      return;
     }
 
     $("leaderboardStatus").textContent = result.rows.length
       ? `${period} top 50`
-      : "no scores yet. civilization awaits."
-    $("scoreList").innerHTML = result.rows.map((row) => {
-      const name = escapeHtml(row.name || "a guy")
-      const score = Number(row.score || 0).toLocaleString()
-      return `<li><span class="score-name">${name}</span><span class="score-number">${score}</span></li>`
-    }).join("")
+      : "no scores yet. civilization awaits.";
+    $("scoreList").innerHTML = result.rows
+      .map((row) => {
+        const name = escapeHtml(row.name || "a guy");
+        const score = Number(row.score || 0).toLocaleString();
+        return `<li><span class="score-name">${name}</span><span class="score-number">${score}</span></li>`;
+      })
+      .join("");
   }
 
   function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, c => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-    }[c]))
+    return text.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        })[c],
+    );
   }
 
   function gameOver(result) {
-    pendingResult = result
-    window.audio.stopGame()
+    pendingResult = result;
+    window.audio.stopGame();
 
-    $("gameOverTitle").textContent = result.title
-    $("finalScore").textContent = Math.floor(result.score).toLocaleString()
-    $("finalDistance").textContent = `${Math.floor(result.distance)} m`
-    $("finalOvertakes").textContent = result.overtakes
-    $("finalSpeed").textContent = Math.floor(result.bestSpeed)
+    $("gameOverTitle").textContent = result.title;
+    $("finalScore").textContent = Math.floor(result.score).toLocaleString();
+    $("finalDistance").textContent = `${Math.floor(result.distance)} m`;
+    $("finalOvertakes").textContent = result.overtakes;
+    $("finalSpeed").textContent = Math.floor(result.bestSpeed);
 
-    const hasName = Boolean(localStorage.getItem("laneRunnerName"))
-    $("namePrompt").classList.toggle("hidden", hasName)
+    const hasName = Boolean(localStorage.getItem("laneRunnerName"));
+    $("namePrompt").classList.toggle("hidden", hasName);
 
     if (hasName) {
-      submitPendingScore()
+      submitPendingScore();
     }
 
     if (!hasName) {
-      $("nameInput").value = ""
-      $("nameInput").focus()
+      $("nameInput").value = "";
+      $("nameInput").focus();
     }
 
-    show("gameOver")
+    show("gameOver");
   }
 
   function savePendingScore() {
-    if (!pendingResult) return
+    if (!pendingResult) return;
 
-    const input = $("nameInput")
-    saveName(input.value)
-    $("namePrompt").classList.add("hidden")
-    submitPendingScore()
+    const input = $("nameInput");
+    saveName(input.value);
+    $("namePrompt").classList.add("hidden");
+    submitPendingScore();
   }
 
   async function submitPendingScore() {
-    if (!pendingResult) return
-    const result = pendingResult
+    if (!pendingResult) return;
+    const result = pendingResult;
 
     const response = await window.db.submitScore({
       ...result,
-      name: playerName()
-    })
+      name: playerName(),
+    });
 
     if (!response.ok && window.db.ready()) {
-      console.warn("score submission failed:", response.error)
+      console.warn("score submission failed:", response.error);
     }
 
-    pendingResult = null
-  }
-
-  function setMode(mode) {
-    selectedMode = mode
-    $("normalModeBtn").classList.toggle("active", mode === "normal")
-    $("bombModeBtn").classList.toggle("active", mode === "bomb")
+    pendingResult = null;
   }
 
   function updateHud(state) {
-    $("scoreHud").textContent = Math.floor(state.score).toLocaleString()
-    $("speedHud").textContent = `${Math.floor(state.speed)} km/h`
-    $("distanceHud").textContent = `${Math.floor(state.distance)} m`
-    $("overtakeHud").textContent = state.overtakes
-
-    $("bombHud").classList.toggle("hidden", state.mode !== "bomb")
-    $("bombBar").style.width = `${Math.max(0, Math.min(100, state.bomb))}%`
+    $("scoreHud").textContent = Math.floor(state.score).toLocaleString();
+    $("speedHud").textContent = `${Math.floor(state.speed)} km/h`;
+    $("distanceHud").textContent = `${Math.floor(state.distance)} m`;
+    $("overtakeHud").textContent = state.overtakes;
   }
 
-  $("startBtn").onclick = startGame
+  $("startBtn").onclick = startGame;
   $("retryBtn").onclick = () => {
-    window.audio.click()
-    window.audio.game()
-    show("game")
-    window.game.start(selectedMode)
-  }
+    window.audio.click();
+    window.audio.game();
+    show("game");
+    window.game.start();
+  };
 
   $("menuBtn").onclick = () => {
-    window.audio.click()
-    window.audio.stopGame()
-    show("menu")
-    refreshName()
-    window.audio.menu()
-  }
+    window.audio.click();
+    window.audio.stopGame();
+    show("menu");
+    refreshName();
+    window.audio.menu();
+  };
 
   $("scoresBtn").onclick = () => {
-    window.audio.click()
-    openLeaderboard("global")
-  }
+    window.audio.click();
+    openLeaderboard("global");
+  };
 
   $("gameOverScoresBtn").onclick = () => {
-    window.audio.click()
-    openLeaderboard("global")
-  }
+    window.audio.click();
+    openLeaderboard("global");
+  };
 
   $("closeScoresBtn").onclick = () => {
-    window.audio.click()
-    show("menu")
-    window.audio.menu()
-  }
+    window.audio.click();
+    show("menu");
+    window.audio.menu();
+  };
 
-  $("globalTab").onclick = () => openLeaderboard("global")
-  $("weeklyTab").onclick = () => openLeaderboard("weekly")
-
-  $("normalModeBtn").onclick = () => {
-    window.audio.click()
-    setMode("normal")
-  }
-
-  $("bombModeBtn").onclick = () => {
-    window.audio.click()
-    setMode("bomb")
-  }
+  $("globalTab").onclick = () => openLeaderboard("global");
+  $("weeklyTab").onclick = () => openLeaderboard("weekly");
 
   $("nameBtn").onclick = () => {
-    window.audio.click()
-    $("menuNameInput").value = localStorage.getItem("laneRunnerName") || ""
-    show("nameModal")
-    $("menuNameInput").focus()
-  }
+    window.audio.click();
+    $("menuNameInput").value = localStorage.getItem("laneRunnerName") || "";
+    show("nameModal");
+    $("menuNameInput").focus();
+  };
 
   $("menuNameSaveBtn").onclick = () => {
-    window.audio.click()
-    saveName($("menuNameInput").value)
-    show("menu")
-  }
+    window.audio.click();
+    saveName($("menuNameInput").value);
+    show("menu");
+  };
 
   $("nameCancelBtn").onclick = () => {
-    window.audio.click()
-    show("menu")
-  }
+    window.audio.click();
+    show("menu");
+  };
 
-  $("saveScoreBtn").onclick = savePendingScore
+  $("saveScoreBtn").onclick = savePendingScore;
 
-  $("nameInput").addEventListener("keydown", e => {
-    if (e.key === "Enter") savePendingScore()
-  })
+  $("nameInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") savePendingScore();
+  });
 
-  $("menuNameInput").addEventListener("keydown", e => {
+  $("menuNameInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      saveName($("menuNameInput").value)
-      show("menu")
+      saveName($("menuNameInput").value);
+      show("menu");
     }
-  })
+  });
 
-  refreshName()
-  window.audio.menu()
+  refreshName();
+  window.audio.menu();
 
   const ui = {
     show,
     gameOver,
     updateHud,
-    playerName
-  }
+    playerName,
+  };
 
-  window.ui = ui
-  return ui
+  window.ui = ui;
+  return ui;
 }

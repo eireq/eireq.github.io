@@ -10,7 +10,6 @@ an 8-bit arcade driving game for github pages.
 - gradually increasing speed
 - traffic that becomes slightly more challenging
 - distance + overtakes scoring
-- speed bomb mode
 - local player name
 - global and weekly top-50 leaderboards
 - supabase database integration
@@ -35,6 +34,7 @@ the browser uses the public anon/publishable key. this is normal for a supabase 
 do not put a service-role key into `src/games/racing/config.js`.
 
 the database is intentionally configured so visitors can:
+
 - read scores
 - insert scores
 

@@ -16,7 +16,6 @@ export function createGame() {
   const state = {
     running: false,
     paused: false,
-    mode: "normal",
     lastTime: 0,
     roadOffset: 0,
     spawnTimer: 0,
@@ -28,8 +27,6 @@ export function createGame() {
     score: 0,
     bestSpeed: 0,
     difficulty: 0,
-    bomb: 100,
-    bombDrain: 0,
     player: {
       lane: 1,
       x: 0,
@@ -61,8 +58,6 @@ export function createGame() {
     state.score = 0;
     state.bestSpeed = 0;
     state.difficulty = 0;
-    state.bomb = 100;
-    state.bombDrain = 0;
     state.traffic = [];
     state.particles = [];
     state.scenery = [];
@@ -81,7 +76,6 @@ export function createGame() {
   }
 
   function start(mode) {
-    state.mode = mode;
     reset();
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(loop);
@@ -153,28 +147,14 @@ export function createGame() {
       distance: state.distance,
       overtakes: state.overtakes,
       bestSpeed: state.bestSpeed,
-      mode: state.mode,
     });
   }
 
   function update(dt) {
     state.difficulty = Math.min(1, state.distance / 5000);
 
-    const acceleration = state.mode === "bomb" ? 24 : 13;
-    state.speed = Math.min(state.maxSpeed, state.speed + acceleration * dt);
+    state.speed = Math.min(state.maxSpeed, state.speed + 13 * dt);
     state.bestSpeed = Math.max(state.bestSpeed, state.speed);
-
-    if (state.mode === "bomb") {
-      const required = 280 + state.difficulty * 90;
-      if (state.speed < required)
-        state.bomb -= (required - state.speed) * 0.018 * dt;
-      else state.bomb = Math.min(100, state.bomb + 5 * dt);
-
-      if (state.bomb <= 0) {
-        state.bomb = 0;
-        crash("the bomb went boom");
-      }
-    }
 
     state.distance += state.speed * dt * 0.075;
     state.score = Math.floor(

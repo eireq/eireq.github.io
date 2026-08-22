@@ -14,31 +14,27 @@
             <button id="nameBtn">set name</button>
           </div>
 
-          <div class="mode-row">
-            <span>mode</span>
-            <button id="normalModeBtn" class="mode active">normal</button>
-            <button id="bombModeBtn" class="mode">speed bomb</button>
-          </div>
-
-          <p class="hint">arrow keys / wasd to change lanes (keyboard required)</p>
+          <p class="hint">
+            arrow keys / wasd to change lanes (keyboard required)
+          </p>
           <p id="savedName" class="saved-name"></p>
           <p class="hint"><router-link to="/games">← games</router-link></p>
         </div>
       </section>
 
       <section id="game" class="screen">
-        <canvas id="gameCanvas" width="480" height="720" aria-label="lane runner game"></canvas>
+        <canvas
+          id="gameCanvas"
+          width="480"
+          height="720"
+          aria-label="lane runner game"
+        ></canvas>
 
         <div class="hud">
           <div><span>score</span><strong id="scoreHud">0</strong></div>
           <div><span>speed</span><strong id="speedHud">0</strong></div>
           <div><span>distance</span><strong id="distanceHud">0 m</strong></div>
           <div><span>overtakes</span><strong id="overtakeHud">0</strong></div>
-        </div>
-
-        <div id="bombHud" class="bomb-hud hidden">
-          <span>engine stability</span>
-          <div class="bomb-bar"><i id="bombBar"></i></div>
         </div>
 
         <div id="pauseHint" class="pause-hint">p = pause</div>
@@ -50,13 +46,22 @@
           <h2 id="gameOverTitle">you crashed</h2>
           <div class="results">
             <div><span>score</span><strong id="finalScore">0</strong></div>
-            <div><span>distance</span><strong id="finalDistance">0 m</strong></div>
-            <div><span>overtakes</span><strong id="finalOvertakes">0</strong></div>
+            <div>
+              <span>distance</span><strong id="finalDistance">0 m</strong>
+            </div>
+            <div>
+              <span>overtakes</span><strong id="finalOvertakes">0</strong>
+            </div>
             <div><span>best speed</span><strong id="finalSpeed">0</strong></div>
           </div>
           <div id="namePrompt" class="name-prompt hidden">
             <label for="nameInput">enter your name</label>
-            <input id="nameInput" maxlength="16" autocomplete="nickname" placeholder="a guy">
+            <input
+              id="nameInput"
+              maxlength="16"
+              autocomplete="nickname"
+              placeholder="a guy"
+            />
             <button id="saveScoreBtn" class="primary">save score</button>
           </div>
           <div class="menu-buttons">
@@ -91,7 +96,12 @@
         <div class="panel small-panel">
           <p class="eyebrow">player setup</p>
           <h2>what should we call you?</h2>
-          <input id="menuNameInput" maxlength="16" autocomplete="nickname" placeholder="a guy">
+          <input
+            id="menuNameInput"
+            maxlength="16"
+            autocomplete="nickname"
+            placeholder="a guy"
+          />
           <button id="menuNameSaveBtn" class="primary">save</button>
           <button id="nameCancelBtn">cancel</button>
         </div>
@@ -105,19 +115,19 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-import { initRacing } from '@/games/racing/init.js'
-import '@/games/racing/style.css'
+import { onMounted, onUnmounted } from "vue";
+import { initRacing } from "@/games/racing/init.js";
+import "@/games/racing/style.css";
 
-let destroy = () => {}
+let destroy = () => {};
 
 onMounted(() => {
-  document.body.classList.add('lane-runner-page')
-  destroy = initRacing()
-})
+  document.body.classList.add("lane-runner-page");
+  destroy = initRacing();
+});
 
 onUnmounted(() => {
-  destroy()
-  document.body.classList.remove('lane-runner-page')
-})
+  destroy();
+  document.body.classList.remove("lane-runner-page");
+});
 </script>
