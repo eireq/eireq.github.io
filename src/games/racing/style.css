@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
 .lane-runner {
   --ink: #11131a;
@@ -7,7 +7,7 @@
   --yellow: #ffd84a;
   --red: #ff4d4d;
   --green: #66e37a;
-  --panel: rgba(10, 13, 20, .94);
+  --panel: rgba(10, 13, 20, 0.94);
   width: 100vw;
   height: 100vh;
   margin: 0;
@@ -71,7 +71,11 @@ body.lane-runner-page {
   background: var(--sky);
   background-image:
     linear-gradient(#7bd2ff 0 0),
-    repeating-linear-gradient(0deg, transparent 0 31px, rgba(255,255,255,.05) 32px);
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      rgba(255, 255, 255, 0.05) 32px
+    );
 }
 
 .lane-runner .cabinet {
@@ -88,7 +92,11 @@ body.lane-runner-page {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px);
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.025) 0 1px,
+    transparent 1px 4px
+  );
 }
 
 .lane-runner .eyebrow {
@@ -149,7 +157,7 @@ body.lane-runner-page {
 .lane-runner .saved-name {
   font-size: 8px;
   line-height: 1.8;
-  opacity: .75;
+  opacity: 0.75;
   margin: 26px 0 0;
 }
 
@@ -175,6 +183,8 @@ body.lane-runner-page {
   width: min(100vw, 480px);
   height: 100vh;
   max-height: 100vh;
+  touch-action: pan-y;
+  user-select: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
@@ -194,7 +204,7 @@ body.lane-runner-page {
 }
 
 .lane-runner .hud div {
-  background: rgba(0,0,0,.78);
+  background: rgba(0, 0, 0, 0.78);
   border: 2px solid var(--white);
   padding: 7px 5px;
   text-align: center;
@@ -216,7 +226,7 @@ body.lane-runner-page {
   left: 50%;
   transform: translateX(-50%);
   width: min(360px, 82vw);
-  background: rgba(0,0,0,.8);
+  background: rgba(0, 0, 0, 0.8);
   padding: 9px;
   border: 2px solid var(--white);
   font-size: 7px;
@@ -241,12 +251,12 @@ body.lane-runner-page {
   right: 14px;
   bottom: 14px;
   font-size: 7px;
-  opacity: .55;
+  opacity: 0.55;
 }
 
 .lane-runner .overlay-screen {
   place-items: center;
-  background: rgba(0,0,0,.72);
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .lane-runner .panel {
@@ -382,8 +392,16 @@ body.lane-runner-page {
 }
 
 @media (max-width: 560px) {
-  .lane-runner .cabinet { padding: 28px 18px; }
-  .lane-runner .hud strong { font-size: 7px; }
-  .lane-runner .hud span { font-size: 5px; }
-  .lane-runner .panel { padding: 24px 18px; }
+  .lane-runner .cabinet {
+    padding: 28px 18px;
+  }
+  .lane-runner .hud strong {
+    font-size: 7px;
+  }
+  .lane-runner .hud span {
+    font-size: 5px;
+  }
+  .lane-runner .panel {
+    padding: 24px 18px;
+  }
 }
