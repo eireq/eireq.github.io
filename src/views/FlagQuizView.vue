@@ -374,8 +374,37 @@ function shuffle(array) {
   return copy;
 }
 
+const countryAliases = {
+  ae: ["uae"],
+  au: ["oz"],
+  bn: ["brunei darussalam"],
+  cf: ["car"],
+  ch: ["swiss"],
+  ci: ["ivory coast"],
+  cv: ["cabo verde"],
+  cz: ["czech republic"],
+  do: ["dr"],
+  gb: ["uk", "great britain"],
+  mk: ["macedonia"],
+  mm: ["burma"],
+  sz: ["swaziland"],
+  tl: ["east timor"],
+  us: ["usa", "america"],
+};
+
 function normalize(value) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isCorrectAnswer(answer, country) {
+  const acceptedAnswers = [
+    country.name,
+    ...(countryAliases[country.code] || []),
+  ];
+
+  return acceptedAnswers.some(
+    (acceptedAnswer) => normalize(answer) === normalize(acceptedAnswer),
+  );
 }
 
 function startQuiz() {
@@ -402,10 +431,7 @@ function startQuiz() {
 }
 
 function submitAnswer() {
-  const userAnswer = normalize(answer.value);
-  const correctAnswer = normalize(currentQuestion.value.name);
-
-  if (userAnswer === correctAnswer) {
+  if (isCorrectAnswer(answer.value, currentQuestion.value)) {
     score.value++;
   }
 
