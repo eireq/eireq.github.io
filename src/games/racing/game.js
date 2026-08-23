@@ -20,6 +20,10 @@ export function createGame() {
     roadOffset: 0,
     spawnTimer: 0,
     spawnEvery: 1.05,
+    elapsed: 0,
+    trafficWave: 0,
+    waveRemaining: 0,
+    waveAnnouncement: 0,
     speed: 180,
     maxSpeed: 520,
     distance: 0,
@@ -52,6 +56,10 @@ export function createGame() {
     state.roadOffset = 0;
     state.spawnTimer = 0.2;
     state.spawnEvery = 1.05;
+    state.elapsed = 0;
+    state.trafficWave = 0;
+    state.waveRemaining = 0;
+    state.waveAnnouncement = 0;
     state.speed = 180;
     state.distance = 0;
     state.overtakes = 0;
@@ -151,6 +159,18 @@ export function createGame() {
   }
 
   function update(dt) {
+    state.elapsed += dt;
+    state.waveRemaining = Math.max(0, state.waveRemaining - dt);
+    state.waveAnnouncement = Math.max(0, state.waveAnnouncement - dt);
+
+    const nextWave = Math.floor(state.elapsed / 120);
+    if (nextWave > state.trafficWave) {
+      state.trafficWave = nextWave;
+      state.waveRemaining = 25;
+      state.waveAnnouncement = 3.5;
+      for (let i = 0; i < 3; i++) spawnTraffic();
+    }
+
     state.difficulty = Math.min(1, state.distance / 5000);
 
     state.speed = Math.min(state.maxSpeed, state.speed + 13 * dt);
@@ -163,10 +183,18 @@ export function createGame() {
 
     state.roadOffset = (state.roadOffset + state.speed * dt) % 64;
 
-    state.spawnEvery = Math.max(0.62, 1.05 - state.difficulty * 0.25);
+    const waveTraffic = state.waveRemaining > 0;
+    state.spawnEvery = Math.max(
+      0.34,
+      1.05 -
+        state.difficulty * 0.25 -
+        state.trafficWave * 0.08 -
+        (waveTraffic ? 0.22 : 0),
+    );
     state.spawnTimer -= dt;
     if (state.spawnTimer <= 0) {
       spawnTraffic();
+      if (waveTraffic) spawnTraffic();
       state.spawnTimer = state.spawnEvery * (0.75 + Math.random() * 0.55);
     }
 
@@ -311,6 +339,23 @@ export function createGame() {
       ctx.fillRect(p.x, p.y, p.size, p.size);
     }
     ctx.globalAlpha = 1;
+
+    if (state.waveAnnouncement > 0) {
+      const alpha = Math.min(
+        1,
+        state.waveAnnouncement / 0.35,
+        (3.5 - state.waveAnnouncement) / 0.5,
+      );
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.72 * alpha})`;
+      ctx.fillRect(42, 285, W - 84, 118);
+      ctx.fillStyle = `rgba(255, 216, 74, ${alpha})`;
+      ctx.textAlign = "center";
+      ctx.font = "34px 'Press Start 2P'";
+      ctx.fillText("TRAFIK!", W / 2, 340);
+      ctx.fillStyle = `rgba(244, 244, 232, ${alpha})`;
+      ctx.font = "9px 'Press Start 2P'";
+      ctx.fillText(`wave ${state.trafficWave}`, W / 2, 372);
+    }
 
     if (state.paused && state.running) {
       ctx.fillStyle = "rgba(0,0,0,.62)";
