@@ -163,7 +163,7 @@ export function createGame() {
     state.waveRemaining = Math.max(0, state.waveRemaining - dt);
     state.waveAnnouncement = Math.max(0, state.waveAnnouncement - dt);
 
-    const nextWave = Math.floor(state.elapsed / 120);
+    const nextWave = Math.floor(state.elapsed / 60);
     if (nextWave > state.trafficWave) {
       state.trafficWave = nextWave;
       state.waveRemaining = 25;
