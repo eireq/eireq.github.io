@@ -19,8 +19,8 @@ an 8-bit arcade driving game for github pages.
 ## local setup
 
 1. from the repo root, run `npm install` then `npm run dev`.
-2. edit `src/games/racing/config.js`.
-3. add your supabase project url and anon/publishable key.
+2. copy `.env.example` to `.env`.
+3. add your Supabase project URL and anon/publishable key to `.env`.
 4. run `src/games/racing/supabase.sql` in the supabase sql editor.
 5. put optional music files in `public/games/racing/assets/`:
    - `menu.mp3`
@@ -29,7 +29,12 @@ an 8-bit arcade driving game for github pages.
 
 ## supabase setup
 
-the browser uses the public anon/publishable key. this is normal for a supabase frontend.
+the browser uses the public anon/publishable key. this is normal for a Supabase frontend.
+
+the key is loaded from environment variables so it does not need to be committed to GitHub.
+Vite still embeds `VITE_*` values into the deployed JavaScript, so this does **not** make the
+publishable key private. Never use a service-role or secret key in this app. Keep RLS enabled
+and use the supplied policies to control what anonymous visitors can do.
 
 do not put a service-role key into `src/games/racing/config.js`.
 
@@ -42,7 +47,17 @@ visitors cannot update or delete scores through the supplied policies.
 
 ## github pages
 
-the vue app builds to static files. github actions deploys `dist` on push to `main`.
+the Vue app builds to static files. Before deploying, add these repository or environment
+secrets in GitHub under **Settings > Secrets and variables > Actions**:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+The workflow injects them during the build. They will still be visible to anyone inspecting
+the deployed site because the leaderboard calls Supabase directly from the browser.
+
+If the goal is to hide credentials from site visitors, the leaderboard must move behind a
+server-side API or Supabase Edge Function. GitHub Pages alone cannot provide that server.
 
 ## important anti-cheat note
 

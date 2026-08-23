@@ -1,9 +1,9 @@
 export const GAME_CONFIG = {
-  supabaseUrl: "https://rufevicjghfdptutstxz.supabase.co",
-  supabaseAnonKey: "sb_publishable_Uh-19vRZUc7cgOJgQ8C6kw_rQI8kxmo",
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL || "",
+  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
 
   // optional music. upload your own files and change these paths.
   menuMusic: "/games/racing/assets/menu.mp3",
   gameMusic: "/games/racing/assets/game.mp3",
-  clickSound: "/games/racing/assets/click.mp3"
-}
+  clickSound: "/games/racing/assets/click.mp3",
+};
