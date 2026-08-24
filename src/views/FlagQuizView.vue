@@ -43,7 +43,9 @@
           <option :value="100">100 flags</option>
         </select>
 
-        <button @click="startQuiz">start quiz →</button>
+        <button :disabled="starting" @click="startQuiz">
+          {{ starting ? "loading flags..." : "start quiz →" }}
+        </button>
       </div>
     </div>
 
@@ -54,11 +56,15 @@
 
       <div class="flag-container">
         <img
+          v-if="!flagError"
           :src="currentQuestion.flag"
           :alt="'flag of ' + currentQuestion.name"
           class="flag"
           @error="handleFlagError"
         />
+        <p v-else class="flag-error">
+          flag unavailable for {{ currentQuestion.name }}
+        </p>
       </div>
 
       <div class="answer">
@@ -142,6 +148,7 @@ import {
 const playerName = ref("a guy");
 const flagCount = ref(10);
 const quizMode = ref("countries");
+const starting = ref(false);
 
 const started = ref(false);
 const finished = ref(false);
@@ -158,6 +165,7 @@ const leaderboardLoading = ref(false);
 const leaderboardError = ref("");
 const scoreSubmitted = ref(false);
 const submittedScoreId = ref(null);
+const flagError = ref(false);
 
 const currentQuestion = computed(() => {
   return questions.value[currentIndex.value];
@@ -440,32 +448,45 @@ function isCorrectAnswer(answer, country) {
   );
 }
 
-function startQuiz() {
+async function startQuiz() {
+  if (starting.value) return;
+
   if (!playerName.value.trim()) {
     playerName.value = "a guy";
   }
 
-  const selectedPool = getQuizPool();
-  const selected = shuffle(selectedPool).slice(0, flagCount.value);
+  starting.value = true;
 
-  questions.value = selected.map((country) => ({
-    name: typeof country === "string" ? country : country.name,
-    code: typeof country === "string" ? null : country.code,
-    flag:
-      typeof country === "string"
-        ? `https://commons.wikimedia.org/wiki/Special:FilePath/Flag%20of%20${encodeURIComponent(country)}.svg`
-        : `https://flagcdn.com/w640/${country.code}.png`,
-  }));
+  try {
+    const selectedPool = getQuizPool();
+    const selected = shuffle(selectedPool).slice(0, flagCount.value);
 
-  currentIndex.value = 0;
-  score.value = 0;
-  answer.value = "";
-  started.value = true;
-  finished.value = false;
+    questions.value = await Promise.all(
+      selected.map(async (country) => {
+        const name = typeof country === "string" ? country : country.name;
+        const code = typeof country === "string" ? null : country.code;
 
-  nextTick(() => {
-    answerInput.value?.focus();
-  });
+        return {
+          name,
+          code,
+          flag: code ? `https://flagcdn.com/w640/${code}.png` : await findWikimediaFlag(name),
+        };
+      }),
+    );
+
+    currentIndex.value = 0;
+    score.value = 0;
+    answer.value = "";
+    flagError.value = false;
+    started.value = true;
+    finished.value = false;
+
+    nextTick(() => {
+      answerInput.value?.focus();
+    });
+  } finally {
+    starting.value = false;
+  }
 }
 
 function getQuizPool() {
@@ -478,8 +499,37 @@ function getQuizPool() {
 }
 
 function handleFlagError(event) {
+  flagError.value = true;
   event.target.alt = `flag unavailable for ${currentQuestion.value.name}`;
-  event.target.classList.add("flag--unavailable");
+}
+
+async function findWikimediaFlag(name) {
+  const fallback = `https://commons.wikimedia.org/wiki/Special:FilePath/Flag%20of%20${encodeURIComponent(name)}.svg`;
+  const params = new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: `intitle:Flag of ${name}`,
+    gsrnamespace: "6",
+    gsrlimit: "1",
+    prop: "imageinfo",
+    iiprop: "url",
+    iiurlwidth: "640",
+    format: "json",
+    origin: "*",
+  });
+
+  try {
+    const response = await fetch(
+      `https://commons.wikimedia.org/w/api.php?${params}`,
+    );
+    if (!response.ok) return fallback;
+
+    const data = await response.json();
+    const page = Object.values(data.query?.pages || {})[0];
+    return page?.imageinfo?.[0]?.thumburl || page?.imageinfo?.[0]?.url || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function submitAnswer() {
@@ -495,6 +545,7 @@ function submitAnswer() {
   }
 
   currentIndex.value++;
+  flagError.value = false;
 
   nextTick(() => {
     answerInput.value?.focus();
@@ -648,6 +699,11 @@ button:hover {
   color: #000;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .quiz {
   text-align: center;
   max-width: 800px;
@@ -676,6 +732,13 @@ button:hover {
   width: auto;
   height: auto;
   object-fit: contain;
+}
+
+.flag-error {
+  max-width: 420px;
+  color: #888;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .answer {
