@@ -168,7 +168,6 @@ export function createGame() {
       state.trafficWave = nextWave;
       state.waveRemaining = 25;
       state.waveAnnouncement = 3.5;
-      for (let i = 0; i < 3; i++) spawnTraffic();
     }
 
     state.difficulty = Math.min(1, state.distance / 5000);
