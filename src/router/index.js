@@ -3,6 +3,7 @@ import HomeView from "../views/HomeView.vue";
 import GamesView from "../views/GamesView.vue";
 import AboutMeView from "../views/AboutMeView.vue";
 import GameRacingView from "../views/GameRacingView.vue";
+import RandomCountryView from "../views/RandomCountryView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -24,6 +25,12 @@ const router = createRouter({
       name: "games",
       component: GamesView,
       meta: { title: "games - eire" },
+    },
+    {
+      path: "/rc",
+      name: "random-country",
+      component: RandomCountryView,
+      meta: { title: "random country - eire" },
     },
     {
       path: "/games/racing",
