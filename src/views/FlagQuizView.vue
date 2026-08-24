@@ -20,6 +20,18 @@
           @keyup.enter="startQuiz"
         />
 
+        <label for="mode">quiz mode</label>
+
+        <select id="mode" v-model="quizMode">
+          <option
+            v-for="mode in quizModes"
+            :key="mode.value"
+            :value="mode.value"
+          >
+            {{ mode.label }}
+          </option>
+        </select>
+
         <label for="amount">number of flags</label>
 
         <select id="amount" v-model.number="flagCount">
@@ -45,6 +57,7 @@
           :src="currentQuestion.flag"
           :alt="'flag of ' + currentQuestion.name"
           class="flag"
+          @error="handleFlagError"
         />
       </div>
 
@@ -121,9 +134,14 @@
 
 <script setup>
 import { computed, nextTick, ref } from "vue";
+import {
+  historicalEntries,
+  territorialEntries,
+} from "@/data/flagQuizExtraEntries.js";
 
 const playerName = ref("a guy");
 const flagCount = ref(10);
+const quizMode = ref("countries");
 
 const started = ref(false);
 const finished = ref(false);
@@ -144,6 +162,13 @@ const submittedScoreId = ref(null);
 const currentQuestion = computed(() => {
   return questions.value[currentIndex.value];
 });
+
+const quizModes = [
+  { value: "countries", label: "countries" },
+  { value: "territorial", label: "territorial" },
+  { value: "historical", label: "historical" },
+  { value: "all", label: "all" },
+];
 
 const percentage = computed(() => {
   if (!questions.value.length) return 0;
@@ -392,6 +417,13 @@ const countryAliases = {
   us: ["usa", "america"],
 };
 
+const nameAliases = {
+  "Cabo Verde": ["Cape Verde"],
+  "Cape Verde": ["Cabo Verde"],
+  Curacao: ["Curaçao"],
+  "Aland Islands": ["Åland Islands"],
+};
+
 function normalize(value) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -400,6 +432,7 @@ function isCorrectAnswer(answer, country) {
   const acceptedAnswers = [
     country.name,
     ...(countryAliases[country.code] || []),
+    ...(nameAliases[country.name] || []),
   ];
 
   return acceptedAnswers.some(
@@ -412,11 +445,16 @@ function startQuiz() {
     playerName.value = "a guy";
   }
 
-  const selected = shuffle(countries).slice(0, flagCount.value);
+  const selectedPool = getQuizPool();
+  const selected = shuffle(selectedPool).slice(0, flagCount.value);
 
   questions.value = selected.map((country) => ({
-    ...country,
-    flag: `https://flagcdn.com/w640/${country.code}.png`,
+    name: typeof country === "string" ? country : country.name,
+    code: typeof country === "string" ? null : country.code,
+    flag:
+      typeof country === "string"
+        ? `https://commons.wikimedia.org/wiki/Special:FilePath/Flag%20of%20${encodeURIComponent(country)}.svg`
+        : `https://flagcdn.com/w640/${country.code}.png`,
   }));
 
   currentIndex.value = 0;
@@ -428,6 +466,20 @@ function startQuiz() {
   nextTick(() => {
     answerInput.value?.focus();
   });
+}
+
+function getQuizPool() {
+  if (quizMode.value === "territorial") return territorialEntries;
+  if (quizMode.value === "historical") return historicalEntries;
+  if (quizMode.value === "all") {
+    return [...countries, ...territorialEntries, ...historicalEntries];
+  }
+  return countries;
+}
+
+function handleFlagError(event) {
+  event.target.alt = `flag unavailable for ${currentQuestion.value.name}`;
+  event.target.classList.add("flag--unavailable");
 }
 
 function submitAnswer() {
