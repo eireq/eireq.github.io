@@ -50,8 +50,8 @@
       </p>
 
       <p>
-        from tv shows i like the it crowd, family guy, two and a half men, big
-        bang theory, and many more.
+        from tv shows i like the it crowd, family guy, two and a half men, peacemaker,
+        big bang theory, and many more.
       </p>
 
       <h2>music</h2>

@@ -463,7 +463,8 @@ async function submitScoreToLeaderboard() {
 
   try {
     if (!window.db?.ready()) {
-      leaderboardError.value = "leaderboard is currently unavailable.";
+      leaderboardError.value =
+        "supabase is not configured. set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.";
       return;
     }
 

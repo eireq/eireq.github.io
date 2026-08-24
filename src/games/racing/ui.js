@@ -52,7 +52,7 @@ export function createUI() {
     if (!result.ok) {
       $("leaderboardStatus").textContent = window.db.ready()
         ? `database error: ${result.error}`
-        : "supabase is not configured yet. add your keys in js/config.js.";
+        : "supabase is not configured. set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.";
       return;
     }
 
