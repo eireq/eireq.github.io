@@ -16,7 +16,7 @@
             <a href="mailto:eireball@proton.me">email</a>
           </li>
           <li>
-            <a href="https://discord.gg/zwvvbqBFPV" target="_blank" rel="noreferrer"
+            <a href="https://discord.com/users/1177928523005038613" target="_blank" rel="noreferrer"
               >discord</a
             >
           </li>

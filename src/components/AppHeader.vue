@@ -9,7 +9,7 @@
       <router-link to="/games">games</router-link>
       <router-link to="/art">art</router-link>
       <router-link to="/misc">misc</router-link>
-      <router-link to="/contect">contact</router-link>
+      <router-link to="/contact">contact</router-link>
     </div>
 
     <div class="socials">
