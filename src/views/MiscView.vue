@@ -1,39 +1,41 @@
 <template>
   <main>
-    <h1>games.</h1>
+    <h1>misc.</h1>
 
     <p class="intro">
-      a collection of games i've made. mostly small projects, experiments,
-      and things i thought would be funny to make.
+      a collection of miscellaneous projects, experiments, and other things
+      that do not fit into games or art.
     </p>
 
-    <section class="games">
-      <router-link class="game" to="/games/racing">
-        <h2>racing</h2>
-        <p>
-          lane changing game. with leaderboards!!
-        </p>
+    <section class="misc">
+      <router-link class="misc-piece" to="/rc">
+        <h2>random country</h2>
+        <p>generate a random country and discover something new.</p>
       </router-link>
 
-      <router-link class="game" to="/games/flagquiz">
-        <h2>flag quiz</h2>
-        <p>
-          identify flags from around the world. how many can you get right?
-        </p>
-      </router-link>
-
-      <a class="game" href="#">
-        <h2>another game</h2>
-        <p>
-          describe what the game is about here.
-        </p>
+      <a
+        class="misc-piece"
+        href="https://eireq.github.io/modes"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <h2>modes</h2>
+        <p>another project from my collection of web experiments.</p>
       </a>
 
-      <a class="game" href="#">
-        <h2>another game</h2>
-        <p>
-          describe the game here.
-        </p>
+      <a
+        class="misc-piece"
+        href="https://github.com/eireq"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <h2>discord bots</h2>
+        <p>small bots and other experiments from my GitHub projects.</p>
+      </a>
+
+      <a class="misc-piece" href="#">
+        <h2>other stuff</h2>
+        <p>more random projects will appear here eventually.</p>
       </a>
     </section>
   </main>
@@ -65,13 +67,13 @@ h1 {
   max-width: 650px;
 }
 
-.games {
+.misc {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
 }
 
-.game {
+.misc-piece {
   display: block;
   padding: 28px;
   border: 1px solid #222;
@@ -81,17 +83,17 @@ h1 {
   min-height: 180px;
 }
 
-.game:hover {
+.misc-piece:hover {
   border-color: #fff;
   transform: translateY(-3px);
 }
 
-.game h2 {
+.misc-piece h2 {
   margin: 0 0 12px;
   font-size: 24px;
 }
 
-.game p {
+.misc-piece p {
   margin: 0;
   color: #888;
   font-size: 16px;
@@ -99,7 +101,7 @@ h1 {
 }
 
 @media (max-width: 800px) {
-  .games {
+  .misc {
     grid-template-columns: 1fr;
   }
 

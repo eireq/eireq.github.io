@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import GamesView from "../views/GamesView.vue";
+import ArtView from "../views/ArtView.vue";
+import MiscView from "../views/MiscView.vue";
+import ContactView from "../views/ContactView.vue";
 import AboutMeView from "../views/AboutMeView.vue";
 import GameRacingView from "../views/GameRacingView.vue";
 import RandomCountryView from "../views/RandomCountryView.vue";
@@ -25,6 +28,24 @@ const router = createRouter({
       name: "games",
       component: GamesView,
       meta: { title: "games - eire" },
+    },
+    {
+      path: "/art",
+      name: "art",
+      component: ArtView,
+      meta: { title: "art - eire" },
+    },
+    {
+      path: "/misc",
+      name: "misc",
+      component: MiscView,
+      meta: { title: "misc - eire" },
+    },
+    {
+      path: "/contect",
+      name: "contect",
+      component: ContactView,
+      meta: { title: "contact - eire" },
     },
     {
       path: "/rc",

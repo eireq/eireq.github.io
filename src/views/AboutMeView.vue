@@ -36,16 +36,16 @@
       </p>
 
       <p>
-        i am also a hobby-vexillologist, which means that i like to study flags
-        and vexillology in general. i am interested in the designs, history,
-        symbolism, and sometimes questionable decisions behind different flags.
+        i am also a hobby-vexillophile, which means that i have a strong
+        interest in flags. i am especially interested in their designs, history,
+        symbolism, and sometimes questionable decisions.
       </p>
 
       <h2>movies & tv</h2>
 
       <p>
         from movies i like american action comedies the most. examples include
-        the naked gun and police squad, rush hour, hot shots!, and jim carrey
+        the naked gun and police squad!, rush hour, hot shots!, and jim carrey
         movies like ace ventura, the mask, liar liar, and many more.
       </p>
 
@@ -82,26 +82,16 @@
       </p>
 
       <p>
-        some of my projects include
-        <a href="https://eireq.github.io/rc" target="_blank">random country</a>
-        and
-        <a href="https://eireq.github.io/modes" target="_blank">modes.</a>
+        my projects include
+        <a href="https://eireq.github.io/rc" target="_blank">random country</a>,
+        <a href="https://eireq.github.io/modes" target="_blank">modes</a>,
+        <a href="https://eireq.github.io/games/racing" target="_blank"
+          >racing</a
+        >, and
+        <a href="https://eireq.github.io/games/flagquiz" target="_blank"
+          >flag quiz</a
+        >.
       </p>
-
-      <p>i am planning to make a lot more projects in the future:</p>
-
-      <ul>
-        <li>flag quiz</li>
-        <li>arcade game where you switch lanes to avoid obstacles</li>
-        <li>
-          a website where you can make your own fictional countries and log them
-          into a world map
-        </li>
-        <li>
-          gravity simulator where you can drop objects and see how they interact
-          with different gravity settings
-        </li>
-      </ul>
 
       <p>
         you can find more of my projects on my
@@ -133,7 +123,7 @@
 
       <ul>
         <li>
-          i stole a license plate from a car once, and it was a very bad idea.
+          i stole a license plate from a car once
         </li>
         <li>i plan to become a hyperpolyglot!</li>
         <li>

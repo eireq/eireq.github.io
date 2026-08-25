@@ -7,6 +7,9 @@
       <router-link to="/rc">random country</router-link>
       <router-link to="/modes">modes.</router-link>
       <router-link to="/games">games</router-link>
+      <router-link to="/art">art</router-link>
+      <router-link to="/misc">misc</router-link>
+      <router-link to="/contect">contact</router-link>
     </div>
 
     <div class="socials">
