@@ -42,8 +42,8 @@ const router = createRouter({
       meta: { title: "misc - eire" },
     },
     {
-      path: "/contect",
-      name: "contect",
+      path: "/contact",
+      name: "contact",
       component: ContactView,
       meta: { title: "contact - eire" },
     },
