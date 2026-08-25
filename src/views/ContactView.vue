@@ -177,9 +177,10 @@ ul {
   align-self: flex-start;
   padding: 12px 20px;
   border: 1px solid #fff;
-  background: #fff;
-  color: #000;
+  background: transparent;
+  color: #fff;
   font: inherit;
+  font-size: 15px;
   cursor: pointer;
   transition: 0.2s;
 }
