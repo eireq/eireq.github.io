@@ -33,7 +33,7 @@ const messages = {
       title: "games.", intro: "a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.", racing: "racing", racingText: "lane changing game. with leaderboards!!", flagQuiz: "flag quiz", flagQuizText: "identify flags from around the world. how many can you get right?", another: "another game", anotherText: "describe what the game is about here.", anotherTextTwo: "describe the game here.",
     },
     misc: {
-      title: "misc.", intro: "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.", randomCountry: "random country", randomCountryText: "generate a random country and discover something new.", modes: "modes", modesText: "another project from my collection of web experiments.", discordBots: "discord bots", discordBotsText: "small bots and other experiments from my GitHub projects.", other: "other stuff", otherText: "more random projects will appear here eventually.",
+      title: "misc.", intro: "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.", randomCountry: "random country", randomCountryText: "generate a random country and discover something new.", politics: "political preferences", politicsText: "my ideological charts and political test results.", modes: "modes", modesText: "another project from my collection of web experiments.", discordBots: "discord bots", discordBotsText: "small bots and other experiments from my GitHub projects.", other: "other stuff", otherText: "more random projects will appear here eventually.",
     },
     art: {
       title: "art.", intro: "a collection of art i've made. mostly digital experiments, flag designs, and things i thought would be funny to draw.", digital: "digital art", digitalText: "drawings, experiments, and other digital creations.", flags: "flag designs", flagsText: "fictional flags and designs inspired by vexillology.", more: "more coming soon", moreText: "i'll add more of my art here when i make something worth showing.",
@@ -43,6 +43,9 @@ const messages = {
     },
     randomCountry: {
       eyebrow: "random country", title: "pick a place.", intro: "countries, territories, and historical states. the map is bigger than you think.", yourPlace: "your random place", randomize: "randomize", pool: "the full pool", entries: "entries", find: "find an entry", search: "search...", empty: "no places found.",
+    },
+    politics: {
+      title: "political compass & values", subtitle: "a collection of my ideological charts and political test results.", results: "political test results", compass: "traditional 2D axes", sapply: "3D compass grid", dozen: "12 core values", orbs: "spherical model", eight: "4 independent axes", nine: "9 detailed axes", scales: "8 characteristics & tags", left: "left-wing spectrum", right: "right-wing spectrum", alt: "alternative values spectrum", unavailable: "image not uploaded yet",
     },
     footer: { contact: "contact", text: "you can contact me via", email: "email" },
     about: {
@@ -108,7 +111,7 @@ const messages = {
       title: "spiele.", intro: "eine Sammlung von Spielen, die ich erstellt habe. meistens kleine Projekte, Experimente und Dinge, die lustig schienen.", racing: "racing", racingText: "spiel zum Spurwechseln, mit Bestenlisten!!", flagQuiz: "flaggenquiz", flagQuizText: "erkenne Flaggen aus aller Welt. wie viele schaffst du richtig?", another: "weiteres Spiel", anotherText: "beschreibe hier, worum es in dem Spiel geht.", anotherTextTwo: "beschreibe hier das Spiel.",
     },
     misc: {
-      title: "sonstiges.", intro: "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen oder Kunst passen.", randomCountry: "zufälliges Land", randomCountryText: "generiere ein zufälliges Land und entdecke etwas Neues.", modes: "modi", modesText: "ein weiteres Projekt aus meiner Sammlung von Web-Experimenten.", discordBots: "Discord-Bots", discordBotsText: "kleine Bots und andere Experimente aus meinen GitHub-Projekten.", other: "andere Sachen", otherText: "hier werden irgendwann weitere zufällige Projekte erscheinen.",
+      title: "sonstiges.", intro: "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen oder Kunst passen.", randomCountry: "zufälliges Land", randomCountryText: "generiere ein zufälliges Land und entdecke etwas Neues.", politics: "politische Präferenzen", politicsText: "meine ideologischen Diagramme und Ergebnisse politischer Tests.", modes: "modi", modesText: "ein weiteres Projekt aus meiner Sammlung von Web-Experimenten.", discordBots: "Discord-Bots", discordBotsText: "kleine Bots und andere Experimente aus meinen GitHub-Projekten.", other: "andere Sachen", otherText: "hier werden irgendwann weitere zufällige Projekte erscheinen.",
     },
     art: {
       title: "kunst.", intro: "eine Sammlung meiner Kunst. hauptsächlich digitale Experimente, Flaggendesigns und Dinge, die lustig zu zeichnen schienen.", digital: "digitale Kunst", digitalText: "Zeichnungen, Experimente und andere digitale Kreationen.", flags: "Flaggendesigns", flagsText: "Fiktive Flaggen und von Vexillologie inspirierte Designs.", more: "mehr kommt bald", moreText: "ich füge hier weitere Kunst hinzu, sobald ich etwas Vorzeigbares mache.",
@@ -118,6 +121,9 @@ const messages = {
     },
     randomCountry: {
       eyebrow: "zufälliges Land", title: "wähle einen Ort.", intro: "Länder, Gebiete und historische Staaten. die Weltkarte ist größer, als du denkst.", yourPlace: "dein zufälliger Ort", randomize: "zufällig auswählen", pool: "die vollständige Auswahl", entries: "Einträge", find: "Eintrag finden", search: "suchen...", empty: "keine Orte gefunden.",
+    },
+    politics: {
+      title: "politischer Kompass & Werte", subtitle: "eine Sammlung meiner ideologischen Diagramme und Ergebnisse politischer Tests.", results: "Ergebnisse politischer Tests", compass: "traditionelle 2D-Achsen", sapply: "3D-Kompassraster", dozen: "12 Grundwerte", orbs: "sphärisches Modell", eight: "4 unabhängige Achsen", nine: "9 detaillierte Achsen", scales: "8 Eigenschaften & Tags", left: "linkes Spektrum", right: "rechtes Spektrum", alt: "alternatives Wertespektrum", unavailable: "Bild noch nicht hochgeladen",
     },
     footer: { contact: "kontakt", text: "du kannst mich per", email: "E-Mail" },
     about: {

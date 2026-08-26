@@ -12,6 +12,11 @@
         <p>{{ t("misc.randomCountryText") }}</p>
       </router-link>
 
+      <router-link class="misc-piece" to="/politics">
+        <h2>{{ t("misc.politics") }}</h2>
+        <p>{{ t("misc.politicsText") }}</p>
+      </router-link>
+
       <a
         class="misc-piece"
         href="https://eireq.github.io/modes"
