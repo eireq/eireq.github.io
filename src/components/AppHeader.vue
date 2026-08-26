@@ -32,13 +32,10 @@
         :aria-label="t('nav.language')"
         @change="setLanguage($event.target.value)"
       >
-        <optgroup :label="t('nav.available')">
-          <option v-for="item in languages" :key="item.code" :value="item.code">
+        <optgroup v-for="group in languageGroups" :key="group.label" :label="group.label">
+          <option v-for="item in group.languages" :key="item.code" :value="item.code">
             {{ item.label }} ({{ item.code }})
           </option>
-        </optgroup>
-        <optgroup :label="t('nav.comingSoon')">
-          <option disabled>{{ t("nav.moreLanguages") }}</option>
         </optgroup>
       </select>
     </div>
@@ -48,7 +45,7 @@
 <script setup>
 import { useI18n } from "../i18n.js";
 
-const { language, languages, setLanguage, t } = useI18n();
+const { language, languageGroups, setLanguage, t } = useI18n();
 </script>
 
 <style scoped>

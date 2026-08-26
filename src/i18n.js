@@ -1,9 +1,39 @@
 import { ref } from "vue";
 
-export const languages = [
-  { code: "eng", label: "English" },
-  { code: "deu", label: "Deutsch" },
+export const languageGroups = [
+  {
+    label: "real languages",
+    languages: [
+      { code: "eng", label: "english" },
+      { code: "deu", label: "deutsch" },
+      { code: "rus", label: "PYCCKNÑ" },
+      { code: "kgn", label: "klingon" },
+    ],
+  },
+  {
+    label: "stereotypes",
+    languages: [
+      { code: "dnk", label: "drunk english" },
+      { code: "prt", label: "pirate english" },
+      { code: "uwu", label: "kawaii uwu anime gurl :3" },
+      { code: "srs", label: "serious english" },
+      { code: "fck", label: "vulgar english" },
+      { code: "ttt", label: "brainrot english" },
+    ],
+  },
+  {
+    label: "crazy stuff and my inventions",
+    languages: [
+      { code: "jjj", label: "Jenglish (english but every consonant is J)" },
+      { code: "ipa", label: "international phonetic alphabet" },
+      { code: "emj", label: "emojis" },
+      { code: "tkp", label: "toki pona but every word is translated back to english so its just a simpler type of english" },
+      { code: "sew", label: "shortening every word" },
+    ],
+  },
 ];
+
+export const languages = languageGroups.flatMap((group) => group.languages);
 
 const savedLanguage = window.localStorage.getItem("language");
 const language = ref(
@@ -132,6 +162,66 @@ const messages = {
   },
 };
 
+const variantTransformers = {
+  dnk: (text) => text.replace(/[aeiou]+/gi, (vowel) => vowel[0] + "..."),
+  prt: (text) => `${text} arr!`,
+  uwu: (text) => text.replace(/r|l/gi, "w").replace(/n([aeiou])/gi, "ny$1") + " uwu :3",
+  srs: (text) => text.replace(/[!?]+/g, "."),
+  fck: (text) => `damn, ${text} as hell`,
+  ttt: (text) => `${text} no cap fr fr`,
+  jjj: (text) => text.replace(/[bcdfghjklmnpqrstvwxyz]/g, "j").replace(/[BCDFGHJKLMNPQRSTVWXYZ]/g, "J"),
+  ipa: (text) => text.replace(/th/gi, "ð").replace(/sh/gi, "ʃ").replace(/ch/gi, "tʃ").replace(/r/gi, "ɹ"),
+  emj: (text) => text.replace(/love/gi, "❤️").replace(/music/gi, "🎵").replace(/game/gi, "🎮").replace(/flag/gi, "🏳️").replace(/contact/gi, "✉️").replace(/country/gi, "🌍") + " ✨",
+  tkp: (text) => text.replace(/information/gi, "facts").replace(/approximately/gi, "about").replace(/miscellaneous/gi, "random").replace(/currently/gi, "now").replace(/whatever you want/gi, "anything"),
+  sew: (text) => text.replace(/[A-Za-z]{5,}/g, (word) => `${word.slice(0, 3)}.`),
+};
+
+function cloneAndTransform(value, transformer) {
+  if (typeof value === "string") return transformer(value);
+  if (Array.isArray(value)) return value.map((item) => cloneAndTransform(item, transformer));
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, cloneAndTransform(item, transformer)]));
+}
+
+for (const [code, transformer] of Object.entries(variantTransformers)) {
+  messages[code] = cloneAndTransform(messages.eng, transformer);
+}
+
+function mergeMessages(base, overrides) {
+  return Object.fromEntries(
+    Object.entries(base).map(([section, values]) => [
+      section,
+      { ...values, ...(overrides[section] || {}) },
+    ]),
+  );
+}
+
+messages.rus = mergeMessages(messages.eng, {
+  nav: { about: "обо мне", randomCountry: "случайная страна", modes: "режимы.", games: "игры", art: "искусство", misc: "разное", contact: "контакты", discord: "сервер Discord", language: "язык", available: "реальные языки", comingSoon: "скоро", moreLanguages: "другие языки" },
+  home: { about: "обо мне ->", contact: "контакты ->" },
+  games: { title: "игры.", intro: "коллекция игр, которые я создал. в основном небольшие проекты, эксперименты и забавные идеи.", racing: "гонки", racingText: "игра со сменой полос. с таблицей лидеров!!", flagQuiz: "викторина о флагах", flagQuizText: "узнай флаги со всего мира. сколько ответов будет правильными?", another: "ещё одна игра", anotherText: "здесь будет описание игры.", anotherTextTwo: "здесь будет описание игры." },
+  misc: { title: "разное.", intro: "коллекция разных проектов, экспериментов и других вещей, которые не относятся к играм или искусству.", randomCountry: "случайная страна", randomCountryText: "получи случайную страну и узнай что-нибудь новое.", politics: "политические предпочтения", politicsText: "мои идеологические диаграммы и результаты политических тестов.", modes: "режимы", modesText: "ещё один проект из моей коллекции веб-экспериментов.", discordBots: "боты Discord", discordBotsText: "небольшие боты и эксперименты из моих проектов на GitHub.", other: "другое", otherText: "здесь со временем появятся новые случайные проекты." },
+  art: { title: "искусство.", intro: "коллекция созданных мной работ. в основном цифровые эксперименты, дизайны флагов и забавные рисунки.", digital: "цифровое искусство", digitalText: "рисунки, эксперименты и другие цифровые работы.", flags: "дизайны флагов", flagsText: "вымышленные флаги и дизайны, вдохновлённые вексиллологией.", more: "скоро будет больше", moreText: "я добавлю сюда новые работы, когда создам что-нибудь достойное показа." },
+  contact: { title: "контакты.", intro: "хочешь поговорить о программировании, флагах, играх, музыке, фильмах или чём-нибудь ещё? напиши мне.", find: "где меня найти", server: "сервер Discord", username: "моё имя пользователя на большинстве платформ", send: "отправить сообщение", name: "имя", email: "электронная почта", message: "сообщение", openDraft: "открыть черновик письма", status: "почтовое приложение должно открыть готовое сообщение." },
+  randomCountry: { eyebrow: "случайная страна", title: "выбери место.", intro: "страны, территории и исторические государства. карта больше, чем кажется.", yourPlace: "твоё случайное место", randomize: "выбрать случайно", pool: "полный список", entries: "записей", find: "найти запись", search: "поиск...", empty: "места не найдены." },
+  politics: { title: "политический компас и ценности", subtitle: "коллекция моих идеологических диаграмм и результатов политических тестов.", results: "результаты политических тестов", compass: "традиционные 2D-оси", sapply: "3D-сетка компаса", dozen: "12 основных ценностей", orbs: "сферическая модель", eight: "4 независимые оси", nine: "9 подробных осей", scales: "8 характеристик и тегов", left: "левый политический спектр", right: "правый политический спектр", alt: "альтернативный спектр ценностей", unavailable: "изображение ещё не загружено" },
+  footer: { contact: "контакты", text: "со мной можно связаться по адресу", email: "электронной почте" },
+  about: { title: "обо мне.", who: "кто я?", intro: "привет всем, это мой личный сайт. здесь можно найти информацию обо мне, моих проектах и других вещах. пишите мне, если хотите посотрудничать или просто поздороваться.", first: "сначала я хочу представиться.", names: "можете называть меня eire, eireball, eireq, irelandball или как угодно.", origin: "хочу уточнить, что я не ирландец, а родом из Словакии.", pronouns: "обычно я использую местоимения он/его, но мне это не особенно важно.", interests: "мои интересы", interestsText: "в свободное время я программирую, создаю сайты, играю в видеоигры, смотрю фильмы и вообще трачу время в интернете.", flagsText: "я также увлекаюсь вексиллологией, то есть флагами, их дизайном, историей, символикой и иногда сомнительными решениями.", movies: "кино и телевидение", moviesText: "больше всего я люблю американские комедийные боевики: Голый пистолет, Полицейский отряд!, Час пик, Без чувств и фильмы Джима Керри.", tvText: "из сериалов мне нравятся Компьютерщики, Гриффины, Два с половиной человека, Миротворец, Теория большого взрыва и многие другие.", music: "музыка", musicText: "я также иногда сочиняю музыку, хотя делаю это не очень хорошо. обычно создаю что-нибудь случайное в FL Studio :)", musicLikes: "в музыке я люблю почти всё, особенно Dubioza Kolektiv, Young Fathers, Gorillaz и Fontaines D.C.", jazz: "к джазу у меня смешанное отношение.", coding: "кодинг и проекты", codingText: "в основном я создаю бесполезные сайты и игры для сайтов, но также люблю делать ботов Discord.", projectsText: "со временем я создал много случайных проектов: сайты, небольшие игры, ботов Discord и другие забавные или интересные вещи.", projectsInclude: "среди моих проектов", randomCountry: "случайная страна", modes: "режимы", racing: "гонки", flagQuiz: "викторина о флагах", moreProjects: "больше проектов можно найти на моём", currently: "сейчас", currentlyText: "сейчас я работаю над этим сайтом и аркадной игрой.", planning: "я также планирую сделать упомянутые проекты, хотя, зная себя, могу начать что-нибудь совершенно другое.", favoriteFlags: "любимые флаги", favoriteFlagsText: "мои любимые флаги: Ирландия, Словакия, Армения и Сен-Пьер и Микелон.", randomFacts: "случайные факты", facts: ["однажды я украл номерной знак с машины", "я планирую стать гиперполиглотом!", "у утконосов нет сосков: они выделяют молоко через кожу", "я очень люблю жёлтый цвет", "что сюда написать?", "мне не стоило создавать этот раздел", "почему ты всё ещё это читаешь? уходи.", "извините за грубость"], where: "где меня найти", contactText: "со мной можно связаться по", contactMore: "также я есть в", username: "моё имя пользователя на большинстве платформ", final: "если хотите поговорить о программировании, флагах, играх, музыке, фильмах или чём угодно, пишите мне." },
+});
+
+// Klingon terminology is approximate, but the complete site remains navigable in this mode.
+messages.kgn = mergeMessages(messages.eng, {
+  nav: { about: "jIH ghu'", randomCountry: "yu' Sep", modes: "mIw.", games: "Quj", art: "nagh", misc: "latlh", contact: "Qum", discord: "Discord Qum", language: "Hol", available: "Holmey", comingSoon: "tugh", moreLanguages: "latlh Holmey" },
+  home: { about: "jIH ghu' ->", contact: "Qum ->" },
+  games: { title: "Quj.", intro: "jIchenmoHbogh Qujmey tetlh. machbogh mIw, ngugh mIwvam je.", racing: "qet", racingText: "chaw' ghom Quj. mIwvaD pat!!", flagQuiz: "joqwI' ghojmoH", flagQuizText: "qo' Hoch joqwI' yIqel. 'ar bIyaj?" },
+  misc: { title: "latlh.", intro: "Quj pagh nagh je Dalutbe'chugh, latlh mIwmey tetlh.", randomCountry: "yu' Sep", randomCountryText: "yu' Sep yISam.", politics: "qum vu'", politicsText: "jIH qum QInmey.", modes: "mIw", discordBots: "Discord bots" },
+  art: { title: "nagh.", intro: "jIta'bogh nagh tetlh.", digital: "De' nagh", flags: "joqwI' chenmoH", more: "tugh latlh" },
+  contact: { title: "Qum.", intro: "bIjatlh DaneH'a'? Qum.", find: "nuqDaq jIH", server: "Qum yej", send: "QIn ngeH", name: "pong", email: "QIn", message: "QIn", openDraft: "QIn ghItlh yIpoS" },
+  randomCountry: { eyebrow: "yu' Sep", title: "Daq yIwIv.", intro: "Sepmey, yotmey, ngo' Sepmey je.", yourPlace: "lIj Daq", randomize: "yIwIv", pool: "tetlh naQ", entries: "mI'", find: "yISam", search: "nej...", empty: "Daq pagh." },
+  politics: { title: "qum compass je", subtitle: "jIH qum QInmey je.", results: "qum test QInmey", compass: "2D 'och", sapply: "3D compass", dozen: "12 ngoQ", orbs: "meq", eight: "4 'och", nine: "9 'och", scales: "8 ghItlh", left: "poS", right: "nIH", alt: "latlh ngoQ", unavailable: "nagh wej yIlan" },
+  footer: { contact: "Qum", text: "QumlaH", email: "QIn" },
+  about: { title: "jIH ghu'.", who: "jIH nuq?", intro: "nuqneH. jIHvaD ghot porgh juH 'oH webvam'e'. jIH, jIta' je yIlegh.", first: "jIH'e' vImaq.", interests: "jIH muSHa'ghach", interestsText: "jIcode, web vIchenmoH, Quj vIQuj, vIDabbogh movie vIlegh.", movies: "movie tv je", tvText: "The IT Crowd, Family Guy, Peacemaker, Big Bang Theory je vIparHa'.", music: "QoQ", coding: "code mIwmey", currently: "DaH", favoriteFlags: "jIH muSHa' joqwI'", randomFacts: "ngoQmey", where: "nuqDaq jIH", final: "program, joqwI', Quj, QoQ, movie pagh latlh vIjatlhnISchugh, Qum." },
+});
+
 export function useI18n() {
   function setLanguage(code) {
     if (!messages[code]) return;
@@ -143,5 +233,5 @@ export function useI18n() {
     return key.split(".").reduce((value, part) => value?.[part], messages[language.value]) ?? key;
   }
 
-  return { language, languages, setLanguage, t };
+  return { language, languageGroups, languages, setLanguage, t };
 }
