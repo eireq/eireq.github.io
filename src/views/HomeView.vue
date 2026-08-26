@@ -3,6 +3,7 @@
     <section class="hero">
       <h1>hey.<br />im eire.</h1>
       <a class="button" href="/me">{{ t("home.about") }}</a>
+      <a class="button" href="/contact">{{ t("home.contact") }}</a>
     </section>
   </main>
 </template>

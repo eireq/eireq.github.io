@@ -28,7 +28,22 @@ const messages = {
       comingSoon: "coming soon",
       moreLanguages: "more languages",
     },
-    home: { about: "about me ->" },
+    home: { about: "about me ->", contact: "contact ->" },
+    games: {
+      title: "games.", intro: "a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.", racing: "racing", racingText: "lane changing game. with leaderboards!!", flagQuiz: "flag quiz", flagQuizText: "identify flags from around the world. how many can you get right?", another: "another game", anotherText: "describe what the game is about here.", anotherTextTwo: "describe the game here.",
+    },
+    misc: {
+      title: "misc.", intro: "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.", randomCountry: "random country", randomCountryText: "generate a random country and discover something new.", modes: "modes", modesText: "another project from my collection of web experiments.", discordBots: "discord bots", discordBotsText: "small bots and other experiments from my GitHub projects.", other: "other stuff", otherText: "more random projects will appear here eventually.",
+    },
+    art: {
+      title: "art.", intro: "a collection of art i've made. mostly digital experiments, flag designs, and things i thought would be funny to draw.", digital: "digital art", digitalText: "drawings, experiments, and other digital creations.", flags: "flag designs", flagsText: "fictional flags and designs inspired by vexillology.", more: "more coming soon", moreText: "i'll add more of my art here when i make something worth showing.",
+    },
+    contact: {
+      title: "contact.", intro: "want to talk about programming, flags, games, music, movies, or anything else? send me a message.", find: "find me", server: "discord server", username: "my username on most platforms is", send: "send a message", name: "name", email: "email", message: "message", openDraft: "open email draft", status: "your email app should open with the message ready to send.",
+    },
+    randomCountry: {
+      eyebrow: "random country", title: "pick a place.", intro: "countries, territories, and historical states. the map is bigger than you think.", yourPlace: "your random place", randomize: "randomize", pool: "the full pool", entries: "entries", find: "find an entry", search: "search...", empty: "no places found.",
+    },
     footer: { contact: "contact", text: "you can contact me via", email: "email" },
     about: {
       title: "about me.",
@@ -88,7 +103,22 @@ const messages = {
       comingSoon: "demnächst",
       moreLanguages: "weitere Sprachen",
     },
-    home: { about: "über mich ->" },
+    home: { about: "über mich ->", contact: "kontakt ->" },
+    games: {
+      title: "spiele.", intro: "eine Sammlung von Spielen, die ich erstellt habe. meistens kleine Projekte, Experimente und Dinge, die lustig schienen.", racing: "racing", racingText: "spiel zum Spurwechseln, mit Bestenlisten!!", flagQuiz: "flaggenquiz", flagQuizText: "erkenne Flaggen aus aller Welt. wie viele schaffst du richtig?", another: "weiteres Spiel", anotherText: "beschreibe hier, worum es in dem Spiel geht.", anotherTextTwo: "beschreibe hier das Spiel.",
+    },
+    misc: {
+      title: "sonstiges.", intro: "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen oder Kunst passen.", randomCountry: "zufälliges Land", randomCountryText: "generiere ein zufälliges Land und entdecke etwas Neues.", modes: "modi", modesText: "ein weiteres Projekt aus meiner Sammlung von Web-Experimenten.", discordBots: "Discord-Bots", discordBotsText: "kleine Bots und andere Experimente aus meinen GitHub-Projekten.", other: "andere Sachen", otherText: "hier werden irgendwann weitere zufällige Projekte erscheinen.",
+    },
+    art: {
+      title: "kunst.", intro: "eine Sammlung meiner Kunst. hauptsächlich digitale Experimente, Flaggendesigns und Dinge, die lustig zu zeichnen schienen.", digital: "digitale Kunst", digitalText: "Zeichnungen, Experimente und andere digitale Kreationen.", flags: "Flaggendesigns", flagsText: "Fiktive Flaggen und von Vexillologie inspirierte Designs.", more: "mehr kommt bald", moreText: "ich füge hier weitere Kunst hinzu, sobald ich etwas Vorzeigbares mache.",
+    },
+    contact: {
+      title: "kontakt.", intro: "du möchtest über Programmierung, Flaggen, Spiele, Musik, Filme oder etwas anderes sprechen? schreib mir.", find: "hier findest du mich", server: "Discord-Server", username: "mein Benutzername auf den meisten Plattformen ist", send: "Nachricht senden", name: "Name", email: "E-Mail", message: "Nachricht", openDraft: "E-Mail-Entwurf öffnen", status: "deine E-Mail-App sollte sich mit der fertigen Nachricht öffnen.",
+    },
+    randomCountry: {
+      eyebrow: "zufälliges Land", title: "wähle einen Ort.", intro: "Länder, Gebiete und historische Staaten. die Weltkarte ist größer, als du denkst.", yourPlace: "dein zufälliger Ort", randomize: "zufällig auswählen", pool: "die vollständige Auswahl", entries: "Einträge", find: "Eintrag finden", search: "suchen...", empty: "keine Orte gefunden.",
+    },
     footer: { contact: "kontakt", text: "du kannst mich per", email: "E-Mail" },
     about: {
       title: "über mich.", who: "wer bin ich?", intro: "hallo zusammen, dies ist meine persönliche Website. hier findest du Informationen über mich, meine Projekte und andere Dinge. melde dich gerne, wenn du zusammenarbeiten oder einfach Hallo sagen möchtest.", first: "zuerst möchte ich mich vorstellen.", names: "du kannst mich eire, eireball, eireq, irelandball oder nennen, wie du möchtest.", origin: "ich möchte klarstellen, dass ich nicht irisch bin, sondern aus der Slowakei komme.", pronouns: "meine Pronomen sind meistens er/ihm, aber Pronomen sind mir nicht besonders wichtig.", interests: "meine Interessen", interestsText: "in meiner Freizeit programmiere ich gerne und erstelle Websites, spiele Videospiele, schaue Filme und verschwende allgemein Zeit im Internet.", flagsText: "ich interessiere mich außerdem als Hobby-Vexillologe sehr für Flaggen, besonders für ihr Design, ihre Geschichte, Symbolik und manchmal fragwürdige Entscheidungen.", movies: "filme & tv", moviesText: "bei Filmen mag ich amerikanische Actionkomödien am meisten. dazu gehören Die nackte Kanone und Police Squad!, Rush Hour, Hot Shots! sowie Jim-Carrey-Filme wie Ace Ventura, Die Maske und Liar Liar.", tvText: "bei Serien mag ich The IT Crowd, Family Guy, Two and a Half Men, Peacemaker, The Big Bang Theory und viele weitere.", music: "musik", musicText: "ich mache auch gerne Musik, bin darin aber nicht besonders gut. meistens erstelle ich zufällige Sachen in FL Studio :)", musicLikes: "bei Musik mag ich eigentlich alles, besonders Dubioza Kolektiv, Young Fathers, Gorillaz, Fontaines D.C. und viele weitere.", jazz: "zu Jazz habe ich gemischte Gefühle.", coding: "programmierung & projekte", codingText: "in meiner Freizeit programmiere ich hauptsächlich nutzlose Websites und Webspiele, aber ich erstelle auch gerne Discord-Bots.", projectsText: "im Laufe der Zeit habe ich viele zufällige Projekte erstellt, meistens Websites, kleine Spiele, Discord-Bots und andere Dinge, die lustig oder interessant schienen.", projectsInclude: "zu meinen Projekten gehören", randomCountry: "zufälliges Land", modes: "modi", racing: "racing", flagQuiz: "flaggenquiz", moreProjects: "mehr Projekte findest du auf meinem", currently: "aktuell", currentlyText: "aktuell arbeite ich an dieser Website und am Arcade-Spiel.", planning: "ich plane außerdem, die genannten Projekte zu erstellen. obwohl es bei mir gut möglich ist, dass ich zwischendurch etwas völlig anderes anfange.", favoriteFlags: "lieblingsflaggen", favoriteFlagsText: "meine Lieblingsflaggen sind Irland, die Slowakei, Armenien und Saint-Pierre und Miquelon. diese Liste ändert sich, sobald ich eine weitere unnötig gute Flagge entdecke.", randomFacts: "zufällige Fakten", facts: ["ich habe einmal ein Nummernschild von einem Auto gestohlen", "ich möchte ein Hyperpolyglott werden!", "wusstest du, dass Schnabeltiere keine Zitzen haben, sondern Milch durch ihre Haut ausschwitzen?", "ich mag die Farbe Gelb sehr", "was soll hier stehen?", "ich sollte diesen Abschnitt wirklich nicht machen", "warum liest du das noch? geh weg, ich habe nichts mehr zu sagen.", "entschuldigung für meine Unhöflichkeit"], where: "wo du mich findest", contactText: "du kannst mich per", contactMore: "du findest mich auch auf", username: "mein Benutzername auf den meisten Plattformen ist", final: "wenn du über Programmierung, Flaggen, Spiele, Musik, Filme oder irgendetwas anderes sprechen möchtest, kannst du dich gerne melden.",

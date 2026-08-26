@@ -1,43 +1,40 @@
 <template>
   <main>
-    <h1>games.</h1>
+    <h1>{{ t("games.title") }}</h1>
 
     <p class="intro">
-      a collection of games i've made. mostly small projects, experiments,
-      and things i thought would be funny to make.
+      {{ t("games.intro") }}
     </p>
 
     <section class="games">
       <router-link class="game" to="/games/racing">
-        <h2>racing</h2>
-        <p>
-          lane changing game. with leaderboards!!
-        </p>
+        <h2>{{ t("games.racing") }}</h2>
+        <p>{{ t("games.racingText") }}</p>
       </router-link>
 
       <router-link class="game" to="/games/flagquiz">
-        <h2>flag quiz</h2>
-        <p>
-          identify flags from around the world. how many can you get right?
-        </p>
+        <h2>{{ t("games.flagQuiz") }}</h2>
+        <p>{{ t("games.flagQuizText") }}</p>
       </router-link>
 
       <a class="game" href="#">
-        <h2>another game</h2>
-        <p>
-          describe what the game is about here.
-        </p>
+        <h2>{{ t("games.another") }}</h2>
+        <p>{{ t("games.anotherText") }}</p>
       </a>
 
       <a class="game" href="#">
-        <h2>another game</h2>
-        <p>
-          describe the game here.
-        </p>
+        <h2>{{ t("games.another") }}</h2>
+        <p>{{ t("games.anotherTextTwo") }}</p>
       </a>
     </section>
   </main>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+</script>
 
 <style scoped>
 main {

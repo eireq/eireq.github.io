@@ -1,30 +1,35 @@
 <template>
   <main>
-    <h1>art.</h1>
+    <h1>{{ t("art.title") }}</h1>
 
     <p class="intro">
-      a collection of art i've made. mostly digital experiments, flag designs,
-      and things i thought would be funny to draw.
+      {{ t("art.intro") }}
     </p>
 
     <section class="art">
       <a class="art-piece" href="#">
-        <h2>digital art</h2>
-        <p>drawings, experiments, and other digital creations.</p>
+        <h2>{{ t("art.digital") }}</h2>
+        <p>{{ t("art.digitalText") }}</p>
       </a>
 
       <a class="art-piece" href="#">
-        <h2>flag designs</h2>
-        <p>fictional flags and designs inspired by vexillology.</p>
+        <h2>{{ t("art.flags") }}</h2>
+        <p>{{ t("art.flagsText") }}</p>
       </a>
 
       <a class="art-piece" href="#">
-        <h2>more coming soon</h2>
-        <p>i'll add more of my art here when i make something worth showing.</p>
+        <h2>{{ t("art.more") }}</h2>
+        <p>{{ t("art.moreText") }}</p>
       </a>
     </section>
   </main>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+</script>
 
 <style scoped>
 main {

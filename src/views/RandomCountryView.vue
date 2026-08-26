@@ -1,20 +1,19 @@
 <template>
   <main class="random-country">
     <section class="random-country__hero" aria-labelledby="random-country-title">
-      <p class="eyebrow">random country</p>
-      <h1 id="random-country-title">pick a place.</h1>
+      <p class="eyebrow">{{ t("randomCountry.eyebrow") }}</p>
+      <h1 id="random-country-title">{{ t("randomCountry.title") }}</h1>
       <p class="intro">
-        countries, territories, and historical states. the map is bigger than
-        you think.
+        {{ t("randomCountry.intro") }}
       </p>
 
       <div class="random-picker">
-        <p class="random-picker__label">your random place</p>
+        <p class="random-picker__label">{{ t("randomCountry.yourPlace") }}</p>
         <output class="random-picker__result" aria-live="polite">
           {{ selectedCountry }}
         </output>
         <button class="random-picker__button" type="button" @click="pickRandom">
-          randomize
+          {{ t("randomCountry.randomize") }}
         </button>
       </div>
     </section>
@@ -22,22 +21,22 @@
     <section class="country-list" aria-labelledby="country-list-title">
       <div class="country-list__header">
         <div>
-          <p class="eyebrow">the full pool</p>
-          <h2 id="country-list-title">{{ countries.length }} entries</h2>
+          <p class="eyebrow">{{ t("randomCountry.pool") }}</p>
+          <h2 id="country-list-title">{{ countries.length }} {{ t("randomCountry.entries") }}</h2>
         </div>
         <label class="country-list__search">
-          <span>find an entry</span>
+          <span>{{ t("randomCountry.find") }}</span>
           <input
             v-model="searchTerm"
             type="search"
-            placeholder="search..."
+            :placeholder="t('randomCountry.search')"
             autocomplete="off"
           />
         </label>
       </div>
 
       <p v-if="!filteredCountries.length" class="country-list__empty">
-        no places found.
+        {{ t("randomCountry.empty") }}
       </p>
       <ol v-else class="country-list__items">
         <li v-for="country in filteredCountries" :key="country">
@@ -50,6 +49,9 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",

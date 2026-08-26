@@ -1,16 +1,15 @@
 <template>
   <main>
-    <h1>misc.</h1>
+    <h1>{{ t("misc.title") }}</h1>
 
     <p class="intro">
-      a collection of miscellaneous projects, experiments, and other things
-      that do not fit into games or art.
+      {{ t("misc.intro") }}
     </p>
 
     <section class="misc">
       <router-link class="misc-piece" to="/rc">
-        <h2>random country</h2>
-        <p>generate a random country and discover something new.</p>
+        <h2>{{ t("misc.randomCountry") }}</h2>
+        <p>{{ t("misc.randomCountryText") }}</p>
       </router-link>
 
       <a
@@ -19,8 +18,8 @@
         target="_blank"
         rel="noreferrer"
       >
-        <h2>modes</h2>
-        <p>another project from my collection of web experiments.</p>
+        <h2>{{ t("misc.modes") }}</h2>
+        <p>{{ t("misc.modesText") }}</p>
       </a>
 
       <a
@@ -29,17 +28,23 @@
         target="_blank"
         rel="noreferrer"
       >
-        <h2>discord bots</h2>
-        <p>small bots and other experiments from my GitHub projects.</p>
+        <h2>{{ t("misc.discordBots") }}</h2>
+        <p>{{ t("misc.discordBotsText") }}</p>
       </a>
 
       <a class="misc-piece" href="#">
-        <h2>other stuff</h2>
-        <p>more random projects will appear here eventually.</p>
+        <h2>{{ t("misc.other") }}</h2>
+        <p>{{ t("misc.otherText") }}</p>
       </a>
     </section>
   </main>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+</script>
 
 <style scoped>
 main {

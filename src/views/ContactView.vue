@@ -1,15 +1,14 @@
 <template>
   <main>
-    <h1>contact.</h1>
+    <h1>{{ t("contact.title") }}</h1>
 
     <section class="contact-layout">
       <div class="contact-info">
         <p class="intro">
-          want to talk about programming, flags, games, music, movies, or
-          anything else? send me a message.
+          {{ t("contact.intro") }}
         </p>
 
-        <h2>find me</h2>
+        <h2>{{ t("contact.find") }}</h2>
 
         <ul>
           <li>
@@ -22,7 +21,7 @@
           </li>
           <li>
             <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer"
-              >discord server</a
+              >{{ t("contact.server") }}</a
             >
           </li>
           <li>
@@ -40,22 +39,22 @@
           </li>
         </ul>
 
-        <p>my username on most platforms is <strong>eireq</strong>.</p>
+        <p>{{ t("contact.username") }} <strong>eireq</strong>.</p>
       </div>
 
       <form class="contact-form" @submit.prevent="sendMessage">
-        <h2>send a message</h2>
+        <h2>{{ t("contact.send") }}</h2>
 
-        <label for="name">name</label>
+        <label for="name">{{ t("contact.name") }}</label>
         <input id="name" v-model="name" type="text" required />
 
-        <label for="email">email</label>
+        <label for="email">{{ t("contact.email") }}</label>
         <input id="email" v-model="email" type="email" required />
 
-        <label for="message">message</label>
+        <label for="message">{{ t("contact.message") }}</label>
         <textarea id="message" v-model="message" rows="7" required></textarea>
 
-        <button type="submit">open email draft</button>
+        <button type="submit">{{ t("contact.openDraft") }}</button>
 
         <p v-if="formStatus" class="form-status" role="status">
           {{ formStatus }}
@@ -67,11 +66,13 @@
 
 <script setup>
 import { ref } from "vue";
+import { useI18n } from "../i18n.js";
 
 const name = ref("");
 const email = ref("");
 const message = ref("");
 const formStatus = ref("");
+const { t } = useI18n();
 
 function sendMessage() {
   const subject = `Website contact from ${name.value}`;
@@ -79,7 +80,7 @@ function sendMessage() {
   const mailto = `mailto:eireball@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
   window.location.href = mailto;
-  formStatus.value = "your email app should open with the message ready to send.";
+  formStatus.value = t("contact.status");
 }
 </script>
 
