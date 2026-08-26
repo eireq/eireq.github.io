@@ -1,12 +1,18 @@
 <template>
   <footer>
-    <strong>contact</strong><br><br>
-    you can contact me via
-    <a href="mailto:eireball@proton.me">email</a>.
+    <strong>{{ t("footer.contact") }}</strong><br><br>
+    {{ t("footer.text") }}
+    <a href="mailto:eireball@proton.me">{{ t("footer.email") }}</a>.
     <br><br>
     © 2026 eire
   </footer>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+</script>
 
 <style scoped>
 footer {

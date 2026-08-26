@@ -3,36 +3,53 @@
     <a class="logo" href="/">eire</a>
 
     <div class="nav-links">
-      <router-link to="/me">about me</router-link>
-      <router-link to="/rc">random country</router-link>
-      <router-link to="/modes">modes.</router-link>
-      <router-link to="/games">games</router-link>
-      <router-link to="/art">art</router-link>
-      <router-link to="/misc">misc</router-link>
-      <router-link to="/contact">contact</router-link>
+      <router-link to="/me">{{ t("nav.about") }}</router-link>
+      <router-link to="/rc">{{ t("nav.randomCountry") }}</router-link>
+      <router-link to="/modes">{{ t("nav.modes") }}</router-link>
+      <router-link to="/games">{{ t("nav.games") }}</router-link>
+      <router-link to="/art">{{ t("nav.art") }}</router-link>
+      <router-link to="/misc">{{ t("nav.misc") }}</router-link>
+      <router-link to="/contact">{{ t("nav.contact") }}</router-link>
     </div>
 
     <div class="socials">
       <a href="https://github.com/eireq" target="_blank" rel="noreferrer"
-        >github
+        >{{ t("nav.github") }}
       </a>
       <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer"
-        >discord serv</a
+        >{{ t("nav.discord") }}</a
       >
       <a
         href="https://www.youtube.com/@%E3%81%84%E4%B8%A8"
         target="_blank"
         rel="noreferrer"
-        >youtube</a
+        >{{ t("nav.youtube") }}</a
       >
 
-      <select class="language" aria-label="language">
-        <option>en</option>
-        <option>sk</option>
+      <select
+        class="language"
+        :value="language"
+        :aria-label="t('nav.language')"
+        @change="setLanguage($event.target.value)"
+      >
+        <optgroup :label="t('nav.available')">
+          <option v-for="item in languages" :key="item.code" :value="item.code">
+            {{ item.label }} ({{ item.code }})
+          </option>
+        </optgroup>
+        <optgroup :label="t('nav.comingSoon')">
+          <option disabled>{{ t("nav.moreLanguages") }}</option>
+        </optgroup>
       </select>
     </div>
   </nav>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { language, languages, setLanguage, t } = useI18n();
+</script>
 
 <style scoped>
 nav {

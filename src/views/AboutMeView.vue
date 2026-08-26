@@ -1,166 +1,74 @@
 <template>
   <main class="about-me">
     <section class="hero">
-      <h1>about me.</h1>
+      <h1>{{ t("about.title") }}</h1>
 
-      <h2>who am i?</h2>
+      <h2>{{ t("about.who") }}</h2>
+      <p>{{ t("about.intro") }}</p>
+      <p>{{ t("about.first") }}</p>
+      <p>{{ t("about.names") }}</p>
+      <p>{{ t("about.origin") }}</p>
+      <p>{{ t("about.pronouns") }}</p>
 
+      <h2>{{ t("about.interests") }}</h2>
+      <p>{{ t("about.interestsText") }}</p>
+      <p>{{ t("about.flagsText") }}</p>
+
+      <h2>{{ t("about.movies") }}</h2>
+      <p>{{ t("about.moviesText") }}</p>
+      <p>{{ t("about.tvText") }}</p>
+
+      <h2>{{ t("about.music") }}</h2>
+      <p>{{ t("about.musicText") }}</p>
+      <p>{{ t("about.musicLikes") }}</p>
+      <p>{{ t("about.jazz") }}</p>
+
+      <h2>{{ t("about.coding") }}</h2>
+      <p>{{ t("about.codingText") }}</p>
+      <p>{{ t("about.projectsText") }}</p>
       <p>
-        so hi everyone, this is my personal website. here you can find some
-        information about me, my projects, and other stuff. feel free to reach
-        out to me if you want to collaborate or just say hi.
+        {{ t("about.projectsInclude") }}
+        <a href="https://eireq.github.io/rc" target="_blank">{{ t("about.randomCountry") }}</a>,
+        <a href="https://eireq.github.io/modes" target="_blank">{{ t("about.modes") }}</a>,
+        <a href="https://eireq.github.io/games/racing" target="_blank">{{ t("about.racing") }}</a>,
+        {{ t("about.flagQuiz") }}.
+      </p>
+      <p>
+        {{ t("about.moreProjects") }}
+        <a href="https://github.com/eireq" target="_blank">github</a>.
       </p>
 
-      <p>first i'd like to introduce myself.</p>
+      <h2>{{ t("about.currently") }}</h2>
+      <p>{{ t("about.currentlyText") }}</p>
+      <p>{{ t("about.planning") }}</p>
 
-      <p>
-        you can call me eire, eireball, eireq, irelandball, or whatever you
-        want.
-      </p>
+      <h2>{{ t("about.favoriteFlags") }}</h2>
+      <p>{{ t("about.favoriteFlagsText") }}</p>
 
-      <p>
-        i would like to clarify that i am not actually irish, i am from
-        slovakia.
-      </p>
-
-      <p>
-        my pronouns are mostly he/him, but i do not really care about pronouns,
-        so you can use whatever you want.
-      </p>
-
-      <h2>my interests</h2>
-
-      <p>
-        in my free time i like to code and make websites, play video games,
-        watch movies, and generally waste time on the internet.
-      </p>
-
-      <p>
-        i am also a hobby-vexillophile, which means that i have a strong
-        interest in flags. i am especially interested in their designs, history,
-        symbolism, and sometimes questionable decisions.
-      </p>
-
-      <h2>movies & tv</h2>
-
-      <p>
-        from movies i like american action comedies the most. examples include
-        the naked gun and police squad!, rush hour, hot shots!, and jim carrey
-        movies like ace ventura, the mask, liar liar, and many more.
-      </p>
-
-      <p>
-        from tv shows i like the it crowd, family guy, two and a half men, peacemaker,
-        big bang theory, and many more.
-      </p>
-
-      <h2>music</h2>
-
-      <p>
-        i also like to make some music, but i am not very good at it. i mostly
-        make some random stuff in fl studio :)
-      </p>
-
-      <p>
-        from music i like basically everything, mostly dubioza kolektiv, young
-        fathers, gorillaz, fontaines d.c., and many more.
-      </p>
-
-      <p>i have mixed opinions about jazz.</p>
-
-      <h2>coding & projects</h2>
-
-      <p>
-        i mostly code useless websites and website games in my free time, but i
-        also like to make some discord bots.
-      </p>
-
-      <p>
-        i have made quite a lot of random projects over time, mostly websites,
-        small games, discord bots, and other things that i thought would be
-        funny or interesting to make.
-      </p>
-
-      <p>
-        my projects include
-        <a href="https://eireq.github.io/rc" target="_blank">random country</a>,
-        <a href="https://eireq.github.io/modes" target="_blank">modes</a>,
-        <a href="https://eireq.github.io/games/racing" target="_blank"
-          >racing</a
-        >, and
-        <a href="https://eireq.github.io/games/flagquiz" target="_blank"
-          >flag quiz</a
-        >.
-      </p>
-
-      <p>
-        you can find more of my projects on my
-        <a href="https://github.com/eireq" target="_blank">github</a>
-        or by looking around this website.
-      </p>
-
-      <h2>currently</h2>
-
-      <p>
-        currently, i am working on this website and also on the arcade game.
-      </p>
-
-      <p>
-        i am also planning to make the projects mentioned above, although
-        knowing me, there is a reasonable chance that i will start something
-        completely different halfway through.
-      </p>
-
-      <h2>favorite flags</h2>
-
-      <p>
-        my favorite flags are ireland, slovakia, armenia, and saint pierre and
-        miquelon, although this list changes whenever i discover another
-        unnecessarily good flag.
-      </p>
-
-      <h2>random facts</h2>
-
+      <h2>{{ t("about.randomFacts") }}</h2>
       <ul>
-        <li>
-          i stole a license plate from a car once
-        </li>
-        <li>i plan to become a hyperpolyglot!</li>
-        <li>
-          did you know platypuses do not have teats, so they sweat milk out of
-          their skin for their babies to drink?
-        </li>
-        <li>i really like the color yellow</li>
-        <li>what to put here?</li>
-        <li>i really shouldn't make this section</li>
-        <li>
-          why are you still reading this? go away, i have nothing else to say.
-        </li>
-        <li>sorry for being rude</li>
+        <li v-for="fact in t('about.facts')" :key="fact">{{ fact }}</li>
       </ul>
 
-      <h2>where you can find me</h2>
-
+      <h2>{{ t("about.where") }}</h2>
       <p>
-        you can contact me via
+        {{ t("about.contactText") }}
         <a href="mailto:eireball@proton.me">email</a>.
       </p>
-
       <p>
-        you can also find me on
+        {{ t("about.contactMore") }}
         <a href="https://discord.gg/zwvvbqBFPV" target="_blank">discord</a>,
-        <a href="https://github.com/eireq" target="_blank">github</a>, and
-        <a href="https://www.youtube.com/@%E3%81%84%E4%B8%A8" target="_blank"
-          >youtube</a
-        >.
+        <a href="https://github.com/eireq" target="_blank">github</a>,
+        <a href="https://www.youtube.com/@%E3%81%84%E4%B8%A8" target="_blank">youtube</a>.
       </p>
-
-      <p>my username on most platforms is <strong>eireq</strong>.</p>
-
-      <p>
-        if you want to talk about programming, flags, games, music, movies, or
-        literally anything else, feel free to contact me.
-      </p>
+      <p>{{ t("about.username") }} <strong>eireq</strong>.</p>
+      <p>{{ t("about.final") }}</p>
     </section>
   </main>
 </template>
+
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+</script>
