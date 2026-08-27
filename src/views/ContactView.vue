@@ -40,6 +40,17 @@
         </ul>
 
         <p>{{ t("contact.username") }} <strong>eireq</strong>.</p>
+
+        <iframe
+          class="discord-widget"
+          src="https://discord.com/widget?id=1177930038025396324&theme=dark"
+          width="350"
+          height="500"
+          allowtransparency="true"
+          frameborder="0"
+          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          title="Discord server widget"
+        ></iframe>
       </div>
 
       <form class="contact-form" @submit.prevent="sendMessage">
@@ -137,6 +148,14 @@ ul {
 
 .contact-info p {
   margin: 0;
+}
+
+.discord-widget {
+  display: block;
+  width: min(350px, 100%);
+  max-width: 100%;
+  margin-top: 30px;
+  border: 0;
 }
 
 .contact-form {
