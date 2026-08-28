@@ -118,11 +118,22 @@ nav {
 }
 
 .language {
+  width: 130px;
+  min-width: 0;
+  max-width: 130px;
+  overflow: hidden;
   color: #aaa;
   background: #000;
   border: 1px solid #333;
   padding: 6px 8px;
   border-radius: 4px;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.language option {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 800px) {
@@ -140,6 +151,11 @@ nav {
 
   .socials {
     margin-left: auto;
+  }
+
+  .language {
+    width: 115px;
+    max-width: 115px;
   }
 }
 </style>
