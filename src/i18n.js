@@ -63,7 +63,7 @@ const messages = {
       title: "games.", intro: "a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.", racing: "racing", racingText: "lane changing game. with leaderboards!!", flagQuiz: "flag quiz", flagQuizText: "identify flags from around the world. how many can you get right?", another: "another game", anotherText: "describe what the game is about here.", anotherTextTwo: "describe the game here.",
     },
     misc: {
-      title: "misc.", intro: "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.", randomCountry: "random country", randomCountryText: "generate a random country and discover something new.", politics: "political preferences", politicsText: "my ideological charts and political test results.", modes: "modes", modesText: "another project from my collection of web experiments.", discordBots: "discord bots", discordBotsText: "small bots and other experiments from my GitHub projects.", other: "other stuff", otherText: "more random projects will appear here eventually.",
+      title: "misc.", intro: "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.", randomCountry: "random country", randomCountryText: "generate a random country and discover something new.", politics: "political preferences", politicsText: "my ideological charts and political test results.", elections: "Doulantese elections", electionsText: "results from the Discord union assembly.", modes: "modes", modesText: "another project from my collection of web experiments.", discordBots: "discord bots", discordBotsText: "small bots and other experiments from my GitHub projects.", other: "other stuff", otherText: "more random projects will appear here eventually.",
     },
     art: {
       title: "art.", intro: "a collection of art i've made. mostly digital experiments, flag designs, and things i thought would be funny to draw.", digital: "digital art", digitalText: "drawings, experiments, and other digital creations.", flags: "flag designs", flagsText: "fictional flags and designs inspired by vexillology.", more: "more coming soon", moreText: "i'll add more of my art here when i make something worth showing.",
@@ -76,6 +76,9 @@ const messages = {
     },
     politics: {
       title: "political compass & values", subtitle: "a collection of my ideological charts and political test results.", results: "political test results", compass: "traditional 2D axes", sapply: "3D compass grid", dozen: "12 core values", orbs: "spherical model", eight: "4 independent axes", nine: "9 detailed axes", scales: "8 characteristics & tags", left: "left-wing spectrum", right: "right-wing spectrum", alt: "alternative values spectrum", unavailable: "image not uploaded yet",
+    },
+    elections: {
+      eyebrow: "Discord union assembly", title: "Doulantese elections.", intro: "preference results as recorded from the election ballot.", results: "election results", choice: "choice", review: "last reviewed: 2026/08/28 13:30 Central European Summer Time",
     },
     footer: { contact: "contact", text: "you can contact me via", email: "email" },
     about: {
@@ -163,11 +166,38 @@ const messages = {
 };
 
 const variantTransformers = {
-  dnk: (text) => text.replace(/[aeiou]+/gi, (vowel) => vowel[0] + "..."),
-  prt: (text) => `${text} arr!`,
-  uwu: (text) => text.replace(/r|l/gi, "w").replace(/n([aeiou])/gi, "ny$1") + " uwu :3",
-  srs: (text) => text.replace(/[!?]+/g, "."),
-  fck: (text) => `damn, ${text} as hell`,
+  dnk: (text) => text
+    .replace(/\byou\b/gi, "ya")
+    .replace(/\byour\b/gi, "yer")
+    .replace(/\band\b/gi, "n")
+    .replace(/\bthe\b/gi, "tha")
+    .replace(/\babout\b/gi, "'bout")
+    .replace(/ing\b/gi, "in'")
+    .replace(/[!?]+/g, "...") + " *hic*",
+  prt: (text) => text
+    .replace(/\byou\b/gi, "ye")
+    .replace(/\byour\b/gi, "yer")
+    .replace(/\bfriend\b/gi, "matey")
+    .replace(/\bfriends\b/gi, "mateys")
+    .replace(/\bmy\b/gi, "me")
+    .replace(/\bthe\b/gi, "thee")
+    .replace(/\bis\b/gi, "be") + " Arr!",
+  uwu: (text) => text
+    .replace(/r|l/gi, "w")
+    .replace(/n([aeiou])/gi, "ny$1")
+    .replace(/\bthe\b/gi, "da")
+    .replace(/\bthis\b/gi, "dis") + " uwu :3",
+  srs: (text) => text
+    .replace(/\bfunny\b/gi, "amusing")
+    .replace(/\bstuff\b/gi, "matters")
+    .replace(/\bthing(s)?\b/gi, "matter$1")
+    .replace(/[!?]+/g, "."),
+  fck: (text) => text
+    .replace(/\bgood\b/gi, "damn good")
+    .replace(/\bbad\b/gi, "fucking awful")
+    .replace(/\bvery\b/gi, "fucking")
+    .replace(/\bwhat\b/gi, "what the hell")
+    .replace(/[!?]+/g, "!"),
   ttt: (text) => `${text} no cap fr fr`,
   jjj: (text) => text.replace(/[bcdfghjklmnpqrstvwxyz]/g, "j").replace(/[BCDFGHJKLMNPQRSTVWXYZ]/g, "J"),
   ipa: (text) => text.replace(/th/gi, "ð").replace(/sh/gi, "ʃ").replace(/ch/gi, "tʃ").replace(/r/gi, "ɹ"),
