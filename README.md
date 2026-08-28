@@ -35,20 +35,24 @@ eireq.github.io/
 │   ├── assets/
 │   │   └── main.css                 # Global styles
 │   ├── components/                  # Reusable Vue components
-│   │   ├── AppHeader.vue           # Navigation header
-│   │   └── AppFooter.vue           # Footer with contact info
-│   ├── views/                       # Page-level components (hayastan branch contains multiple .vue view files — ~7 view components)
-│   │   ├── HomeView.vue
-│   │   ├── AboutView.vue
+│   │   ├── AppHeader.vue            # Navigation header
+│   │   └── AppFooter.vue            # Footer with contact info
+│   ├── views/                       # Page-level components (hayastan branch)
+│   │   ├── AboutMeView.vue
+│   │   ├── ArtView.vue
+│   │   ├── ContactView.vue
+│   │   ├── DoulanteseElectionsView.vue
+│   │   ├── FlagQuizView.vue
+│   │   ├── GameRacingView.vue
 │   │   ├── GamesView.vue
-│   │   ├── RacingView.vue
-│   │   ├── RandomCountryView.vue
-│   │   ├── ToolsView.vue
-│   │   └── NotFoundView.vue
+│   │   ├── HomeView.vue
+│   │   ├── MiscView.vue
+│   │   ├── PoliticalPreferencesView.vue
+│   │   └── RandomCountryView.vue
 │   ├── games/                       # Game implementations
 │   │   └── racing/
-│   │       ├── config.js           # Game configuration
-│   │       └── supabase.js         # Leaderboard database
+│   │       ├── config.js            # Game configuration
+│   │       └── supabase.js          # Leaderboard database
 │   ├── router/                      # Vue Router configuration
 │   └── data/                        # Static data files
 ├── package.json                     # Dependencies & scripts
