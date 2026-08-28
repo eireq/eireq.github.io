@@ -1,7 +1,7 @@
 <template>
   <main>
     <section class="hero">
-      <h1>hey.<br />im eire.</h1>
+      <h1>{{ t("home.greeting") }}<br />{{ t("home.signature") }}</h1>
       <a class="button" href="/me">{{ t("home.about") }}</a>
       <a class="button" href="/contact">{{ t("home.contact") }}</a>
     </section>

@@ -1,26 +1,25 @@
 <template>
   <main>
     <div v-if="!started && !finished" class="setup">
-      <h1>flag quiz.</h1>
+      <h1>{{ t("flagQuiz.title") }}</h1>
 
       <p class="intro">
-        how well do you know the world's flags? probably not very well. but
-        let's find out.
+        {{ t("flagQuiz.intro") }}
       </p>
 
       <div class="form">
-        <label for="name">name</label>
+        <label for="name">{{ t("flagQuiz.name") }}</label>
 
         <input
           id="name"
           v-model="playerName"
           type="text"
           maxlength="30"
-          placeholder="a guy"
+          :placeholder="t('flagQuiz.namePlaceholder')"
           @keyup.enter="startQuiz"
         />
 
-        <label for="mode">quiz mode</label>
+        <label for="mode">{{ t("flagQuiz.mode") }}</label>
 
         <select id="mode" v-model="quizMode">
           <option
@@ -28,23 +27,24 @@
             :key="mode.value"
             :value="mode.value"
           >
-            {{ mode.label }}
+            {{ t(mode.label) }}
           </option>
         </select>
 
-        <label for="amount">number of flags</label>
+        <label for="amount">{{ t("flagQuiz.amount") }}</label>
 
         <select id="amount" v-model.number="flagCount">
-          <option :value="5">5 flags</option>
-          <option :value="10">10 flags</option>
-          <option :value="20">20 flags</option>
-          <option :value="30">30 flags</option>
-          <option :value="50">50 flags</option>
-          <option :value="100">100 flags</option>
+          <option
+            v-for="amount in [5, 10, 20, 30, 50, 100]"
+            :key="amount"
+            :value="amount"
+          >
+            {{ amount }} {{ t("flagQuiz.flags") }}
+          </option>
         </select>
 
         <button :disabled="starting" @click="startQuiz">
-          {{ starting ? "loading flags..." : "start quiz →" }}
+          {{ starting ? t("flagQuiz.loading") : t("flagQuiz.start") }}
         </button>
       </div>
     </div>
@@ -58,12 +58,12 @@
         <img
           v-if="!flagError"
           :src="currentQuestion.flag"
-          :alt="'flag of ' + currentQuestion.name"
+          :alt="t('flagQuiz.flagAlt') + ' ' + currentQuestion.name"
           class="flag"
           @error="handleFlagError"
         />
         <p v-else class="flag-error">
-          flag unavailable for {{ currentQuestion.name }}
+          {{ t("flagQuiz.unavailable") }} {{ currentQuestion.name }}
         </p>
       </div>
 
@@ -75,18 +75,18 @@
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
-          placeholder="country name..."
+          :placeholder="t('flagQuiz.countryPlaceholder')"
           @keyup.enter="submitAnswer"
         />
 
-        <button @click="submitAnswer">enter</button>
+        <button @click="submitAnswer">{{ t("flagQuiz.enter") }}</button>
       </div>
 
-      <p class="score">score: {{ score }}</p>
+      <p class="score">{{ t("flagQuiz.score") }}: {{ score }}</p>
     </div>
 
     <div v-else class="results">
-      <h1>quiz complete.</h1>
+      <h1>{{ t("flagQuiz.complete") }}</h1>
 
       <p class="final-score">{{ score }} / {{ questions.length }}</p>
 
@@ -97,10 +97,10 @@
       </p>
 
       <div class="leaderboard">
-        <h2>leaderboard</h2>
+        <h2>{{ t("flagQuiz.leaderboard") }}</h2>
 
         <p v-if="leaderboardLoading" class="leaderboard-placeholder">
-          loading leaderboard...
+          {{ t("flagQuiz.loadingLeaderboard") }}
         </p>
 
         <p v-else-if="leaderboardError" class="leaderboard-placeholder">
@@ -126,14 +126,18 @@
           </div>
         </div>
 
-        <p v-else class="leaderboard-placeholder">no scores yet.</p>
+        <p v-else class="leaderboard-placeholder">
+          {{ t("flagQuiz.noScores") }}
+        </p>
 
         <p v-if="playerPosition" class="your-position">
-          your position: <strong>#{{ playerPosition }}</strong>
+          {{ t("flagQuiz.position") }} <strong>#{{ playerPosition }}</strong>
         </p>
       </div>
 
-      <button class="restart" @click="resetQuiz">play again →</button>
+      <button class="restart" @click="resetQuiz">
+        {{ t("flagQuiz.playAgain") }}
+      </button>
     </div>
   </main>
 </template>
@@ -144,6 +148,9 @@ import {
   historicalEntries,
   territorialEntries,
 } from "@/data/flagQuizExtraEntries.js";
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
 
 const playerName = ref("a guy");
 const flagCount = ref(10);
@@ -172,10 +179,10 @@ const currentQuestion = computed(() => {
 });
 
 const quizModes = [
-  { value: "countries", label: "countries" },
-  { value: "territorial", label: "territorial" },
-  { value: "historical", label: "historical" },
-  { value: "all", label: "all" },
+  { value: "countries", label: "flagQuiz.modes.countries" },
+  { value: "territorial", label: "flagQuiz.modes.territorial" },
+  { value: "historical", label: "flagQuiz.modes.historical" },
+  { value: "all", label: "flagQuiz.modes.all" },
 ];
 
 const percentage = computed(() => {
@@ -186,18 +193,18 @@ const percentage = computed(() => {
 
 const resultMessage = computed(() => {
   if (percentage.value === 100) {
-    return "perfect score. suspicious.";
+    return t("flagQuiz.perfect");
   }
 
   if (percentage.value >= 80) {
-    return "pretty good. you may continue existing.";
+    return t("flagQuiz.good");
   }
 
   if (percentage.value >= 50) {
-    return "not terrible. the flags remain unconvinced.";
+    return t("flagQuiz.okay");
   }
 
-  return "the flags have defeated you.";
+  return t("flagQuiz.defeated");
 });
 
 const countries = [
@@ -469,7 +476,9 @@ async function startQuiz() {
         return {
           name,
           code,
-          flag: code ? `https://flagcdn.com/w640/${code}.png` : await findWikimediaFlag(name),
+          flag: code
+            ? `https://flagcdn.com/w640/${code}.png`
+            : await findWikimediaFlag(name),
         };
       }),
     );
@@ -526,7 +535,9 @@ async function findWikimediaFlag(name) {
 
     const data = await response.json();
     const page = Object.values(data.query?.pages || {})[0];
-    return page?.imageinfo?.[0]?.thumburl || page?.imageinfo?.[0]?.url || fallback;
+    return (
+      page?.imageinfo?.[0]?.thumburl || page?.imageinfo?.[0]?.url || fallback
+    );
   } catch {
     return fallback;
   }
