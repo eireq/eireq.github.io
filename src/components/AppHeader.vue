@@ -16,9 +16,9 @@
       <a href="https://github.com/eireq" target="_blank" rel="noreferrer"
         >{{ t("nav.github") }}
       </a>
-      <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer"
-        >{{ t("nav.discord") }}</a
-      >
+      <a href="https://dsc.gg/pissedoff" target="_blank" rel="noreferrer">{{
+        t("nav.discord")
+      }}</a>
       <a
         href="https://www.youtube.com/@%E3%81%84%E4%B8%A8"
         target="_blank"
@@ -32,9 +32,17 @@
         :aria-label="t('nav.language')"
         @change="setLanguage($event.target.value)"
       >
-        <optgroup v-for="group in languageGroups" :key="group.label" :label="group.label">
-          <option v-for="item in group.languages" :key="item.code" :value="item.code">
-            {{ item.label }} ({{ item.code }})
+        <optgroup
+          v-for="group in languageGroups"
+          :key="group.label"
+          :label="languageGroupLabel(group)"
+        >
+          <option
+            v-for="item in group.languages"
+            :key="item.code"
+            :value="item.code"
+          >
+            {{ languageLabel(item) }} ({{ item.code }})
           </option>
         </optgroup>
       </select>
@@ -45,7 +53,14 @@
 <script setup>
 import { useI18n } from "../i18n.js";
 
-const { language, languageGroups, setLanguage, t } = useI18n();
+const {
+  language,
+  languageGroups,
+  setLanguage,
+  t,
+  languageLabel,
+  languageGroupLabel,
+} = useI18n();
 </script>
 
 <style scoped>
