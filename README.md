@@ -38,17 +38,17 @@ eireq.github.io/
 │   │   ├── AppHeader.vue            # Navigation header
 │   │   └── AppFooter.vue            # Footer with contact info
 │   ├── views/                       # Page-level components (hayastan branch)
-│   │   ├── AboutMeView.vue
-│   │   ├── ArtView.vue
-│   │   ├── ContactView.vue
-│   │   ├── DoulanteseElectionsView.vue
-│   │   ├── FlagQuizView.vue
-│   │   ├── GameRacingView.vue
-│   │   ├── GamesView.vue
-│   │   ├── HomeView.vue
-│   │   ├── MiscView.vue
-│   │   ├── PoliticalPreferencesView.vue
-│   │   └── RandomCountryView.vue
+│   │   ├── [AboutMeView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/AboutMeView.vue) — Personal bio and introduction
+│   │   ├── [ArtView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/ArtView.vue) — Gallery and digital art showcase
+│   │   ├── [ContactView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/ContactView.vue) — Contact information and message form
+│   │   ├── [DoulanteseElectionsView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/DoulanteseElectionsView.vue) — Mock election results / community polls
+│   │   ├── [FlagQuizView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/FlagQuizView.vue) — Flag quiz game with leaderboards
+│   │   ├── [GameRacingView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/GameRacingView.vue) — Lane Runner / racing game entry point
+│   │   ├── [GamesView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/GamesView.vue) — Games index and links
+│   │   ├── [HomeView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/HomeView.vue) — Landing / hero section
+│   │   ├── [MiscView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/MiscView.vue) — Misc tools and utilities (random country, modes, etc.)
+│   │   ├── [PoliticalPreferencesView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/PoliticalPreferencesView.vue) — Political quiz/results gallery
+│   │   └── [RandomCountryView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/RandomCountryView.vue) — Random country picker tool
 │   ├── games/                       # Game implementations
 │   │   └── racing/
 │   │       ├── config.js            # Game configuration
