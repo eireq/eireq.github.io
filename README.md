@@ -8,6 +8,8 @@ A modern, interactive portfolio website built with **Vue 3** and **Vite**, featu
 
 ---
 
+> NOTE: This README reflects the file layout and contents from the `hayastan` branch (not `main`). The hayastan branch contains several view components and other branch-specific changes.
+
 ## 🎯 Overview
 
 This is a GitHub Pages portfolio site showcasing creative projects and interactive experiences.
@@ -22,7 +24,7 @@ This is a GitHub Pages portfolio site showcasing creative projects and interacti
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure (hayastan branch)
 
 ```
 eireq.github.io/
@@ -35,7 +37,14 @@ eireq.github.io/
 │   ├── components/                  # Reusable Vue components
 │   │   ├── AppHeader.vue           # Navigation header
 │   │   └── AppFooter.vue           # Footer with contact info
-│   ├── views/                       # Page-level components
+│   ├── views/                       # Page-level components (hayastan branch contains multiple .vue view files — ~7 view components)
+│   │   ├── HomeView.vue
+│   │   ├── AboutView.vue
+│   │   ├── GamesView.vue
+│   │   ├── RacingView.vue
+│   │   ├── RandomCountryView.vue
+│   │   ├── ToolsView.vue
+│   │   └── NotFoundView.vue
 │   ├── games/                       # Game implementations
 │   │   └── racing/
 │   │       ├── config.js           # Game configuration
@@ -45,7 +54,7 @@ eireq.github.io/
 ├── package.json                     # Dependencies & scripts
 ├── vite.config.js                   # Vite build config
 ├── index.html                       # SPA root entry point
-└── README.md                        # This file
+└── README.md                        # This file (updated for hayastan)
 ```
 
 ---
