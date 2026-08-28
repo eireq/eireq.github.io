@@ -96,8 +96,53 @@
         {{ resultMessage }}
       </p>
 
+      <button
+        class="analysis-toggle"
+        type="button"
+        :aria-expanded="analysisOpen"
+        @click="analysisOpen = !analysisOpen"
+      >
+        {{ analysisOpen ? t("flagQuiz.hideAnalysis") : t("flagQuiz.analysis") }}
+      </button>
+
+      <section v-if="analysisOpen" class="analysis" :aria-label="t('flagQuiz.analysis')">
+        <p v-if="!wrongAnswers.length" class="analysis-perfect">
+          {{ t("flagQuiz.allCorrect") }}
+        </p>
+        <div v-else class="analysis-list">
+          <article v-for="question in wrongAnswers" :key="question.name" class="analysis-row">
+            <img :src="question.flag" :alt="t('flagQuiz.flagAlt') + ' ' + question.name" />
+            <div>
+              <h3>{{ question.name }}</h3>
+              <p>
+                {{ t("flagQuiz.yourAnswer") }}:
+                <strong>{{ question.answer || t("flagQuiz.noAnswer") }}</strong>
+              </p>
+              <p>
+                {{ t("flagQuiz.correctAnswer") }}:
+                <strong>{{ question.name }}</strong>
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <div class="leaderboard">
         <h2>{{ t("flagQuiz.leaderboard") }}</h2>
+
+        <div class="leaderboard-modes" role="tablist" :aria-label="t('flagQuiz.leaderboard')">
+          <button
+            v-for="mode in quizModes"
+            :key="mode.value"
+            type="button"
+            role="tab"
+            :aria-selected="leaderboardMode === mode.value"
+            :class="{ active: leaderboardMode === mode.value }"
+            @click="selectLeaderboard(mode.value)"
+          >
+            {{ t(mode.label) }}
+          </button>
+        </div>
 
         <p v-if="leaderboardLoading" class="leaderboard-placeholder">
           {{ t("flagQuiz.loadingLeaderboard") }}
@@ -172,6 +217,9 @@ const leaderboardLoading = ref(false);
 const leaderboardError = ref("");
 const scoreSubmitted = ref(false);
 const submittedScoreId = ref(null);
+const leaderboardMode = ref("countries");
+const wrongAnswers = ref([]);
+const analysisOpen = ref(false);
 const flagError = ref(false);
 
 const currentQuestion = computed(() => {
@@ -179,7 +227,7 @@ const currentQuestion = computed(() => {
 });
 
 const quizModes = [
-  { value: "countries", label: "flagQuiz.modes.countries" },
+  { value: "countries", label: "flagQuiz.modes.normal" },
   { value: "territorial", label: "flagQuiz.modes.territorial" },
   { value: "historical", label: "flagQuiz.modes.historical" },
   { value: "all", label: "flagQuiz.modes.all" },
@@ -486,6 +534,9 @@ async function startQuiz() {
     currentIndex.value = 0;
     score.value = 0;
     answer.value = "";
+    wrongAnswers.value = [];
+    analysisOpen.value = false;
+    leaderboardMode.value = quizMode.value;
     flagError.value = false;
     started.value = true;
     finished.value = false;
@@ -544,8 +595,16 @@ async function findWikimediaFlag(name) {
 }
 
 function submitAnswer() {
-  if (isCorrectAnswer(answer.value, currentQuestion.value)) {
+  const correct = isCorrectAnswer(answer.value, currentQuestion.value);
+
+  if (correct) {
     score.value++;
+  } else {
+    wrongAnswers.value.push({
+      name: currentQuestion.value.name,
+      flag: currentQuestion.value.flag,
+      answer: answer.value.trim(),
+    });
   }
 
   answer.value = "";
@@ -586,6 +645,7 @@ async function submitScoreToLeaderboard() {
       {
         name: playerName.value,
         score: score.value,
+        mode: quizMode.value,
       },
       questions.value.length,
     );
@@ -598,8 +658,32 @@ async function submitScoreToLeaderboard() {
 
     scoreSubmitted.value = true;
     submittedScoreId.value = submitResult.row?.id || null;
+    await loadLeaderboard(quizMode.value);
+  } catch (error) {
+    leaderboardError.value = "something went wrong with the leaderboard.";
+    console.warn("flag quiz leaderboard error:", error);
+  } finally {
+    leaderboardLoading.value = false;
+  }
+}
 
-    const leaderboardResult = await window.db.getFlagQuizLeaderboard(50);
+async function selectLeaderboard(mode) {
+  leaderboardMode.value = mode;
+  await loadLeaderboard(mode);
+}
+
+async function loadLeaderboard(mode) {
+  leaderboardLoading.value = true;
+  leaderboardError.value = "";
+
+  try {
+    if (!window.db?.ready()) {
+      leaderboardError.value =
+        "supabase is not configured. set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.";
+      return;
+    }
+
+    const leaderboardResult = await window.db.getFlagQuizLeaderboard(50, mode);
 
     if (!leaderboardResult.ok) {
       leaderboardError.value = "could not load leaderboard.";
@@ -608,12 +692,11 @@ async function submitScoreToLeaderboard() {
     }
 
     leaderboard.value = leaderboardResult.rows;
+    playerPosition.value = null;
 
-    const submittedId = submitResult.row?.id;
-
-    if (submittedId) {
+    if (mode === quizMode.value && submittedScoreId.value) {
       const index = leaderboard.value.findIndex(
-        (row) => row.id === submittedId,
+        (row) => row.id === submittedScoreId.value,
       );
 
       if (index !== -1) {
@@ -635,6 +718,11 @@ function resetQuiz() {
   currentIndex.value = 0;
   answer.value = "";
   score.value = 0;
+  wrongAnswers.value = [];
+  analysisOpen.value = false;
+  leaderboard.value = [];
+  playerPosition.value = null;
+  submittedScoreId.value = null;
 }
 </script>
 
@@ -797,6 +885,70 @@ button:disabled {
   line-height: 1.6;
 }
 
+.analysis-toggle {
+  margin-top: 24px;
+  border-color: #04d361;
+  color: #04d361;
+}
+
+.analysis-toggle:hover {
+  background: #04d361;
+  color: #000;
+}
+
+.analysis {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #29292e;
+  background: #151517;
+}
+
+.analysis-perfect {
+  margin: 0;
+  color: #04d361;
+}
+
+.analysis-list {
+  display: grid;
+  gap: 14px;
+}
+
+.analysis-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #29292e;
+}
+
+.analysis-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.analysis-row img {
+  width: 110px;
+  max-height: 70px;
+  object-fit: contain;
+}
+
+.analysis-row h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.analysis-row p {
+  margin: 3px 0 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.analysis-row strong {
+  color: #ddd;
+  font-weight: normal;
+}
+
 .leaderboard {
   margin-top: 60px;
   border-top: 1px solid #222;
@@ -806,6 +958,28 @@ button:disabled {
 .leaderboard h2 {
   font-size: 26px;
   margin: 0 0 15px;
+}
+
+.leaderboard-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.leaderboard-modes button {
+  margin: 0;
+  padding: 8px 12px;
+  border-color: #333;
+  color: #999;
+  font-size: 13px;
+}
+
+.leaderboard-modes button:hover,
+.leaderboard-modes button.active {
+  border-color: #04d361;
+  background: #04d361;
+  color: #000;
 }
 
 .leaderboard-list {
@@ -864,6 +1038,15 @@ button:disabled {
 
   .answer button {
     width: 100%;
+  }
+
+  .analysis-row {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-row img {
+    width: 100%;
+    max-height: 130px;
   }
 }
 </style>
