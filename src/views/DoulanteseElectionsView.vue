@@ -17,39 +17,39 @@
         <tbody>
           <tr>
             <td>ACT</td>
-            <td>10 votes</td>
-            <td>23.8%</td>
+            <td>11 votes</td>
+            <td>25.0%</td>
             <td>3 seats</td>
           </tr>
           <tr>
-            <td>LAR</td>
+            <td>LAB</td>
             <td>10 votes</td>
-            <td>23.8%</td>
-            <td>3 seats</td>
-          </tr>
-          <tr>
-            <td>UNI</td>
-            <td>9 votes</td>
-            <td>21.4%</td>
+            <td>22.7%</td>
             <td>2 seats</td>
           </tr>
           <tr>
-            <td>DTL</td>
+            <td>UNI</td>
             <td>5 votes</td>
-            <td>11.9%</td>
+            <td>11.4%</td>
             <td>1 seat</td>
           </tr>
           <tr>
+            <td>DTL</td>
+            <td>9 votes</td>
+            <td>20.5%</td>
+            <td>2 seats</td>
+          </tr>
+          <tr>
             <td>FLF</td>
-            <td>5 votes</td>
-            <td>11.9%</td>
+            <td>3 votes</td>
+            <td>6.8%</td>
             <td>1 seat</td>
           </tr>
           <tr>
             <td>NFD</td>
-            <td>3 votes</td>
-            <td>7.1%</td>
-            <td>1 seat</td>
+            <td>6 votes</td>
+            <td>13.6%</td>
+            <td>2 seats</td>
           </tr>
           <tr>
             <td>CoK</td>
@@ -61,7 +61,7 @@
         <tfoot>
           <tr>
             <td><strong>Total</strong></td>
-            <td><strong>42 votes</strong></td>
+            <td><strong>44 votes</strong></td>
             <td><strong>100%</strong></td>
             <td><strong>11 seats</strong></td>
           </tr>
