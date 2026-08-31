@@ -23,8 +23,15 @@ create table if not exists public.flag_quiz_scores (
   score integer not null check (score >= 0),
   total integer not null check (total > 0),
   percentage integer not null check (percentage between 0 and 100),
+  mode text not null default 'countries' check (mode in ('countries', 'territorial', 'historical', 'all')),
   created_at timestamptz not null default now()
 );
+
+alter table public.flag_quiz_scores
+  add column if not exists mode text not null default 'countries';
+
+create index if not exists flag_quiz_scores_mode_rank_idx
+  on public.flag_quiz_scores (mode, percentage desc, score desc, created_at asc);
 
 create index if not exists flag_quiz_scores_rank_idx
   on public.flag_quiz_scores (percentage desc, score desc, created_at asc);
@@ -74,6 +81,7 @@ with check (
   and score between 0 and total
   and total > 0
   and percentage between 0 and 100
+  and mode in ('countries', 'territorial', 'historical', 'all')
 );
 
 -- no update/delete policy on purpose.

@@ -97,6 +97,8 @@ const messages = {
         "small bots and other experiments from my GitHub projects.",
       other: "other stuff",
       otherText: "more random projects will appear here eventually.",
+      elections: "Doulantese elections",
+      electionsText: "results from the Discord union assembly.",
     },
     art: {
       title: "art.",
@@ -176,6 +178,12 @@ const messages = {
       enter: "enter",
       score: "score",
       complete: "quiz complete.",
+      analysis: "analyze missed flags",
+      hideAnalysis: "hide analysis",
+      allCorrect: "perfect. you got every flag right.",
+      yourAnswer: "your answer",
+      correctAnswer: "correct answer",
+      noAnswer: "no answer",
       leaderboard: "leaderboard",
       loadingLeaderboard: "loading leaderboard...",
       noScores: "no scores yet.",
@@ -186,12 +194,17 @@ const messages = {
       okay: "not terrible. the flags remain unconvinced.",
       defeated: "the flags have defeated you.",
       modes: {
+        normal: "normal",
         countries: "countries",
         territorial: "territorial",
         historical: "historical",
         all: "all",
       },
     },
+    elections: {
+      eyebrow: "Discord union assembly", title: "Doulantese elections.", intro: "preference results as recorded from the election ballot.", results: "election results", choice: "choice", review: "last reviewed: 2026/08/28 13:30 Central European Summer Time",
+    },
+    footer: { contact: "contact", text: "you can contact me via", email: "email" },
     about: {
       title: "about me.",
       who: "who am i?",
@@ -435,12 +448,44 @@ const messages = {
 };
 
 const variantTransformers = {
-  dnk: (text) => text.replace(/[aeiou]+/gi, (vowel) => vowel[0] + "..."),
-  prt: (text) => `${text} arr!`,
-  uwu: (text) =>
-    text.replace(/r|l/gi, "w").replace(/n([aeiou])/gi, "ny$1") + " uwu :3",
-  srs: (text) => text.replace(/[!?]+/g, "."),
-  fck: (text) => `damn, ${text} as hell`,
+  dnk: (text) => text
+    .replace(/\byou\b/gi, "ya")
+    .replace(/\byour\b/gi, "yer")
+    .replace(/\band\b/gi, "n")
+    .replace(/\bthe\b/gi, "tha")
+    .replace(/\babout\b/gi, "'bout")
+    .replace(/ing\b/gi, "in'")
+    .replace(/[!?]+/g, "...") + " *hic*",
+  prt: (text) => text
+    .replace(/\byou\b/gi, "ye")
+    .replace(/\byour\b/gi, "yer")
+    .replace(/\bfriend\b/gi, "matey")
+    .replace(/\bfriends\b/gi, "mateys")
+    .replace(/\bmy\b/gi, "me")
+    .replace(/\bthe\b/gi, "thee")
+    .replace(/\bis\b/gi, "be") + " Arr!",
+  uwu: (text) => text
+    .replace(/r|l/gi, "w")
+    .replace(/n([aeiou])/gi, "ny$1")
+    .replace(/\bthe\b/gi, "da")
+    .replace(/\bthis\b/gi, "dis") + " uwu :3",
+  srs: (text) => text
+    .replace(/\bfunny\b/gi, "amusing")
+    .replace(/\bstuff\b/gi, "matters")
+    .replace(/\bthing(s)?\b/gi, "matter$1")
+    .replace(/[!?]+/g, "."),
+  fck: (text) => text
+    .replace(/\bgood\b/gi, "damn good")
+    .replace(/\bbad\b/gi, "fucking awful")
+    .replace(/\bvery\b/gi, "fucking")
+    .replace(/\bwhat\b/gi, "what the hell")
+    .replace(/[!?]+/g, "!"),
+  ttt: (text) => `${text} no cap fr fr`,
+  jjj: (text) => text.replace(/[bcdfghjklmnpqrstvwxyz]/g, "j").replace(/[BCDFGHJKLMNPQRSTVWXYZ]/g, "J"),
+  ipa: (text) => text.replace(/th/gi, "ð").replace(/sh/gi, "ʃ").replace(/ch/gi, "tʃ").replace(/r/gi, "ɹ"),
+  emj: (text) => text.replace(/love/gi, "❤️").replace(/music/gi, "🎵").replace(/game/gi, "🎮").replace(/flag/gi, "🏳️").replace(/contact/gi, "✉️").replace(/country/gi, "🌍") + " ✨",
+  tkp: (text) => text.replace(/information/gi, "facts").replace(/approximately/gi, "about").replace(/miscellaneous/gi, "random").replace(/currently/gi, "now").replace(/whatever you want/gi, "anything"),
+  sew: (text) => text.replace(/[A-Za-z]{5,}/g, (word) => `${word.slice(0, 3)}.`),
   ttt: (text) => brainrotize(text),
   jjj: (text) =>
     text

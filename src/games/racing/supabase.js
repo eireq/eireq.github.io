@@ -121,6 +121,9 @@ export function createDb() {
           score: safeScore,
           total: safeTotal,
           percentage,
+          mode: ["countries", "territorial", "historical", "all"].includes(score.mode)
+            ? score.mode
+            : "countries",
         })
         .select("id,name,score,total,percentage,created_at")
         .single();
@@ -138,7 +141,7 @@ export function createDb() {
       };
     },
 
-    async getFlagQuizLeaderboard(limit = 50) {
+    async getFlagQuizLeaderboard(limit = 50, mode = "countries") {
       if (!this.ready()) {
         return {
           ok: false,
@@ -147,7 +150,7 @@ export function createDb() {
         };
       }
 
-      const { data, error } = await this.client
+      let query = this.client
         .from("flag_quiz_scores")
         .select("id,name,score,total,percentage,created_at")
         .order("percentage", {
@@ -160,6 +163,12 @@ export function createDb() {
           ascending: true,
         })
         .limit(limit);
+
+      if (["countries", "territorial", "historical", "all"].includes(mode)) {
+        query = query.eq("mode", mode);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         return {
