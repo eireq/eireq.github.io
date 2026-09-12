@@ -74,7 +74,7 @@
                 :class="{ winner: match.winner === match.a?.id }"
               >
                 <input
-                  v-if="roundIndex === 0 && isOwner"
+                  v-if="roundIndex === 0 && isOwner && match.a"
                   v-model="match.a.name"
                   class="item-name"
                   :disabled="!match.a"
@@ -182,7 +182,7 @@ const rounds = computed(() => {
     roundIndex += 1;
   }
 
-  if (participants.length === 1)
+  if (participants.length === 1 && participants[0])
     result.push([
       { a: participants[0], b: null, bye: true, winner: participants[0].id },
     ]);
