@@ -147,6 +147,22 @@ An 8-bit arcade-style driving game where you dodge traffic by changing lanes.
 
 **Location:** `/src/games/racing/`
 
+### KHT tournament
+
+The 370-entry bracket is available at `/kht`. Public visitors can view the
+bracket, while the configured Supabase owner can edit names and scores.
+
+To enable shared editing:
+
+1. Run `src/games/kht/supabase.sql` in Supabase SQL Editor.
+2. Replace the placeholder UUID in both RLS policy expressions with the
+  owner's Supabase Auth user id.
+3. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and
+  `VITE_KHT_OWNER_ID` in the deployment environment.
+
+The bracket saves as one JSON document in `kht_bracket`; Supabase RLS allows
+public reads and restricts inserts, updates, and deletes to the owner UUID.
+
 ---
 
 ## 🌐 Internationalization (i18n)
