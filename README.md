@@ -15,6 +15,7 @@ A modern, interactive portfolio website built with **Vue 3** and **Vite**, featu
 This is a GitHub Pages portfolio site showcasing creative projects and interactive experiences.
 
 ### Key Features:
+
 - ✨ **Vue 3 + Vite** — Modern, fast SPA framework
 - 🎮 **Interactive Games** — Multiple arcade-style games with leaderboards
 - 🌍 **Multi-language Support** — English and Slovak (via i18n system)
@@ -66,16 +67,19 @@ eireq.github.io/
 ## 🛠️ Technologies
 
 **Frontend:**
+
 - **Vue 3** — Progressive JavaScript framework
 - **Vue Router** — Client-side routing
 - **Vite** — Next-generation build tool
 - **CSS3** — Modern styling with responsive design
 
 **Backend & Database:**
+
 - **Supabase** — Real-time database for leaderboards
 - **Supabase JS SDK** — Client library for database operations
 
 **Hosting:**
+
 - **GitHub Pages** — Free static site hosting
 
 ---
@@ -101,6 +105,7 @@ eireq.github.io/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 
 ### Installation
@@ -136,9 +141,11 @@ npm run preview
 ## 🎮 Games
 
 ### Lane Runner
+
 An 8-bit arcade-style driving game where you dodge traffic by changing lanes.
 
 **Features:**
+
 - Lane-changing mechanics
 - Global and weekly leaderboards (powered by Supabase)
 - Multiple game modes (Normal & Speed Bomb)
@@ -156,9 +163,9 @@ To enable shared editing:
 
 1. Run `src/games/kht/supabase.sql` in Supabase SQL Editor.
 2. Replace the placeholder UUID in both RLS policy expressions with the
-  owner's Supabase Auth user id.
+   owner's Supabase Auth user id.
 3. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and
-  `VITE_KHT_OWNER_ID` in the deployment environment.
+   `VITE_KHT_OWNER_ID` in the deployment environment.
 
 The bracket saves as one JSON document in `kht_bracket`; Supabase RLS allows
 public reads and restricts inserts, updates, and deletes to the owner UUID.
@@ -168,6 +175,7 @@ public reads and restricts inserts, updates, and deletes to the owner UUID.
 ## 🌐 Internationalization (i18n)
 
 Multi-language support is built-in via `src/i18n.js`. Currently supports:
+
 - **English** (en)
 - **Slovak** (sk)
 
@@ -197,6 +205,7 @@ Language strings are centralized in the i18n file, making it easy to add more la
 ## 📊 Architecture
 
 ### Component Hierarchy
+
 ```
 App.vue
 ├── AppHeader.vue (navigation)
@@ -205,6 +214,7 @@ App.vue
 ```
 
 ### Data Flow
+
 - Vue Router manages page navigation
 - Components fetch data as needed
 - Supabase handles leaderboard persistence
@@ -240,10 +250,11 @@ Reach out via email: **eireball@proton.me**
 ## 🚀 Contributing
 
 Found a bug or have a feature request? Feel free to:
+
 - Open an issue on GitHub
 - Contact via email
 - Join the Discord community
 
 ---
 
-*Built with ❤️ using Vue 3 and Vite*
+_Built with ❤️ using Vue 3 and Vite_

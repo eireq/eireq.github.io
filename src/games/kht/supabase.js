@@ -6,9 +6,10 @@ const config = {
 };
 
 export const khtOwnerId = import.meta.env.VITE_KHT_OWNER_ID || "";
-export const khtDb = config.url && config.anonKey
-  ? createClient(config.url, config.anonKey)
-  : null;
+export const khtDb =
+  config.url && config.anonKey
+    ? createClient(config.url, config.anonKey)
+    : null;
 
 export async function loadBracket() {
   if (!khtDb) return { data: null, error: "Supabase is not configured." };
