@@ -165,7 +165,7 @@ const rounds = computed(() => {
       const aScore = scoreValue(roundIndex, matches.length, "a");
       const bScore = scoreValue(roundIndex, matches.length, "b");
       const winner = bye
-        ? a.id
+        ? a?.id || null
         : a && b && aScore !== null && bScore !== null
           ? aScore > bScore
             ? a.id
@@ -184,7 +184,12 @@ const rounds = computed(() => {
 
   if (participants.length === 1 && participants[0])
     result.push([
-      { a: participants[0], b: null, bye: true, winner: participants[0].id },
+      {
+        a: participants[0],
+        b: null,
+        bye: true,
+        winner: participants[0]?.id || null,
+      },
     ]);
   return result;
 });
@@ -194,6 +199,23 @@ function createItems() {
     id: `item-${index + 1}`,
     name: `Item ${String(index + 1).padStart(3, "0")}`,
   }));
+}
+
+function normalizeItems(savedItems) {
+  const defaults = createItems();
+
+  if (!Array.isArray(savedItems)) return defaults;
+
+  return defaults.map((item, index) => {
+    const saved = savedItems[index];
+
+    return saved && typeof saved === "object" && saved.id
+      ? {
+          id: String(saved.id),
+          name: typeof saved.name === "string" ? saved.name : item.name,
+        }
+      : item;
+  });
 }
 
 function scoreKey(round, match, side) {
@@ -257,8 +279,7 @@ async function load() {
     return;
   }
   if (!result.data) return;
-  items.value =
-    result.data.items?.length === ENTRY_COUNT ? result.data.items : items.value;
+  items.value = normalizeItems(result.data.items);
   Object.assign(scores, result.data.scores || {});
 }
 
