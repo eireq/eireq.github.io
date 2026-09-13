@@ -298,6 +298,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .kht-page {
+  display: block;
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
