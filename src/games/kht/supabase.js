@@ -6,6 +6,7 @@ const config = {
 };
 
 export const khtOwnerId = import.meta.env.VITE_KHT_OWNER_ID || "";
+const khtRedirectUrl = import.meta.env.VITE_KHT_REDIRECT_URL || "";
 export const khtDb =
   config.url && config.anonKey
     ? createClient(config.url, config.anonKey)
@@ -49,7 +50,9 @@ export async function sendKhtLogin(email) {
 
   const { error } = await khtDb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${window.location.origin}/kht` },
+    options: {
+      emailRedirectTo: khtRedirectUrl || `${window.location.origin}/kht`,
+    },
   });
 
   return { error: error?.message || null };

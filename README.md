@@ -165,7 +165,18 @@ To enable shared editing:
 2. Replace the placeholder UUID in both RLS policy expressions with the
    owner's Supabase Auth user id.
 3. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and
-   `VITE_KHT_OWNER_ID` in the deployment environment.
+   `VITE_KHT_OWNER_ID` in the deployment environment. Set
+   `VITE_KHT_REDIRECT_URL` to `https://eireq.github.io/kht` for production.
+
+In Supabase Authentication settings, add these redirect URLs:
+
+- `https://eireq.github.io/kht`
+- `http://localhost:5173/kht`
+- `http://localhost:3000/kht` if using port 3000 locally
+
+Magic links expire and always return to the URL used when the email was
+requested. If a link points to localhost, keep the matching local dev server
+running or request a new link from the deployed site.
 
 The bracket saves as one JSON document in `kht_bracket`; Supabase RLS allows
 public reads and restricts inserts, updates, and deletes to the owner UUID.
