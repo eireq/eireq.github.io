@@ -10,6 +10,7 @@ import RandomCountryView from "../views/RandomCountryView.vue";
 import PoliticalPreferencesView from "../views/PoliticalPreferencesView.vue";
 import DoulanteseElectionsView from "../views/DoulanteseElectionsView.vue";
 import KhtView from "../views/KhtView.vue";
+import JPolView from "../views/JPolView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -61,6 +62,12 @@ const router = createRouter({
       name: "politics",
       component: PoliticalPreferencesView,
       meta: { title: "political preferences - eire" },
+    },
+    {
+      path: "/jpol",
+      name: "jpol",
+      component: JPolView,
+      meta: { title: "jPol - eire" },
     },
     {
       path: "/elections",

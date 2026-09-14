@@ -17,6 +17,11 @@
         <p>{{ t("misc.politicsText") }}</p>
       </router-link>
 
+      <router-link class="misc-piece" to="/jpol">
+        <h2>jPol</h2>
+        <p>take a 60-question political values quiz and generate your result.</p>
+      </router-link>
+
       <router-link class="misc-piece" to="/elections">
         <h2>{{ t("misc.elections") }}</h2>
         <p>{{ t("misc.electionsText") }}</p>
