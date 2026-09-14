@@ -251,7 +251,7 @@ const axisDefinitions = {
 
 const questionSets = {
   equality: [
-    "A society is fair only when wealth differences are kept fairly small.",
+    "A society is fair only when wealth differences are kept fairly small. ",
     "Essential services should be available to everyone regardless of income.",
     "Inheritance should be taxed heavily when it creates huge advantages.",
     "Workers deserve a meaningful say in how the companies they work for are run.",
