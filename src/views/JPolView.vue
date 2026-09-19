@@ -1,7 +1,7 @@
 <template>
   <main class="jpol-page">
     <header class="jpol-hero">
-      <p class="eyebrow">60 questions · six value axes</p>
+      <p class="eyebrow">72 questions · a values map</p>
       <h1>jPol</h1>
       <p>
         eire's compact political values quiz. there are no correct answers, and
@@ -19,7 +19,6 @@
       </div>
 
       <article class="question-card">
-        <p class="question-axis">{{ currentQuestion.axisLabel }}</p>
         <h2>{{ currentQuestion.text }}</h2>
         <div class="answers" role="radiogroup" aria-label="Answer choices">
           <button
@@ -251,7 +250,7 @@ const axisDefinitions = {
 
 const questionSets = {
   equality: [
-    "A society is fair only when wealth differences are kept fairly small. ",
+    "A society is fair only when wealth differences are kept fairly small.",
     "Essential services should be available to everyone regardless of income.",
     "Inheritance should be taxed heavily when it creates huge advantages.",
     "Workers deserve a meaningful say in how the companies they work for are run.",
@@ -261,6 +260,14 @@ const questionSets = {
     "Tax systems should ask much more from people with the most money.",
     "Private ownership is less important than making sure everyone has a secure life.",
     "Economic policy should prioritize reducing inequality over maximizing growth.",
+    {
+      text: "Large differences in wealth are acceptable if everyone has a chance to succeed.",
+      direction: -1,
+    },
+    {
+      text: "People should keep most of what they earn, even when public services suffer.",
+      direction: -1,
+    },
   ],
   coordination: [
     "Competitive markets usually allocate resources better than public planners.",
@@ -273,6 +280,14 @@ const questionSets = {
     "Regulation should be strict when private profit can harm the public.",
     "Cooperative ownership is often better than ownership by distant shareholders.",
     "Economic decisions should be made as close as possible to the people affected by them.",
+    {
+      text: "Private companies usually respond to changing needs faster than public institutions.",
+      direction: -1,
+    },
+    {
+      text: "Some essential services work better when they are run for profit.",
+      direction: -1,
+    },
   ],
   power: [
     "A decisive government is more useful than one that is constantly blocked.",
@@ -285,6 +300,14 @@ const questionSets = {
     "Strict consequences are necessary to deter behavior that threatens social stability.",
     "Expert administrators should have more influence over policy than popular moods do.",
     "A society becomes weaker when it treats every rule as optional.",
+    {
+      text: "A government should accept slow decisions rather than risk concentrating power.",
+      direction: -1,
+    },
+    {
+      text: "Breaking a law can be responsible when following it would cause clear harm.",
+      direction: -1,
+    },
   ],
   autonomy: [
     "Adults should be free to live as they choose if they are not harming others.",
@@ -297,6 +320,14 @@ const questionSets = {
     "People should be allowed to take risks with their own lives and property.",
     "No authority should be treated as automatically above criticism.",
     "A messy free society is preferable to an orderly society built on constant surveillance.",
+    {
+      text: "People sometimes need to give up personal freedoms to make society work well.",
+      direction: -1,
+    },
+    {
+      text: "Authorities should be able to limit public speech that threatens social cohesion.",
+      direction: -1,
+    },
   ],
   identity: [
     "A person's background should never determine how welcome they are in public life.",
@@ -309,6 +340,14 @@ const questionSets = {
     "Religious and cultural differences are usually an asset rather than a threat.",
     "People should be free to define their own identity without state approval.",
     "No group should be considered inherently superior to another.",
+    {
+      text: "A shared national culture should take priority over preserving every minority custom.",
+      direction: -1,
+    },
+    {
+      text: "A country should be cautious about accepting newcomers who may change its character.",
+      direction: -1,
+    },
   ],
   progress: [
     "New technology is usually worth adopting even when it changes familiar habits.",
@@ -321,16 +360,42 @@ const questionSets = {
     "Future generations deserve more consideration than nostalgia for earlier ways of life.",
     "Cultural change is generally a sign of a living society rather than its decline.",
     "Institutions should be redesigned when they no longer fit present conditions.",
+    {
+      text: "New ideas should be treated cautiously until their consequences are clear.",
+      direction: -1,
+    },
+    {
+      text: "A familiar custom can be valuable simply because it has lasted for generations.",
+      direction: -1,
+    },
   ],
 };
 
-const questions = Object.entries(questionSets).flatMap(([key, texts]) =>
-  texts.map((text) => ({
-    key,
-    text,
-    axisLabel: `${axisDefinitions[key].name} axis`,
-  })),
-);
+function shuffle(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+  return shuffled;
+}
+
+function makeQuestions() {
+  return shuffle(
+    Object.entries(questionSets).flatMap(([key, entries]) =>
+      entries.map((entry) => ({
+        key,
+        text: typeof entry === "string" ? entry : entry.text,
+        direction: typeof entry === "string" ? 1 : entry.direction,
+      })),
+    ),
+  );
+}
+
+let questions = makeQuestions();
 const currentIndex = ref(0);
 const answers = ref(Array(questions.length).fill(null));
 const finished = ref(false);
@@ -352,6 +417,7 @@ function previousQuestion() {
   if (currentIndex.value > 0) currentIndex.value -= 1;
 }
 function restart() {
+  questions = makeQuestions();
   currentIndex.value = 0;
   answers.value = Array(questions.length).fill(null);
   finished.value = false;
@@ -360,12 +426,18 @@ function restart() {
 function rawScore(key) {
   const values = questions
     .map((question, index) =>
-      question.key === key ? answers.value[index] : null,
+      question.key === key
+        ? { value: answers.value[index], direction: question.direction }
+        : null,
     )
-    .filter((value) => value !== null);
+    .filter((answer) => answer !== null && answer.value !== null);
   if (!values.length) return 0;
   return (
-    values.reduce((total, value) => total + value, 0) / (values.length * 2)
+    values.reduce(
+      (total, answer) => total + answer.value * answer.direction,
+      0,
+    ) /
+    (values.length * 2)
   );
 }
 function percentage(score) {
@@ -598,13 +670,6 @@ function drawCanvasCompass(context, x, y, size) {
   margin: 72px auto 58px;
   max-width: 820px;
 }
-.question-axis {
-  margin: 0 0 18px;
-  color: #04d361;
-  font-size: 13px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
 .question-card h2 {
   margin: 0 0 40px;
   color: #fff;
@@ -626,9 +691,9 @@ function drawCanvasCompass(context, x, y, size) {
 .answers button {
   min-height: 108px;
   padding: 16px 10px;
-  border: 1px solid #343840;
-  background: #16181b;
-  color: #c6cbd1;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #101114;
   text-align: left;
 }
 .answers button:hover,
@@ -645,8 +710,12 @@ function drawCanvasCompass(context, x, y, size) {
 .answers small {
   display: block;
   margin-top: 10px;
-  color: #727983;
+  color: #626873;
   font-size: 11px;
+}
+.answers button:hover small,
+.answers button.selected small {
+  color: #b7c8bc;
 }
 .quiz-actions,
 .result-actions {
