@@ -27,6 +27,7 @@
           <span>Category</span>
           <select v-model="selectedCategory">
             <option value="all">All categories</option>
+            <option value="territories">Territories &amp; dependencies</option>
             <option
               v-for="category in categories"
               :key="category"
@@ -81,7 +82,7 @@
               @error="hideBrokenImage"
             />
             <span class="flag-row__name">{{ flag.name }}</span>
-            <span class="flag-row__category">{{ flag.category }}</span>
+            <span class="flag-row__category">{{ displayCategory(flag) }}</span>
             <span class="flag-row__date">{{
               formatDate(flag.adoptionDate)
             }}</span>
@@ -160,18 +161,30 @@ const selectedCategory = ref("all");
 const sortOrder = ref("name-asc");
 const currentPage = ref(1);
 const expandedFlag = shallowRef(null);
+const territoryNames = new Set([
+  "Flag of Aruba",
+  "Flag of Cook Islands",
+  "Flag of Curaçao",
+  "Flag of Greenland",
+  "Flag of Niue",
+  "Flag of Sint Maarten",
+]);
 
 const categories = computed(() =>
-  [...new Set(flags.map((flag) => flag.category).filter(Boolean))].sort(
-    (a, b) => a.localeCompare(b),
-  ),
+  [...new Set(flags.map((flag) => flag.category).filter(Boolean))]
+    .filter((category) => category !== "Territory")
+    .sort((a, b) => a.localeCompare(b)),
 );
 
 const filteredFlags = computed(() => {
   const query = searchTerm.value.trim().toLocaleLowerCase();
   const matches = flags.filter((flag) => {
+    if (selectedCategory.value === "territories" && !isTerritory(flag)) {
+      return false;
+    }
     if (
       selectedCategory.value !== "all" &&
+      selectedCategory.value !== "territories" &&
       flag.category !== selectedCategory.value
     ) {
       return false;
@@ -248,6 +261,14 @@ watch(pageCount, (count) => {
 
 function toggleFlag(flag) {
   expandedFlag.value = expandedFlag.value === flag ? null : flag;
+}
+
+function isTerritory(flag) {
+  return flag.category === "Territory" || territoryNames.has(flag.name);
+}
+
+function displayCategory(flag) {
+  return isTerritory(flag) ? "Territory / dependency" : flag.category;
 }
 
 function imageUrl(url) {
