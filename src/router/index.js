@@ -58,6 +58,12 @@ const router = createRouter({
       meta: { title: "random country - eire" },
     },
     {
+      path: "/flagdb",
+      name: "flag-database",
+      component: () => import("../views/FlagDatabaseView.vue"),
+      meta: { title: "flag database - eire" },
+    },
+    {
       path: "/politics",
       name: "politics",
       component: PoliticalPreferencesView,
