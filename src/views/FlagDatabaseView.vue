@@ -8,10 +8,7 @@
           >{{ flags.length.toLocaleString() }} records</span
         >
       </div>
-      <p class="intro">
-        Browse national, territorial, and historical flags. Select a record to
-        see its history and design notes.
-      </p>
+      <p class="intro">browse flags <3 click on a flag to see more info.</p>
     </header>
 
     <section class="directory" aria-label="Flag records">
@@ -431,10 +428,9 @@ h1 {
 
 .flag-row {
   display: grid;
-  grid-template-columns: 74px minmax(180px, 1fr) minmax(120px, 0.4fr) minmax(
-      130px,
-      0.4fr
-    ) 66px;
+  grid-template-columns:
+    74px minmax(180px, 1fr) minmax(120px, 0.4fr) minmax(130px, 0.4fr)
+    66px;
   align-items: center;
   width: 100%;
   min-height: 70px;
