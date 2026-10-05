@@ -197,6 +197,8 @@ const collections = [
   { id: "all", label: "All flags" },
   { id: "subnational", label: "Subnational flags" },
   { id: "territories", label: "Territories" },
+  { id: "international", label: "International bodies" },
+  { id: "pride", label: "Pride flags" },
   { id: "soviet", label: "Soviet flags" },
   { id: "historical", label: "Historical states" },
   { id: "revolutionary", label: "Revolutionary flags" },
@@ -308,6 +310,16 @@ function matchesCollection(flag) {
 
   if (selectedCollection.value === "territories") {
     return isTerritory(flag);
+  }
+
+  if (selectedCollection.value === "international") {
+    return /league|asean|caricom|commonwealth|cis|union|eu|nato|olympic|oau|african union|opec|red cross|red crescent|red crystal|south pacific|united nations|un\b|osn|mercosur|saarc|ctso|sadc|interpol|fifa|uefa|imf|who|unesco|world trade|world bank|greenpeace|amnesty|ilo/i.test(
+      name,
+    );
+  }
+
+  if (selectedCollection.value === "pride") {
+    return category === "Pride flag";
   }
 
   if (selectedCollection.value === "soviet") {
