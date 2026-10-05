@@ -51,6 +51,22 @@
         </label>
       </div>
 
+      <div class="collection-bar" aria-label="Flag collections">
+        <span class="collection-label">Collections</span>
+        <div class="collection-list">
+          <button
+            v-for="collection in collections"
+            :key="collection.id"
+            type="button"
+            class="collection-button"
+            :class="{ active: selectedCollection === collection.id }"
+            @click="selectedCollection = collection.id"
+          >
+            {{ collection.label }}
+          </button>
+        </div>
+      </div>
+
       <div class="list-summary" aria-live="polite">
         <span>{{ filteredFlags.length.toLocaleString() }} matching flags</span>
         <span v-if="filteredFlags.length"
@@ -158,6 +174,7 @@ import flags from "../assets/master_flags.json";
 const pageSize = 48;
 const searchTerm = ref("");
 const selectedCategory = ref("all");
+const selectedCollection = ref("all");
 const sortOrder = ref("name-asc");
 const currentPage = ref(1);
 const expandedFlag = shallowRef(null);
@@ -176,9 +193,25 @@ const categories = computed(() =>
     .sort((a, b) => a.localeCompare(b)),
 );
 
+const collections = [
+  { id: "all", label: "All flags" },
+  { id: "subnational", label: "Subnational flags" },
+  { id: "territories", label: "Territories" },
+  { id: "soviet", label: "Soviet flags" },
+  { id: "historical", label: "Historical states" },
+  { id: "revolutionary", label: "Revolutionary flags" },
+  { id: "arab", label: "Pan-Arab / Arab flags" },
+];
+
 const filteredFlags = computed(() => {
   const query = searchTerm.value.trim().toLocaleLowerCase();
   const matches = flags.filter((flag) => {
+    if (selectedCollection.value === "territories" && !isTerritory(flag)) {
+      return false;
+    }
+    if (selectedCollection.value !== "all" && !matchesCollection(flag)) {
+      return false;
+    }
     if (selectedCategory.value === "territories" && !isTerritory(flag)) {
       return false;
     }
@@ -250,7 +283,7 @@ const visibleFlags = computed(() => {
   return filteredFlags.value.slice(start, start + pageSize);
 });
 
-watch([searchTerm, selectedCategory, sortOrder], () => {
+watch([searchTerm, selectedCategory, selectedCollection, sortOrder], () => {
   currentPage.value = 1;
   expandedFlag.value = null;
 });
@@ -261,6 +294,44 @@ watch(pageCount, (count) => {
 
 function toggleFlag(flag) {
   expandedFlag.value = expandedFlag.value === flag ? null : flag;
+}
+
+function matchesCollection(flag) {
+  const name = flag.name || "";
+  const category = flag.category || "";
+
+  if (selectedCollection.value === "subnational") {
+    return /province|state|territory|region|autonomous|community|canton|republic|federal territory|county|constituent country|borough|city-state|federal district/i.test(
+      `${category} ${name}`,
+    );
+  }
+
+  if (selectedCollection.value === "territories") {
+    return isTerritory(flag);
+  }
+
+  if (selectedCollection.value === "soviet") {
+    return /soviet|ssr|ussr|union of soviet socialist republics/i.test(name);
+  }
+
+  if (selectedCollection.value === "historical") {
+    return (
+      category.toLowerCase().includes("historical") ||
+      /historical|empire|kingdom|republic|dynasty/i.test(name)
+    );
+  }
+
+  if (selectedCollection.value === "revolutionary") {
+    return /revolution|revolt|liberation|anarchist|pan-african|miranda|federal republic of central america/i.test(
+      name,
+    );
+  }
+
+  if (selectedCollection.value === "arab") {
+    return /arab|egyptian|palestine|jordan|iraq|levant|pan-african/i.test(name);
+  }
+
+  return true;
 }
 
 function isTerritory(flag) {
@@ -424,6 +495,47 @@ h1 {
 
 .search-control input::placeholder {
   color: #77756d;
+}
+
+.collection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 10px;
+}
+
+.collection-label {
+  color: #aaa79f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.collection-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collection-button {
+  padding: 8px 12px;
+  border: 1px solid #45443d;
+  background: #10100e;
+  color: #f4f1e8;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.collection-button:hover,
+.collection-button.active {
+  border-color: #f5cf3d;
+  background: #1c1b17;
 }
 
 .list-summary {
