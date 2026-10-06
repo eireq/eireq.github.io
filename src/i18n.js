@@ -250,8 +250,8 @@ const messages = {
       flags: "flags",
       start: "start quiz →",
       loading: "loading flags...",
-      flagAlt: "flag of",
-      unavailable: "flag unavailable for",
+      flagAlt: "mystery flag",
+      unavailable: "flag image unavailable",
       countryPlaceholder: "country name...",
       enter: "enter",
       score: "score",
@@ -271,6 +271,10 @@ const messages = {
       good: "pretty good. you may continue existing.",
       okay: "not terrible. the flags remain unconvinced.",
       defeated: "the flags have defeated you.",
+      cheatedTitle: "devtools detected.",
+      cheatedText:
+        "nice try. answers aren't in the DOM, and opening the console voids the run. no leaderboard for detectives.",
+      cheatedAgain: "try again without cheating →",
       modes: {
         normal: "countries",
         countries: "countries",
