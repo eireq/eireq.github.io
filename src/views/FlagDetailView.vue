@@ -162,7 +162,7 @@ watch(
 );
 
 function handleImageError() {
-  console.warn("Flag image failed to load:", flag.value?.name);
+  console.log("Flag image failed to load:", flag.value?.name);
   imageFailed.value = true;
 }
 

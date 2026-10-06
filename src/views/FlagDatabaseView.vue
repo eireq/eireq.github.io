@@ -547,7 +547,7 @@ function colorText(color) {
 }
 
 function hideBrokenImage(event, flagName) {
-  console.warn("Flag image failed to load:", flagName);
+  console.log("Flag image failed to load:", flagName);
   event.currentTarget.hidden = true;
 }
 </script>
