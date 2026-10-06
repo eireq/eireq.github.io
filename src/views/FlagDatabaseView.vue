@@ -67,6 +67,34 @@
         </div>
       </div>
 
+      <div
+        v-if="selectedCategory === 'Subdivision'"
+        class="collection-bar subdivision-collection"
+        aria-label="Subdivision countries"
+      >
+        <span class="collection-label">Subdivisions</span>
+        <div class="collection-list">
+          <button
+            type="button"
+            class="collection-button"
+            :class="{ active: selectedSubdivisionCountry === 'all' }"
+            @click="selectedSubdivisionCountry = 'all'"
+          >
+            All countries
+          </button>
+          <button
+            v-for="country in subdivisionCountries"
+            :key="country"
+            type="button"
+            class="collection-button"
+            :class="{ active: selectedSubdivisionCountry === country }"
+            @click="selectedSubdivisionCountry = country"
+          >
+            {{ country }}
+          </button>
+        </div>
+      </div>
+
       <div class="list-summary" aria-live="polite">
         <span>{{ filteredFlags.length.toLocaleString() }} matching flags</span>
         <span v-if="filteredFlags.length"
@@ -175,9 +203,22 @@ const pageSize = 48;
 const searchTerm = ref("");
 const selectedCategory = ref("all");
 const selectedCollection = ref("all");
+const selectedSubdivisionCountry = ref("all");
 const sortOrder = ref("name-asc");
 const currentPage = ref(1);
 const expandedFlag = shallowRef(null);
+const subdivisionCategories = new Set([
+  "Autonomous community",
+  "Canton",
+  "County",
+  "Federal district",
+  "Federal territory",
+  "Province",
+  "Region",
+  "Republic",
+  "State",
+  "US State",
+]);
 const territoryNames = new Set([
   "Flag of Aruba",
   "Flag of Cook Islands",
@@ -188,14 +229,19 @@ const territoryNames = new Set([
 ]);
 
 const categories = computed(() =>
-  [...new Set(flags.map((flag) => flag.category).filter(Boolean))]
+  [
+    ...new Set(
+      flags
+        .map((flag) => (isSubdivision(flag) ? "Subdivision" : flag.category))
+        .filter(Boolean),
+    ),
+  ]
     .filter((category) => category !== "Territory")
     .sort((a, b) => a.localeCompare(b)),
 );
 
 const collections = [
   { id: "all", label: "All flags" },
-  { id: "subnational", label: "Subnational flags" },
   { id: "territories", label: "Territories" },
   { id: "international", label: "International bodies" },
   { id: "pride", label: "Pride flags" },
@@ -204,6 +250,14 @@ const collections = [
   { id: "revolutionary", label: "Revolutionary flags" },
   { id: "arab", label: "Pan-Arab / Arab flags" },
 ];
+
+const subdivisionCountries = computed(() =>
+  [
+    ...new Set(
+      flags.filter(isSubdivision).map(subdivisionCountry).filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b)),
+);
 
 const filteredFlags = computed(() => {
   const query = searchTerm.value.trim().toLocaleLowerCase();
@@ -218,8 +272,17 @@ const filteredFlags = computed(() => {
       return false;
     }
     if (
+      selectedCategory.value === "Subdivision" &&
+      (!isSubdivision(flag) ||
+        (selectedSubdivisionCountry.value !== "all" &&
+          subdivisionCountry(flag) !== selectedSubdivisionCountry.value))
+    ) {
+      return false;
+    }
+    if (
       selectedCategory.value !== "all" &&
       selectedCategory.value !== "territories" &&
+      selectedCategory.value !== "Subdivision" &&
       flag.category !== selectedCategory.value
     ) {
       return false;
@@ -285,10 +348,19 @@ const visibleFlags = computed(() => {
   return filteredFlags.value.slice(start, start + pageSize);
 });
 
-watch([searchTerm, selectedCategory, selectedCollection, sortOrder], () => {
-  currentPage.value = 1;
-  expandedFlag.value = null;
-});
+watch(
+  [
+    searchTerm,
+    selectedCategory,
+    selectedCollection,
+    selectedSubdivisionCountry,
+    sortOrder,
+  ],
+  () => {
+    currentPage.value = 1;
+    expandedFlag.value = null;
+  },
+);
 
 watch(pageCount, (count) => {
   if (currentPage.value > count) currentPage.value = count;
@@ -301,12 +373,6 @@ function toggleFlag(flag) {
 function matchesCollection(flag) {
   const name = flag.name || "";
   const category = flag.category || "";
-
-  if (selectedCollection.value === "subnational") {
-    return /province|state|territory|region|autonomous|community|canton|republic|federal territory|county|constituent country|borough|city-state|federal district/i.test(
-      `${category} ${name}`,
-    );
-  }
 
   if (selectedCollection.value === "territories") {
     return isTerritory(flag);
@@ -346,12 +412,131 @@ function matchesCollection(flag) {
   return true;
 }
 
+function isSubdivision(flag) {
+  return subdivisionCategories.has(flag.category);
+}
+
+function subdivisionCountry(flag) {
+  const name = flag.name || "";
+  const subdivisionName = name.replace(/^Flag of /, "");
+
+  if (flag.category === "Autonomous community") return "Spain";
+  if (flag.category === "Canton") return "Switzerland";
+  if (flag.category === "County") return "United Kingdom";
+  if (flag.category === "Federal district") return "Brazil";
+  if (flag.category === "Federal territory") return "Malaysia";
+  if (flag.category === "Region") return "Belgium";
+  if (flag.category === "US State") return "United States";
+  if (flag.category === "Province") {
+    return dutchProvinces.has(subdivisionName) ? "Netherlands" : "Canada";
+  }
+  if (flag.category === "Republic") {
+    return subdivisionName === "Crimea" ? "Ukraine" : "Russia";
+  }
+  if (flag.category === "State") {
+    return stateCountryByName.get(subdivisionName) || "";
+  }
+  return "";
+}
+
+const dutchProvinces = new Set([
+  "Groningen",
+  "Friesland",
+  "Drenthe",
+  "Overijssel",
+  "Gelderland",
+  "Utrecht",
+  "North Holland",
+  "South Holland",
+  "Zeeland",
+  "North Brabant",
+  "Limburg",
+  "Flevoland",
+]);
+
+const stateCountryByName = new Map([
+  ...[
+    "Acre",
+    "Alagoas",
+    "Amapá",
+    "Amazonas",
+    "Bahia",
+    "Ceará",
+    "Espírito Santo",
+    "Goiás",
+    "Maranhão",
+    "Mato Grosso",
+    "Mato Grosso do Sul",
+    "Minas Gerais",
+    "Pará",
+    "Paraíba",
+    "Paraná",
+    "Pernambuco",
+    "Piauí",
+    "Rio de Janeiro",
+    "Rio Grande do Norte",
+    "Rio Grande do Sul",
+    "Rondônia",
+    "Roraima",
+    "Santa Catarina",
+    "São Paulo",
+    "Sergipe",
+    "Tocantins",
+  ].map((name) => [name, "Brazil"]),
+  ...[
+    "Baden-Württemberg",
+    "Bavaria",
+    "Berlin",
+    "Brandenburg",
+    "Bremen",
+    "Hamburg",
+    "Hesse",
+    "Lower Saxony",
+    "Mecklenburg-Vorpommern",
+    "North Rhine-Westphalia",
+    "Rhineland-Palatinate",
+    "Saarland",
+    "Saxony",
+    "Saxony-Anhalt",
+    "Schleswig-Holstein",
+    "Thuringia",
+  ].map((name) => [name, "Germany"]),
+  ...[
+    "Johor",
+    "Kedah",
+    "Kelantan",
+    "Melaka",
+    "Negeri Sembilan",
+    "Pahang",
+    "Penang",
+    "Perak",
+    "Perlis",
+    "Sabah",
+    "Sarawak",
+    "Selangor",
+    "Terengganu",
+  ].map((name) => [name, "Malaysia"]),
+  ...[
+    "New South Wales",
+    "Queensland",
+    "South Australia",
+    "Tasmania",
+    "Victoria",
+    "Western Australia",
+  ].map((name) => [name, "Australia"]),
+  ...["Chuuk", "Kosrae", "Pohnpei", "Yap"].map((name) => [
+    name,
+    "Federated States of Micronesia",
+  ]),
+]);
+
 function isTerritory(flag) {
   return flag.category === "Territory" || territoryNames.has(flag.name);
 }
 
 function displayCategory(flag) {
-  return isTerritory(flag) ? "Territory / dependency" : flag.category;
+  if (isTerritory(flag)) return "Territory / dependency";
+  return isSubdivision(flag) ? "Subdivision" : flag.category;
 }
 
 function imageUrl(url) {
