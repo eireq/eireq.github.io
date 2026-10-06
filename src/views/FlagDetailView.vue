@@ -40,29 +40,29 @@
             @error="handleImageError"
           />
           <p v-else class="image-fallback">Flag image unavailable</p>
-          <figcaption v-if="flag.proportions">
-            {{ flag.proportions }}
+          <figcaption v-if="displayProportions">
+            {{ displayProportions }}
           </figcaption>
         </figure>
       </section>
 
-      <section v-if="palette.length" class="color-palette" aria-label="Flag colors">
+      <section class="color-palette" aria-label="Flag colors">
         <h2>Colors</h2>
-        <ul>
+        <p v-if="metaLoading" class="muted">reading palette from svg…</p>
+        <ul v-else-if="palette.length">
           <li v-for="hex in palette" :key="hex">
             <span class="swatch" :style="{ background: hex }"></span>
             <code>{{ hex }}</code>
           </li>
         </ul>
+        <p v-else class="muted">no hex colors found in the source svg.</p>
       </section>
 
       <section class="detail-layout">
         <article class="flag-story">
-          <p class="eyebrow">{{ displayCategory(flag) }} / FLAG RECORD</p>
-          <h1>
-            <span>The Flag of</span>
-            {{ flagTitle }}
-          </h1>
+          <p class="eyebrow">{{ displayCategory(flag) }}</p>
+          <p class="title-kicker">Flag of</p>
+          <h1>{{ flagTitle }}</h1>
 
           <p v-if="article?.description" class="article-kicker">
             {{ article.description }}
@@ -71,14 +71,23 @@
           <div v-if="articleLoading" class="story-copy muted">
             loading wikipedia article…
           </div>
-          <template v-else-if="article">
-            <p
-              v-for="(paragraph, index) in articleParagraphs"
-              :key="index"
-              class="story-copy"
+          <template v-else-if="articleSections.length">
+            <section
+              v-for="(section, index) in articleSections"
+              :key="`${section.heading || 'intro'}-${index}`"
+              class="article-section"
             >
-              {{ paragraph }}
-            </p>
+              <h2 v-if="section.heading" class="chapter-title">
+                {{ section.heading }}
+              </h2>
+              <p
+                v-for="(paragraph, paragraphIndex) in section.paragraphs"
+                :key="paragraphIndex"
+                class="story-copy"
+              >
+                {{ paragraph }}
+              </p>
+            </section>
             <p v-if="article.url" class="source-link">
               <a :href="article.url" target="_blank" rel="noreferrer"
                 >Read more on Wikipedia</a
@@ -112,7 +121,7 @@
             </div>
             <div>
               <dt>Proportions</dt>
-              <dd>{{ flag.proportions || "Not recorded" }}</dd>
+              <dd>{{ displayProportions || "Not recorded" }}</dd>
             </div>
             <div>
               <dt>Designer</dt>
@@ -120,7 +129,18 @@
             </div>
             <div v-if="palette.length">
               <dt>Palette</dt>
-              <dd>{{ palette.join(", ") }}</dd>
+              <dd>
+                <div class="facts-palette">
+                  <span
+                    v-for="hex in palette"
+                    :key="hex"
+                    class="facts-swatch"
+                    :style="{ background: hex }"
+                    :title="hex"
+                  ></span>
+                  <span>{{ palette.join(", ") }}</span>
+                </div>
+              </dd>
             </div>
           </dl>
         </aside>
@@ -130,7 +150,7 @@
 
   <main v-else class="flag-detail-page">
     <section class="missing-flag">
-      <p class="eyebrow">FLAG RECORD</p>
+      <p class="eyebrow">Missing</p>
       <h1>Flag not found</h1>
       <RouterLink to="/flagdb" class="back-link"
         >Back to the database</RouterLink
@@ -149,7 +169,7 @@ import {
   loadFlags,
   shortName as flagShortName,
 } from "../data/flags.js";
-import { extractColorsFromSvg, fetchFlagArticle } from "../data/wikipedia.js";
+import { extractSvgMeta, fetchFlagArticle } from "../data/wikipedia.js";
 
 const route = useRoute();
 const flags = shallowRef([]);
@@ -157,7 +177,9 @@ const flagsReady = ref(false);
 const imageFailed = ref(false);
 const article = ref(null);
 const articleLoading = ref(false);
+const metaLoading = ref(false);
 const extractedColors = ref([]);
+const measuredProportions = ref(null);
 
 onMounted(async () => {
   flags.value = await loadFlags();
@@ -197,13 +219,28 @@ const palette = computed(() => {
   return [...new Set(merged)];
 });
 
-const articleParagraphs = computed(() => {
+const displayProportions = computed(
+  () => measuredProportions.value || flag.value?.proportions || null,
+);
+
+const articleSections = computed(() => {
+  if (article.value?.sections?.length) {
+    return article.value.sections
+      .map((section) => ({
+        heading: section.heading,
+        paragraphs: (section.paragraphs || []).slice(0, 8),
+      }))
+      .filter((section) => section.paragraphs.length)
+      .slice(0, 8);
+  }
+
   const text = article.value?.fullText || article.value?.extract || "";
-  return text
+  const paragraphs = text
     .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean)
     .slice(0, 12);
+  return paragraphs.length ? [{ heading: null, paragraphs }] : [];
 });
 
 watch(
@@ -218,20 +255,26 @@ watch(
   async (record) => {
     article.value = null;
     extractedColors.value = [];
+    measuredProportions.value = null;
     if (!record) return;
 
     articleLoading.value = true;
+    metaLoading.value = true;
     try {
-      const [wiki, colors] = await Promise.all([
+      const [wiki, meta] = await Promise.all([
         fetchFlagArticle(record.name),
-        extractColorsFromSvg(record.svgUrl),
+        extractSvgMeta(record.svgUrl),
       ]);
       if (flag.value === record) {
         article.value = wiki;
-        extractedColors.value = colors;
+        extractedColors.value = meta.colors || [];
+        measuredProportions.value = meta.proportions;
       }
     } finally {
-      if (flag.value === record) articleLoading.value = false;
+      if (flag.value === record) {
+        articleLoading.value = false;
+        metaLoading.value = false;
+      }
     }
   },
   { immediate: true },
@@ -340,6 +383,7 @@ function formatDate(value) {
 
 .color-palette {
   margin-top: 28px;
+  padding-top: 8px;
 }
 
 .color-palette h2,
@@ -355,18 +399,20 @@ function formatDate(value) {
 
 .color-palette ul {
   list-style: none;
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
 }
 
 .color-palette li {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 120px;
+  min-width: 132px;
+  padding: 8px 10px;
+  border: 1px solid #292824;
 }
 
 .swatch {
@@ -378,7 +424,7 @@ function formatDate(value) {
 
 .color-palette code {
   color: #f4f1e8;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .detail-layout {
@@ -388,20 +434,35 @@ function formatDate(value) {
   margin-top: 42px;
 }
 
-.flag-story h1,
-.missing-flag h1 {
-  margin: 8px 0 0;
-  font-size: clamp(36px, 7vw, 64px);
-  line-height: 1.04;
-  overflow-wrap: anywhere;
-}
-
-.flag-story h1 span {
-  display: block;
-  margin-bottom: 5px;
+.title-kicker {
+  margin: 14px 0 0;
   color: #aaa79f;
   font-size: 14px;
   font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.flag-story h1,
+.missing-flag h1 {
+  margin: 6px 0 0;
+  font-size: clamp(40px, 8vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.chapter-title {
+  margin: 34px 0 0;
+  color: #fff;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.article-section + .article-section .chapter-title {
+  margin-top: 42px;
 }
 
 .article-kicker {
@@ -412,16 +473,15 @@ function formatDate(value) {
 
 .story-copy {
   max-width: 760px;
-  margin: 18px 0 0;
+  margin: 16px 0 0;
   color: #d0cdc4;
   font-size: 17px;
   line-height: 1.75;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
 
 .source-link {
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .flag-facts {
@@ -456,6 +516,19 @@ function formatDate(value) {
   overflow-wrap: anywhere;
 }
 
+.facts-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.facts-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #393832;
+}
+
 .missing-flag {
   width: min(100%, 780px);
   margin: 100px auto;
@@ -485,6 +558,16 @@ function formatDate(value) {
 
   .flag-art {
     padding: 18px;
+  }
+
+  .flag-story h1,
+  .missing-flag h1 {
+    letter-spacing: -0.03em;
+  }
+
+  .chapter-title {
+    margin-top: 28px;
+    font-size: 24px;
   }
 
   .story-copy {
