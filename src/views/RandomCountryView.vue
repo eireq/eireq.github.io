@@ -4,7 +4,6 @@
       class="random-country__hero"
       aria-labelledby="random-country-title"
     >
-      <p class="eyebrow">{{ t("randomCountry.eyebrow") }}</p>
       <h1 id="random-country-title">{{ t("randomCountry.title") }}</h1>
       <p class="intro">
         {{ t("randomCountry.intro") }}
@@ -53,7 +52,6 @@
     <section class="country-list" aria-labelledby="country-list-title">
       <div class="country-list__header">
         <div>
-          <p class="eyebrow">{{ t("randomCountry.pool") }}</p>
           <h2 id="country-list-title">
             {{ ready ? pool.length : "…" }} {{ t("randomCountry.entries") }}
           </h2>
@@ -164,14 +162,6 @@ function flagRoute(flag) {
   max-width: 1000px;
   margin: 0 auto;
   padding: 80px 30px;
-}
-
-.eyebrow {
-  margin: 0 0 10px;
-  color: #888;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 h1 {

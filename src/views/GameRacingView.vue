@@ -4,7 +4,6 @@
       <section id="menu" class="screen active">
         <div class="cabinet">
           <div class="scanlines"></div>
-          <p class="eyebrow">eire + racing = eiracing</p>
           <h1>eiracing :: lane runner</h1>
           <p class="tagline">change lanes. dodge traffic. don't die.</p>
 
@@ -42,7 +41,6 @@
 
       <section id="gameOver" class="screen overlay-screen">
         <div class="panel">
-          <p class="eyebrow">run over</p>
           <h2 id="gameOverTitle">you crashed</h2>
           <div class="results">
             <div><span>score</span><strong id="finalScore">0</strong></div>
@@ -76,7 +74,6 @@
         <div class="panel leaderboard-panel">
           <div class="leaderboard-head">
             <div>
-              <p class="eyebrow">top 50</p>
               <h2>leaderboard</h2>
             </div>
             <button id="closeScoresBtn">x</button>
@@ -94,7 +91,6 @@
 
       <section id="nameModal" class="screen overlay-screen">
         <div class="panel small-panel">
-          <p class="eyebrow">player setup</p>
           <h2>what should we call you?</h2>
           <input
             id="menuNameInput"

@@ -2,7 +2,6 @@
   <main class="kht-page">
     <header class="kht-heading">
       <div>
-        <p class="eyebrow">370 entries · single elimination</p>
         <h1>KHT</h1>
         <p class="intro">
           Enter the scores for each matchup. The higher score advances, and odd
@@ -310,13 +309,6 @@ onBeforeUnmount(() => {
   align-items: end;
   gap: 30px;
   margin-bottom: 35px;
-}
-.eyebrow {
-  margin: 0 0 12px;
-  color: #04d361;
-  font-size: 13px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 h1 {
   margin: 0;

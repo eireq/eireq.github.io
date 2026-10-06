@@ -1,7 +1,6 @@
 <template>
   <main class="flag-database">
     <header class="database-heading">
-      <p class="eyebrow">REFERENCE / FLAGS</p>
       <div class="heading-line">
         <h1>Flag database</h1>
         <span class="total-count"
@@ -573,14 +572,6 @@ function hideBrokenImage(event, flagName) {
 .database-heading {
   max-width: 850px;
   margin-bottom: 46px;
-}
-
-.eyebrow {
-  margin: 0 0 15px;
-  color: #f5cf3d;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
 }
 
 .heading-line {

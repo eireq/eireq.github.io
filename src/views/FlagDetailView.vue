@@ -60,7 +60,6 @@
 
       <section class="detail-layout">
         <article class="flag-story">
-          <p class="eyebrow">{{ displayCategory(flag) }}</p>
           <p class="title-kicker">Flag of</p>
           <h1>{{ flagTitle }}</h1>
 
@@ -150,7 +149,6 @@
 
   <main v-else class="flag-detail-page">
     <section class="missing-flag">
-      <p class="eyebrow">Missing</p>
       <h1>Flag not found</h1>
       <RouterLink to="/flagdb" class="back-link"
         >Back to the database</RouterLink
@@ -387,8 +385,7 @@ function formatDate(value) {
 }
 
 .color-palette h2,
-.flag-facts h2,
-.eyebrow {
+.flag-facts h2 {
   margin: 0;
   color: #aaa79f;
   font-size: 11px;

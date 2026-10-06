@@ -1,6 +1,5 @@
 <template>
   <main class="daily-flag">
-    <p class="eyebrow">{{ t("dailyFlag.eyebrow") }}</p>
     <h1>{{ t("dailyFlag.title") }}</h1>
     <p class="intro">{{ t("dailyFlag.intro") }}</p>
 
@@ -43,9 +42,7 @@
       <div v-else class="outcome">
         <p class="result">
           {{
-            progress.solved
-              ? t("dailyFlag.solved")
-              : t("dailyFlag.failed")
+            progress.solved ? t("dailyFlag.solved") : t("dailyFlag.failed")
           }}
         </p>
         <p class="answer">
@@ -162,18 +159,14 @@ function flagRoute(flag) {
 
 <style scoped>
 .daily-flag {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding: 80px 30px;
-}
-
-.eyebrow {
-  margin: 0 0 10px;
-  color: #888;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 h1 {
@@ -190,6 +183,7 @@ h1 {
 .answer {
   color: #888;
   line-height: 1.6;
+  margin: 0 0 12px;
 }
 
 .flag {
@@ -197,9 +191,14 @@ h1 {
   width: min(100%, 520px);
   max-height: 300px;
   object-fit: contain;
-  margin: 28px auto;
+  margin: 16px auto 28px;
   background: #111;
   border: 1px solid #222;
+}
+
+.guess,
+.outcome {
+  width: 100%;
 }
 
 .guess label {
@@ -251,6 +250,7 @@ button {
   list-style: none;
   margin: 28px 0 0;
   padding: 0;
+  width: 100%;
 }
 
 .guess-list li {

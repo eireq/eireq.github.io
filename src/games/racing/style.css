@@ -107,13 +107,6 @@ body.lane-runner-page {
   );
 }
 
-.lane-runner .eyebrow {
-  color: var(--yellow);
-  font-size: 11px;
-  line-height: 1.7;
-  margin: 0 0 16px;
-}
-
 .lane-runner h1 {
   margin: 0;
   font-size: clamp(35px, 9vw, 72px);

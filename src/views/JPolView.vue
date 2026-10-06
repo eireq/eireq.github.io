@@ -1,7 +1,6 @@
 <template>
   <main class="jpol-page">
     <header class="jpol-hero">
-      <p class="eyebrow">72 questions · a values map</p>
       <h1>jPol</h1>
       <p>
         eire's compact political values quiz. there are no correct answers, and
@@ -63,7 +62,7 @@
     <section v-else class="results-panel">
       <div class="results-heading">
         <div>
-          <p class="eyebrow">your jPol result</p>
+          <p class="results-label">your jPol result</p>
           <h2>{{ ideology }}</h2>
           <p>
             These scores describe the balance of answers you gave, not a
@@ -606,12 +605,10 @@ function drawCanvasCompass(context, x, y, size) {
   max-width: 720px;
   margin-bottom: 42px;
 }
-.eyebrow {
-  margin: 0 0 12px;
-  color: #04d361;
-  font-size: 13px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+.results-label {
+  margin: 0 0 8px;
+  color: #9ba1a9;
+  font-size: 15px;
 }
 .jpol-hero h1 {
   margin: 0;
