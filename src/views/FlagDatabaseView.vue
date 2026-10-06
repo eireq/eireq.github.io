@@ -112,11 +112,10 @@
           :key="`${flag.name}-${flag.svgUrl}`"
           class="flag-record"
         >
-          <button
+          <RouterLink
+            :to="flagRoute(flag)"
             class="flag-row"
-            type="button"
-            :aria-expanded="expandedFlag === flag"
-            @click="toggleFlag(flag)"
+            :aria-label="`View details for ${flag.name}`"
           >
             <img
               class="flag-thumbnail"
@@ -130,47 +129,8 @@
             <span class="flag-row__date">{{
               formatDate(flag.adoptionDate)
             }}</span>
-            <span class="flag-row__action">{{
-              expandedFlag === flag ? "Close" : "Details"
-            }}</span>
-          </button>
-
-          <section
-            v-if="expandedFlag === flag"
-            class="flag-details"
-            :aria-label="`${flag.name} details`"
-          >
-            <figure class="flag-preview">
-              <img
-                :src="imageUrl(flag.svgUrl)"
-                :alt="flag.name"
-                loading="lazy"
-                @error="hideBrokenImage"
-              />
-              <figcaption>
-                {{ flag.proportions || "Proportions unknown" }}
-              </figcaption>
-            </figure>
-
-            <div class="detail-copy">
-              <div class="detail-dates">
-                <p><span>Adopted</span>{{ formatDate(flag.adoptionDate) }}</p>
-                <p>
-                  <span>Cancelled</span>{{ formatDate(flag.cancellationDate) }}
-                </p>
-                <p><span>Designer</span>{{ flag.designer || "Unknown" }}</p>
-                <p><span>Colors</span>{{ formatColors(flag.colors) }}</p>
-              </div>
-              <p v-if="flag.emblemMeaning" class="detail-description">
-                <strong>Design and meaning</strong>
-                {{ flag.emblemMeaning }}
-              </p>
-              <p v-if="flag.funFact" class="detail-description">
-                <strong>Notes</strong>
-                {{ flag.funFact }}
-              </p>
-            </div>
-          </section>
+            <span class="flag-row__action">Details</span>
+          </RouterLink>
         </li>
       </ol>
 
@@ -196,7 +156,7 @@
 </template>
 
 <script setup>
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import flags from "../assets/master_flags.json";
 
 const pageSize = 48;
@@ -206,7 +166,6 @@ const selectedCollection = ref("all");
 const selectedSubdivisionCountry = ref("all");
 const sortOrder = ref("name-asc");
 const currentPage = ref(1);
-const expandedFlag = shallowRef(null);
 const subdivisionCategories = new Set([
   "Autonomous community",
   "Canton",
@@ -358,7 +317,6 @@ watch(
   ],
   () => {
     currentPage.value = 1;
-    expandedFlag.value = null;
   },
 );
 
@@ -366,8 +324,11 @@ watch(pageCount, (count) => {
   if (currentPage.value > count) currentPage.value = count;
 });
 
-function toggleFlag(flag) {
-  expandedFlag.value = expandedFlag.value === flag ? null : flag;
+function flagRoute(flag) {
+  return {
+    name: "flag-detail",
+    params: { flagId: String(flags.indexOf(flag)) },
+  };
 }
 
 function matchesCollection(flag) {
@@ -585,11 +546,6 @@ function colorText(color) {
   return "";
 }
 
-function formatColors(colors) {
-  if (!Array.isArray(colors) || !colors.length) return "Unknown";
-  return colors.map(colorText).filter(Boolean).join(", ");
-}
-
 function hideBrokenImage(event) {
   event.currentTarget.hidden = true;
 }
@@ -770,12 +726,17 @@ h1 {
   background: transparent;
   color: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.flag-row:hover,
-.flag-row[aria-expanded="true"] {
+.flag-row:hover {
   background: #11110e;
+}
+
+.flag-row:focus-visible {
+  outline: 1px solid #f5cf3d;
+  outline-offset: -1px;
 }
 
 .flag-thumbnail {
@@ -847,24 +808,6 @@ h1 {
   margin: 0;
   color: #e4e0d5;
   font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-.detail-dates span,
-.detail-description strong {
-  display: block;
-  margin-bottom: 4px;
-  color: #99968e;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.detail-description {
-  margin: 14px 0 0;
-  color: #c1beb5;
-  font-size: 13px;
-  line-height: 1.65;
 }
 
 .empty-state {
@@ -943,16 +886,6 @@ h1 {
     grid-column: 3;
     grid-row: 1 / 3;
   }
-
-  .flag-details {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 12px 14px 24px;
-  }
-
-  .flag-preview img {
-    max-height: 230px;
-  }
 }
 
 @media (max-width: 420px) {
@@ -962,10 +895,6 @@ h1 {
 
   .search-control {
     grid-column: auto;
-  }
-
-  .detail-dates {
-    grid-template-columns: 1fr;
   }
 
   .pagination {
