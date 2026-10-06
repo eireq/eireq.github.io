@@ -165,13 +165,13 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import {
   filterFlagsByMode,
-  imageUrl,
   isCorrectFlagAnswer,
   loadFlags,
   QUIZ_MODE_VALUES,
   shortName,
   shuffle,
 } from "@/data/flags.js";
+import { cachedFlagImageUrl, prefetchFlagImages } from "@/data/flagImageCache.js";
 import { getPlayerName, setPlayerName } from "@/data/profile.js";
 import { ensureGameDb } from "@/games/ensureDb.js";
 import { useI18n } from "../i18n.js";
@@ -264,11 +264,14 @@ async function startQuiz() {
   try {
     const pool = filterFlagsByMode(flags.value, quizMode.value);
     const selected = shuffle(pool).slice(0, flagCount.value);
-    questions.value = selected.map((flag) => ({
-      name: shortName(flag),
-      flag: imageUrl(flag.svgUrl),
-      record: flag,
-    }));
+    await prefetchFlagImages(selected.map((flag) => flag.svgUrl));
+    questions.value = await Promise.all(
+      selected.map(async (flag) => ({
+        name: shortName(flag),
+        flag: await cachedFlagImageUrl(flag.svgUrl),
+        record: flag,
+      })),
+    );
     currentIndex.value = 0;
     score.value = 0;
     answer.value = "";

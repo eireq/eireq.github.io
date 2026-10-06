@@ -22,6 +22,11 @@
         <p>{{ t("tools.dailyFlagText") }}</p>
       </router-link>
 
+      <router-link class="tool" to="/compare">
+        <h2>{{ t("tools.compare") }}</h2>
+        <p>{{ t("tools.compareText") }}</p>
+      </router-link>
+
       <router-link class="tool" to="/games/flagquiz">
         <h2>{{ t("tools.flagQuiz") }}</h2>
         <p>{{ t("tools.flagQuizText") }}</p>

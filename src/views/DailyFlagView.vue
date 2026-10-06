@@ -13,7 +13,7 @@
 
       <img
         class="flag"
-        :src="imageUrl(dailyFlag.svgUrl)"
+        :src="flagSrc"
         :alt="t('dailyFlag.flagAlt')"
       />
 
@@ -80,12 +80,12 @@ import {
   recordDailyGuess,
 } from "@/data/dailyFlag.js";
 import {
-  imageUrl,
   isCorrectFlagAnswer,
   loadFlags,
   shortName,
   utcDateKey,
 } from "@/data/flags.js";
+import { cachedFlagImageUrl } from "@/data/flagImageCache.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
@@ -95,6 +95,7 @@ const dateKey = utcDateKey();
 const ready = ref(false);
 const flags = ref([]);
 const dailyFlag = ref(null);
+const flagSrc = ref("");
 const progress = ref(loadDailyProgress(dateKey));
 const guess = ref("");
 const shareLabel = ref("");
@@ -106,6 +107,9 @@ const done = computed(
 onMounted(async () => {
   flags.value = await loadFlags();
   dailyFlag.value = pickDailyFlag(flags.value, dateKey);
+  if (dailyFlag.value) {
+    flagSrc.value = await cachedFlagImageUrl(dailyFlag.value.svgUrl);
+  }
   progress.value = loadDailyProgress(dateKey);
   ready.value = true;
   shareLabel.value = t("dailyFlag.share");

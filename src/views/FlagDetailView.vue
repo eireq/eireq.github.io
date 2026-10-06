@@ -144,6 +144,32 @@
           </dl>
         </aside>
       </section>
+
+      <section
+        v-if="similarFlags.length"
+        class="similar-flags"
+        aria-label="Similar flags"
+      >
+        <h2>Similar flags</h2>
+        <div class="similar-grid">
+          <RouterLink
+            v-for="item in similarFlags"
+            :key="item.name + item.svgUrl"
+            class="similar-card"
+            :to="flagRoute(item)"
+          >
+            <img :src="imageUrl(item.svgUrl)" :alt="item.name" loading="lazy" />
+            <span>{{ shortName(item) }}</span>
+          </RouterLink>
+        </div>
+        <p class="similar-actions">
+          <RouterLink
+            class="compare-link"
+            :to="{ path: '/compare', query: { a: flagTitle } }"
+            >Compare with another flag</RouterLink
+          >
+        </p>
+      </section>
     </div>
   </main>
 
@@ -167,6 +193,7 @@ import {
   loadFlags,
   shortName as flagShortName,
 } from "../data/flags.js";
+import { findSimilarFlags } from "../data/flagSimilarity.js";
 import { extractSvgMeta, fetchFlagArticle } from "../data/wikipedia.js";
 
 const route = useRoute();
@@ -219,6 +246,13 @@ const palette = computed(() => {
 
 const displayProportions = computed(
   () => measuredProportions.value || flag.value?.proportions || null,
+);
+
+const similarFlags = computed(() =>
+  findSimilarFlags(flag.value, flags.value, {
+    limit: 6,
+    colors: palette.value,
+  }),
 );
 
 const articleSections = computed(() => {
@@ -524,6 +558,61 @@ function formatDate(value) {
   width: 14px;
   height: 14px;
   border: 1px solid #393832;
+}
+
+.similar-flags {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid #292824;
+}
+
+.similar-flags h2 {
+  margin: 0 0 18px;
+  color: #fff;
+  font-size: clamp(24px, 4vw, 32px);
+  letter-spacing: -0.03em;
+}
+
+.similar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.similar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #292824;
+  color: #f4f1e8;
+  text-decoration: none;
+}
+
+.similar-card:hover {
+  border-color: #f5cf3d;
+}
+
+.similar-card img {
+  width: 100%;
+  height: 84px;
+  object-fit: contain;
+  background: #14140f;
+}
+
+.similar-card span {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.similar-actions {
+  margin: 18px 0 0;
+}
+
+.compare-link {
+  color: #f4f1e8;
+  text-decoration: none;
+  border-bottom: 1px solid #f5cf3d;
 }
 
 .missing-flag {

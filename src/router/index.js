@@ -64,6 +64,12 @@ const router = createRouter({
       meta: { title: "flag details - eire" },
     },
     {
+      path: "/compare",
+      name: "compare-flags",
+      component: () => import("../views/CompareFlagsView.vue"),
+      meta: { title: "compare flags - eire" },
+    },
+    {
       path: "/politics",
       name: "politics",
       component: () => import("../views/PoliticalPreferencesView.vue"),

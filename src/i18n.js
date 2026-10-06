@@ -68,8 +68,30 @@ const messages = {
     home: {
       greeting: "hey.",
       signature: "im eire.",
+      lead:
+        "games, a giant flag database, and a few experiments that somehow stayed online.",
       about: "about me ->",
       contact: "contact ->",
+      dailyCta: "daily flag ->",
+      flagDbCta: "flag database ->",
+      whatTitle: "what to do here",
+      whatIntro:
+        "a short tour of the best bits. pick anything. leaving is optional.",
+      featDaily: "daily flag",
+      featDailyText: "one shared country flag every UTC day. six guesses.",
+      featDb: "flag database",
+      featDbText: "1,700+ flags with colors, ratios, and wikipedia writeups.",
+      featQuiz: "flag quiz",
+      featQuizText: "countries, territories, history, orgs — your call.",
+      featCompare: "compare flags",
+      featCompareText: "put two flags side by side and spot the differences.",
+      featRacing: "lane runner",
+      featRacingText: "change lanes, dodge traffic, chase the leaderboard.",
+      featJpol: "jPol",
+      featJpolText: "a 60-question values map. no correct answers.",
+      weekTitle: "flag of the week",
+      weekOpen: "open flag record ->",
+      weekCompare: "compare it ->",
     },
     games: {
       title: "games.",
@@ -99,6 +121,23 @@ const messages = {
       dailyFlagText: "guess today's flag. streaks stay on this device.",
       flagQuiz: "flag quiz",
       flagQuizText: "quiz modes powered by the same flag database.",
+      compare: "compare flags",
+      compareText: "two flags, colors, ratios, and a similarity score.",
+    },
+    compare: {
+      title: "compare flags.",
+      intro:
+        "pick two flags from the shared database and compare colors, proportions, and dates.",
+      loading: "loading flag corpus…",
+      left: "flag a",
+      right: "flag b",
+      search: "search flags…",
+      pickPrompt: "search for a flag above.",
+      category: "category",
+      adopted: "adopted",
+      proportions: "proportions",
+      colors: "colors",
+      similarity: "similarity score",
     },
     misc: {
       title: "misc.",
@@ -1303,11 +1342,13 @@ export function useI18n() {
   }
 
   function t(key) {
-    return (
-      key
-        .split(".")
-        .reduce((value, part) => value?.[part], messages[language.value]) ?? key
+    const parts = key.split(".");
+    const fromActive = parts.reduce(
+      (value, part) => value?.[part],
+      messages[language.value],
     );
+    if (fromActive != null) return fromActive;
+    return parts.reduce((value, part) => value?.[part], messages.eng) ?? key;
   }
 
   function languageLabel(item) {
