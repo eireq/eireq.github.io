@@ -1,30 +1,30 @@
 <template>
   <main>
-    <h1>{{ t("games.title") }}</h1>
+    <h1>{{ t("tools.title") }}</h1>
 
     <p class="intro">
-      {{ t("games.intro") }}
+      {{ t("tools.intro") }}
     </p>
 
-    <section class="games">
-      <router-link class="game" to="/games/racing">
-        <h2>{{ t("games.racing") }}</h2>
-        <p>{{ t("games.racingText") }}</p>
+    <section class="tools">
+      <router-link class="tool" to="/flagdb">
+        <h2>{{ t("tools.flagDatabase") }}</h2>
+        <p>{{ t("tools.flagDatabaseText") }}</p>
       </router-link>
 
-      <router-link class="game" to="/games/flagquiz">
-        <h2>{{ t("games.flagQuiz") }}</h2>
-        <p>{{ t("games.flagQuizText") }}</p>
+      <router-link class="tool" to="/rc">
+        <h2>{{ t("tools.randomCountry") }}</h2>
+        <p>{{ t("tools.randomCountryText") }}</p>
       </router-link>
 
-      <router-link class="game" to="/games/daily">
-        <h2>{{ t("games.dailyFlag") }}</h2>
-        <p>{{ t("games.dailyFlagText") }}</p>
+      <router-link class="tool" to="/games/daily">
+        <h2>{{ t("tools.dailyFlag") }}</h2>
+        <p>{{ t("tools.dailyFlagText") }}</p>
       </router-link>
 
-      <router-link class="game" to="/kht">
-        <h2>{{ t("games.kht") }}</h2>
-        <p>{{ t("games.khtText") }}</p>
+      <router-link class="tool" to="/games/flagquiz">
+        <h2>{{ t("tools.flagQuiz") }}</h2>
+        <p>{{ t("tools.flagQuizText") }}</p>
       </router-link>
     </section>
   </main>
@@ -62,13 +62,13 @@ h1 {
   max-width: 650px;
 }
 
-.games {
+.tools {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
 
-.game {
+.tool {
   display: block;
   padding: 28px;
   border: 1px solid #222;
@@ -78,17 +78,17 @@ h1 {
   min-height: 180px;
 }
 
-.game:hover {
+.tool:hover {
   border-color: #fff;
   transform: translateY(-3px);
 }
 
-.game h2 {
+.tool h2 {
   margin: 0 0 12px;
   font-size: 24px;
 }
 
-.game p {
+.tool p {
   margin: 0;
   color: #888;
   font-size: 16px;
@@ -96,7 +96,7 @@ h1 {
 }
 
 @media (max-width: 800px) {
-  .games {
+  .tools {
     grid-template-columns: 1fr;
   }
 

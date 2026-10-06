@@ -1,13 +1,11 @@
-import { GAME_CONFIG } from "./config.js";
+import { ensureGameDb } from "../ensureDb.js";
 import { createAudio } from "./audio.js";
-import { createDb } from "./supabase.js";
 import { createGame } from "./game.js";
 import { createUI } from "./ui.js";
 
 export function initRacing() {
-  window.GAME_CONFIG = GAME_CONFIG;
+  ensureGameDb();
   createAudio();
-  createDb();
   createGame();
   createUI();
 

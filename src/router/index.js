@@ -1,16 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import GamesView from "../views/GamesView.vue";
-import ArtView from "../views/ArtView.vue";
-import MiscView from "../views/MiscView.vue";
-import ContactView from "../views/ContactView.vue";
-import AboutMeView from "../views/AboutMeView.vue";
-import GameRacingView from "../views/GameRacingView.vue";
-import RandomCountryView from "../views/RandomCountryView.vue";
-import PoliticalPreferencesView from "../views/PoliticalPreferencesView.vue";
-import DoulanteseElectionsView from "../views/DoulanteseElectionsView.vue";
-import KhtView from "../views/KhtView.vue";
-import JPolView from "../views/JPolView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,43 +6,49 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: HomeView,
+      component: () => import("../views/HomeView.vue"),
       meta: { title: "eire" },
     },
     {
       path: "/me",
       name: "about-me",
-      component: AboutMeView,
+      component: () => import("../views/AboutMeView.vue"),
       meta: { title: "about me - eire" },
     },
     {
       path: "/games",
       name: "games",
-      component: GamesView,
+      component: () => import("../views/GamesView.vue"),
       meta: { title: "games - eire" },
+    },
+    {
+      path: "/tools",
+      name: "tools",
+      component: () => import("../views/ToolsView.vue"),
+      meta: { title: "tools - eire" },
     },
     {
       path: "/art",
       name: "art",
-      component: ArtView,
+      component: () => import("../views/ArtView.vue"),
       meta: { title: "art - eire" },
     },
     {
       path: "/misc",
       name: "misc",
-      component: MiscView,
+      component: () => import("../views/MiscView.vue"),
       meta: { title: "misc - eire" },
     },
     {
       path: "/contact",
       name: "contact",
-      component: ContactView,
+      component: () => import("../views/ContactView.vue"),
       meta: { title: "contact - eire" },
     },
     {
       path: "/rc",
       name: "random-country",
-      component: RandomCountryView,
+      component: () => import("../views/RandomCountryView.vue"),
       meta: { title: "random country - eire" },
     },
     {
@@ -72,31 +66,31 @@ const router = createRouter({
     {
       path: "/politics",
       name: "politics",
-      component: PoliticalPreferencesView,
+      component: () => import("../views/PoliticalPreferencesView.vue"),
       meta: { title: "political preferences - eire" },
     },
     {
       path: "/jpol",
       name: "jpol",
-      component: JPolView,
+      component: () => import("../views/JPolView.vue"),
       meta: { title: "jPol - eire" },
     },
     {
       path: "/elections",
       name: "elections",
-      component: DoulanteseElectionsView,
+      component: () => import("../views/DoulanteseElectionsView.vue"),
       meta: { title: "doulantese elections - eire" },
     },
     {
       path: "/kht",
       name: "kht",
-      component: KhtView,
+      component: () => import("../views/KhtView.vue"),
       meta: { title: "KHT tournament - eire" },
     },
     {
       path: "/games/racing",
       name: "game-racing",
-      component: GameRacingView,
+      component: () => import("../views/GameRacingView.vue"),
       meta: {
         title: "eiracing :: lane runner",
         hideChrome: true,
@@ -110,6 +104,24 @@ const router = createRouter({
         title: "eire's flag quiz",
         hideChrome: true,
       },
+    },
+    {
+      path: "/games/daily",
+      name: "game-daily-flag",
+      component: () => import("../views/DailyFlagView.vue"),
+      meta: {
+        title: "daily flag - eire",
+      },
+    },
+    {
+      path: "/modes",
+      name: "modes",
+      beforeEnter() {
+        window.location.replace("https://eireq.github.io/modes");
+        return false;
+      },
+      component: () => import("../views/HomeView.vue"),
+      meta: { title: "modes - eire" },
     },
   ],
   scrollBehavior() {

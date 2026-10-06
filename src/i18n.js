@@ -51,6 +51,7 @@ const messages = {
       randomCountry: "random country",
       modes: "modes.",
       games: "games",
+      tools: "tools",
       art: "art",
       misc: "misc",
       contact: "contact",
@@ -61,6 +62,8 @@ const messages = {
       available: "available",
       comingSoon: "coming soon",
       moreLanguages: "more languages",
+      menu: "menu",
+      close: "close",
     },
     home: {
       greeting: "hey.",
@@ -77,26 +80,40 @@ const messages = {
       flagQuiz: "flag quiz",
       flagQuizText:
         "identify flags from around the world. how many can you get right?",
-      another: "another game",
-      anotherText: "describe what the game is about here.",
-      anotherTextTwo: "describe the game here.",
+      dailyFlag: "daily flag",
+      dailyFlagText: "one shared flag every day. keep the streak alive.",
+      kht: "KHT tournament",
+      khtText: "a giant bracket tournament. watch it update live.",
+    },
+    tools: {
+      title: "tools.",
+      intro:
+        "useful (and less useful) utilities. browse flags, pick random places, and poke around the data.",
+      flagDatabase: "flag database",
+      flagDatabaseText:
+        "search and browse 1,700+ flags with details, categories, and collections.",
+      randomCountry: "random country",
+      randomCountryText:
+        "generate a random entry from the shared flag corpus.",
+      dailyFlag: "daily flag",
+      dailyFlagText: "guess today's flag. streaks stay on this device.",
+      flagQuiz: "flag quiz",
+      flagQuizText: "quiz modes powered by the same flag database.",
     },
     misc: {
       title: "misc.",
       intro:
-        "a collection of miscellaneous projects, experiments, and other things that do not fit into games or art.",
-      randomCountry: "random country",
-      randomCountryText:
-        "generate a random country and discover something new.",
+        "a collection of miscellaneous projects, experiments, and other things that do not fit into games, tools, or art.",
       politics: "political preferences",
       politicsText: "my ideological charts and political test results.",
+      jpol: "jPol",
+      jpolText:
+        "take a 60-question political values quiz and generate your result.",
       modes: "modes",
       modesText: "another project from my collection of web experiments.",
       discordBots: "discord bots",
       discordBotsText:
         "small bots and other experiments from my GitHub projects.",
-      other: "other stuff",
-      otherText: "more random projects will appear here eventually.",
       elections: "Doulantese elections",
       electionsText: "results from the Discord union assembly.",
     },
@@ -130,7 +147,7 @@ const messages = {
       eyebrow: "random country",
       title: "pick a place.",
       intro:
-        "countries, territories, and historical states. the map is bigger than you think.",
+        "powered by the same flag database as the quiz and flag explorer. the map is bigger than you think.",
       yourPlace: "your random place",
       randomize: "randomize",
       pool: "the full pool",
@@ -138,6 +155,28 @@ const messages = {
       find: "find an entry",
       search: "search...",
       empty: "no places found.",
+      loading: "loading flag corpus…",
+      poolFilter: "pool",
+      openRecord: "open flag record →",
+      pickPrompt: "hit randomize",
+    },
+    dailyFlag: {
+      eyebrow: "daily challenge",
+      title: "daily flag.",
+      intro:
+        "one country flag for everyone each UTC day. six guesses. streaks stay on your device.",
+      loading: "loading today's flag…",
+      streak: "streak",
+      flagAlt: "today's mystery flag",
+      guess: "your guess",
+      placeholder: "country name...",
+      submit: "guess",
+      attempts: "attempts",
+      solved: "solved. come back tomorrow.",
+      failed: "out of guesses. the flag wins today.",
+      answer: "answer",
+      share: "copy result",
+      copied: "copied!",
     },
     politics: {
       title: "political compass & values",
@@ -164,7 +203,7 @@ const messages = {
     flagQuiz: {
       title: "flag quiz.",
       intro:
-        "how well do you know the world's flags? probably not very well. but let's find out.",
+        "how well do you know the world's flags? pools now come straight from the flag database.",
       name: "name",
       namePlaceholder: "a guy",
       mode: "quiz mode",
@@ -194,11 +233,13 @@ const messages = {
       okay: "not terrible. the flags remain unconvinced.",
       defeated: "the flags have defeated you.",
       modes: {
-        normal: "normal",
+        normal: "countries",
         countries: "countries",
-        territorial: "territorial",
+        territorial: "territories",
         historical: "historical",
-        all: "all",
+        subdivisions: "subdivisions",
+        organizations: "organizations",
+        all: "all flags",
       },
     },
     elections: {
@@ -277,6 +318,7 @@ const messages = {
       randomCountry: "zufälliges Land",
       modes: "modi.",
       games: "spiele",
+      tools: "werkzeuge",
       art: "kunst",
       misc: "sonstiges",
       contact: "kontakt",
@@ -287,6 +329,8 @@ const messages = {
       available: "verfügbar",
       comingSoon: "demnächst",
       moreLanguages: "weitere Sprachen",
+      menu: "menü",
+      close: "schließen",
     },
     home: { about: "über mich ->", contact: "kontakt ->" },
     games: {
@@ -298,29 +342,44 @@ const messages = {
       flagQuiz: "flaggenquiz",
       flagQuizText:
         "erkenne Flaggen aus aller Welt. wie viele schaffst du richtig?",
-      another: "weiteres Spiel",
-      anotherText: "beschreibe hier, worum es in dem Spiel geht.",
-      anotherTextTwo: "beschreibe hier das Spiel.",
+      dailyFlag: "tagesflagge",
+      dailyFlagText: "eine gemeinsame Flagge jeden Tag. halte die Serie.",
+      kht: "KHT-Turnier",
+      khtText: "ein riesiges Bracket-Turnier. live aktualisiert.",
+    },
+    tools: {
+      title: "werkzeuge.",
+      intro:
+        "nützliche (und weniger nützliche) Utilities. Flaggen durchsuchen, Orte würfeln und in den Daten stöbern.",
+      flagDatabase: "flaggendatenbank",
+      flagDatabaseText:
+        "durchsuche und browsen 1.700+ Flaggen mit Details, Kategorien und Sammlungen.",
+      randomCountry: "zufälliges Land",
+      randomCountryText:
+        "würfle einen Eintrag aus dem gemeinsamen Flaggenkorpus.",
+      dailyFlag: "tagesflagge",
+      dailyFlagText: "rate die Flagge des Tages. Serien bleiben auf dem Gerät.",
+      flagQuiz: "flaggenquiz",
+      flagQuizText: "Quiz-Modi aus derselben Flaggendatenbank.",
     },
     misc: {
       title: "sonstiges.",
       intro:
-        "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen oder Kunst passen.",
-      randomCountry: "zufälliges Land",
-      randomCountryText:
-        "generiere ein zufälliges Land und entdecke etwas Neues.",
+        "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen, Werkzeugen oder Kunst passen.",
       politics: "politische Präferenzen",
       politicsText:
         "meine ideologischen Diagramme und Ergebnisse politischer Tests.",
+      jpol: "jPol",
+      jpolText:
+        "mach ein 60-Fragen-Wertequiz und erzeuge dein Ergebnis.",
       modes: "modi",
       modesText:
         "ein weiteres Projekt aus meiner Sammlung von Web-Experimenten.",
       discordBots: "Discord-Bots",
       discordBotsText:
         "kleine Bots und andere Experimente aus meinen GitHub-Projekten.",
-      other: "andere Sachen",
-      otherText:
-        "hier werden irgendwann weitere zufällige Projekte erscheinen.",
+      elections: "Doulantese-Wahlen",
+      electionsText: "Ergebnisse der Discord-Gewerkschaftsversammlung.",
     },
     art: {
       title: "kunst.",
@@ -945,6 +1004,7 @@ messages.rus = mergeMessages(messages.eng, {
     randomCountry: "случайная страна",
     modes: "режимы.",
     games: "игры",
+    tools: "инструменты",
     art: "искусство",
     misc: "разное",
     contact: "контакты",
@@ -964,26 +1024,35 @@ messages.rus = mergeMessages(messages.eng, {
     flagQuiz: "викторина о флагах",
     flagQuizText:
       "узнай флаги со всего мира. сколько ответов будет правильными?",
-    another: "ещё одна игра",
-    anotherText: "здесь будет описание игры.",
-    anotherTextTwo: "здесь будет описание игры.",
+    kht: "турнир KHT",
+    khtText: "огромная турнирная сетка. обновляется вживую.",
+  },
+  tools: {
+    title: "инструменты.",
+    intro:
+      "полезные (и не очень) утилиты. смотри флаги, выбирай случайные места и копайся в данных.",
+    flagDatabase: "база флагов",
+    flagDatabaseText:
+      "ищи и просматривай 1700+ флагов с деталями, категориями и коллекциями.",
+    randomCountry: "случайная страна",
+    randomCountryText: "получи случайную страну и узнай что-нибудь новое.",
   },
   misc: {
     title: "разное.",
     intro:
-      "коллекция разных проектов, экспериментов и других вещей, которые не относятся к играм или искусству.",
-    randomCountry: "случайная страна",
-    randomCountryText: "получи случайную страну и узнай что-нибудь новое.",
+      "коллекция разных проектов, экспериментов и других вещей, которые не относятся к играм, инструментам или искусству.",
     politics: "политические предпочтения",
     politicsText:
       "мои идеологические диаграммы и результаты политических тестов.",
+    jpol: "jPol",
+    jpolText: "пройди квиз из 60 вопросов о ценностях и получи результат.",
     modes: "режимы",
     modesText: "ещё один проект из моей коллекции веб-экспериментов.",
     discordBots: "боты Discord",
     discordBotsText:
       "небольшие боты и эксперименты из моих проектов на GitHub.",
-    other: "другое",
-    otherText: "здесь со временем появятся новые случайные проекты.",
+    elections: "выборы Doulantese",
+    electionsText: "результаты ассамблеи Discord-союза.",
   },
   art: {
     title: "искусство.",
@@ -1118,6 +1187,7 @@ messages.kgn = mergeMessages(messages.eng, {
     randomCountry: "yu' Sep",
     modes: "mIw.",
     games: "Quj",
+    tools: "jan",
     art: "nagh",
     misc: "latlh",
     contact: "Qum",
@@ -1135,16 +1205,28 @@ messages.kgn = mergeMessages(messages.eng, {
     racingText: "chaw' ghom Quj. mIwvaD pat!!",
     flagQuiz: "joqwI' ghojmoH",
     flagQuizText: "qo' Hoch joqwI' yIqel. 'ar bIyaj?",
+    kht: "KHT Quj",
+    khtText: "Quj bracket. yIn Qap.",
+  },
+  tools: {
+    title: "jan.",
+    intro: "janmey. joqwI' yInej, Sep yIwIv.",
+    flagDatabase: "joqwI' De'",
+    flagDatabaseText: "joqwI'mey yInej.",
+    randomCountry: "yu' Sep",
+    randomCountryText: "yu' Sep yISam.",
   },
   misc: {
     title: "latlh.",
-    intro: "Quj pagh nagh je Dalutbe'chugh, latlh mIwmey tetlh.",
-    randomCountry: "yu' Sep",
-    randomCountryText: "yu' Sep yISam.",
+    intro: "Quj, jan, nagh je Dalutbe'chugh, latlh mIwmey tetlh.",
     politics: "qum vu'",
     politicsText: "jIH qum QInmey.",
+    jpol: "jPol",
+    jpolText: "60 yu' qum ghojmoH.",
     modes: "mIw",
     discordBots: "Discord bots",
+    elections: "Doulantese wIv",
+    electionsText: "Discord ghom wIv.",
   },
   art: {
     title: "nagh.",

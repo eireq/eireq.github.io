@@ -121,7 +121,7 @@ export function createDb() {
           score: safeScore,
           total: safeTotal,
           percentage,
-          mode: ["countries", "territorial", "historical", "all"].includes(score.mode)
+          mode: ["countries", "territorial", "historical", "all", "subdivisions", "organizations"].includes(score.mode)
             ? score.mode
             : "countries",
         })
@@ -164,7 +164,7 @@ export function createDb() {
         })
         .limit(limit);
 
-      if (["countries", "territorial", "historical", "all"].includes(mode)) {
+      if (["countries", "territorial", "historical", "all", "subdivisions", "organizations"].includes(mode)) {
         query = query.eq("mode", mode);
       }
 

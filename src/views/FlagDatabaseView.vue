@@ -5,13 +5,15 @@
       <div class="heading-line">
         <h1>Flag database</h1>
         <span class="total-count"
-          >{{ flags.length.toLocaleString() }} records</span
+          >{{ flagsReady ? flags.length.toLocaleString() : "…" }} records</span
         >
       </div>
       <p class="intro">browse flags <3 click on a flag to see more info.</p>
     </header>
 
-    <section class="directory" aria-label="Flag records">
+    <p v-if="!flagsReady" class="loading-state">loading flag records…</p>
+
+    <section v-else class="directory" aria-label="Flag records">
       <div class="controls">
         <label class="search-control">
           <span>Search flags</span>
@@ -156,10 +158,12 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
-import flags from "../assets/master_flags.json";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { loadFlags } from "../data/flags.js";
 
 const pageSize = 48;
+const flags = shallowRef([]);
+const flagsReady = ref(false);
 const searchTerm = ref("");
 const selectedCategory = ref("all");
 const selectedCollection = ref("all");
@@ -187,10 +191,15 @@ const territoryNames = new Set([
   "Flag of Sint Maarten",
 ]);
 
+onMounted(async () => {
+  flags.value = await loadFlags();
+  flagsReady.value = true;
+});
+
 const categories = computed(() =>
   [
     ...new Set(
-      flags
+      flags.value
         .map((flag) => (isSubdivision(flag) ? "Subdivision" : flag.category))
         .filter(Boolean),
     ),
@@ -213,14 +222,14 @@ const collections = [
 const subdivisionCountries = computed(() =>
   [
     ...new Set(
-      flags.filter(isSubdivision).map(subdivisionCountry).filter(Boolean),
+      flags.value.filter(isSubdivision).map(subdivisionCountry).filter(Boolean),
     ),
   ].sort((a, b) => a.localeCompare(b)),
 );
 
 const filteredFlags = computed(() => {
   const query = searchTerm.value.trim().toLocaleLowerCase();
-  const matches = flags.filter((flag) => {
+  const matches = flags.value.filter((flag) => {
     if (selectedCollection.value === "territories" && !isTerritory(flag)) {
       return false;
     }
@@ -327,7 +336,7 @@ watch(pageCount, (count) => {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.indexOf(flag)) },
+    params: { flagId: String(flags.value.indexOf(flag)) },
   };
 }
 
@@ -599,6 +608,12 @@ h1 {
   color: #aaa79f;
   font-size: 16px;
   line-height: 1.6;
+}
+
+.loading-state {
+  margin: 24px 0 0;
+  color: #aaa79f;
+  font-size: 16px;
 }
 
 .directory {

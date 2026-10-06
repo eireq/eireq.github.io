@@ -1,15 +1,30 @@
 <template>
   <nav>
-    <a class="logo" href="/">eire</a>
+    <router-link class="logo" to="/">eire</router-link>
 
-    <div class="nav-links">
-      <router-link to="/me">{{ t("nav.about") }}</router-link>
-      <router-link to="/rc">{{ t("nav.randomCountry") }}</router-link>
-      <router-link to="/modes">{{ t("nav.modes") }}</router-link>
-      <router-link to="/games">{{ t("nav.games") }}</router-link>
-      <router-link to="/art">{{ t("nav.art") }}</router-link>
-      <router-link to="/misc">{{ t("nav.misc") }}</router-link>
-      <router-link to="/contact">{{ t("nav.contact") }}</router-link>
+    <button
+      class="menu-toggle"
+      type="button"
+      :aria-expanded="menuOpen ? 'true' : 'false'"
+      aria-controls="site-nav-links"
+      @click="menuOpen = !menuOpen"
+    >
+      {{ menuOpen ? t("nav.close") : t("nav.menu") }}
+    </button>
+
+    <div
+      id="site-nav-links"
+      class="nav-links"
+      :class="{ 'nav-links--open': menuOpen }"
+    >
+      <router-link to="/me" @click="closeMenu">{{ t("nav.about") }}</router-link>
+      <router-link to="/games" @click="closeMenu">{{ t("nav.games") }}</router-link>
+      <router-link to="/tools" @click="closeMenu">{{ t("nav.tools") }}</router-link>
+      <router-link to="/art" @click="closeMenu">{{ t("nav.art") }}</router-link>
+      <router-link to="/misc" @click="closeMenu">{{ t("nav.misc") }}</router-link>
+      <router-link to="/contact" @click="closeMenu">{{
+        t("nav.contact")
+      }}</router-link>
     </div>
 
     <div class="socials">
@@ -51,6 +66,8 @@
 </template>
 
 <script setup>
+import { ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "../i18n.js";
 
 const {
@@ -61,6 +78,20 @@ const {
   languageLabel,
   languageGroupLabel,
 } = useI18n();
+
+const route = useRoute();
+const menuOpen = ref(false);
+
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false;
+  },
+);
+
+function closeMenu() {
+  menuOpen.value = false;
+}
 </script>
 
 <style scoped>
@@ -71,6 +102,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 18px 30px;
   background: #000;
   border-bottom: 1px solid #222;
@@ -81,6 +113,17 @@ nav {
   text-decoration: none;
   font-weight: bold;
   font-size: 20px;
+}
+
+.menu-toggle {
+  display: none;
+  margin-left: auto;
+  padding: 8px 12px;
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
 }
 
 .nav-links {
@@ -136,26 +179,46 @@ nav {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   nav {
     flex-wrap: wrap;
-    gap: 15px;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
   }
 
   .nav-links {
+    display: none;
     order: 3;
     width: 100%;
-    overflow-x: auto;
-    padding-bottom: 5px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    border-top: 1px solid #222;
+  }
+
+  .nav-links--open {
+    display: flex;
+  }
+
+  .nav-links a {
+    padding: 14px 0;
+    border-bottom: 1px solid #1a1a1a;
   }
 
   .socials {
-    margin-left: auto;
+    width: 100%;
+    order: 4;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .language {
-    width: 115px;
-    max-width: 115px;
+    width: 100%;
+    max-width: none;
   }
 }
 </style>

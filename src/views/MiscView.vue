@@ -7,21 +7,14 @@
     </p>
 
     <section class="misc">
-      <router-link class="misc-piece" to="/rc">
-        <h2>{{ t("misc.randomCountry") }}</h2>
-        <p>{{ t("misc.randomCountryText") }}</p>
-      </router-link>
-
       <router-link class="misc-piece" to="/politics">
         <h2>{{ t("misc.politics") }}</h2>
         <p>{{ t("misc.politicsText") }}</p>
       </router-link>
 
       <router-link class="misc-piece" to="/jpol">
-        <h2>jPol</h2>
-        <p>
-          take a 60-question political values quiz and generate your result.
-        </p>
+        <h2>{{ t("misc.jpol") }}</h2>
+        <p>{{ t("misc.jpolText") }}</p>
       </router-link>
 
       <router-link class="misc-piece" to="/elections">
@@ -47,11 +40,6 @@
       >
         <h2>{{ t("misc.discordBots") }}</h2>
         <p>{{ t("misc.discordBotsText") }}</p>
-      </a>
-
-      <a class="misc-piece" href="#">
-        <h2>{{ t("misc.other") }}</h2>
-        <p>{{ t("misc.otherText") }}</p>
       </a>
     </section>
   </main>
@@ -91,7 +79,7 @@ h1 {
 
 .misc {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
 

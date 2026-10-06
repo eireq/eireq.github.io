@@ -10,14 +10,43 @@
         {{ t("randomCountry.intro") }}
       </p>
 
+      <div class="filters">
+        <label>
+          <span>{{ t("randomCountry.poolFilter") }}</span>
+          <select v-model="poolMode">
+            <option
+              v-for="mode in poolModes"
+              :key="mode.value"
+              :value="mode.value"
+            >
+              {{ t(mode.label) }}
+            </option>
+          </select>
+        </label>
+      </div>
+
       <div class="random-picker">
         <p class="random-picker__label">{{ t("randomCountry.yourPlace") }}</p>
         <output class="random-picker__result" aria-live="polite">
-          {{ selectedCountry }}
+          {{ selectedLabel }}
         </output>
-        <button class="random-picker__button" type="button" @click="pickRandom">
-          {{ t("randomCountry.randomize") }}
-        </button>
+        <div class="random-picker__actions">
+          <button
+            class="random-picker__button"
+            type="button"
+            :disabled="!pool.length"
+            @click="pickRandom"
+          >
+            {{ t("randomCountry.randomize") }}
+          </button>
+          <RouterLink
+            v-if="selectedFlag"
+            class="random-picker__link"
+            :to="flagRoute(selectedFlag)"
+          >
+            {{ t("randomCountry.openRecord") }}
+          </RouterLink>
+        </div>
       </div>
     </section>
 
@@ -26,7 +55,7 @@
         <div>
           <p class="eyebrow">{{ t("randomCountry.pool") }}</p>
           <h2 id="country-list-title">
-            {{ countries.length }} {{ t("randomCountry.entries") }}
+            {{ ready ? pool.length : "…" }} {{ t("randomCountry.entries") }}
           </h2>
         </div>
         <label class="country-list__search">
@@ -40,12 +69,16 @@
         </label>
       </div>
 
-      <p v-if="!filteredCountries.length" class="country-list__empty">
+      <p v-if="!ready" class="country-list__empty">
+        {{ t("randomCountry.loading") }}
+      </p>
+      <p v-else-if="!filtered.length" class="country-list__empty">
         {{ t("randomCountry.empty") }}
       </p>
       <ol v-else class="country-list__items">
-        <li v-for="country in filteredCountries" :key="country">
-          {{ country }}
+        <li v-for="flag in filtered" :key="flag.name + flag.svgUrl">
+          <RouterLink :to="flagRoute(flag)">{{ shortName(flag) }}</RouterLink>
+          <span class="country-list__category">{{ displayCategory(flag) }}</span>
         </li>
       </ol>
     </section>
@@ -53,412 +86,74 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import {
+  displayCategory,
+  filterFlagsByMode,
+  loadFlags,
+  shortName,
+  shuffle,
+} from "../data/flags.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
 
-const countries = [
-  "Afghanistan",
-  "Albania",
-  "Algeria",
-  "Andorra",
-  "Angola",
-  "Antigua and Barbuda",
-  "Argentina",
-  "Armenia",
-  "Australia",
-  "Austria",
-  "Azerbaijan",
-  "Bahamas",
-  "Bahrain",
-  "Bangladesh",
-  "Barbados",
-  "Belarus",
-  "Belgium",
-  "Belize",
-  "Benin",
-  "Bhutan",
-  "Bolivia",
-  "Bosnia and Herzegovina",
-  "Botswana",
-  "Brazil",
-  "Brunei",
-  "Bulgaria",
-  "Burkina Faso",
-  "Burundi",
-  "Cabo Verde",
-  "Cambodia",
-  "Cameroon",
-  "Canada",
-  "Central African Republic",
-  "Chad",
-  "Chile",
-  "China",
-  "Colombia",
-  "Comoros",
-  "Congo",
-  "Costa Rica",
-  "Croatia",
-  "Cuba",
-  "Cyprus",
-  "Czechia",
-  "DR Congo",
-  "Denmark",
-  "Djibouti",
-  "Dominica",
-  "Dominican Republic",
-  "Ecuador",
-  "Egypt",
-  "El Salvador",
-  "Equatorial Guinea",
-  "Eritrea",
-  "Estonia",
-  "Eswatini",
-  "Ethiopia",
-  "Fiji",
-  "Finland",
-  "France",
-  "Gabon",
-  "Gambia",
-  "Georgia",
-  "Germany",
-  "Ghana",
-  "Greece",
-  "Grenada",
-  "Guatemala",
-  "Guinea",
-  "Guinea-Bissau",
-  "Guyana",
-  "Haiti",
-  "Honduras",
-  "Hungary",
-  "Iceland",
-  "India",
-  "Indonesia",
-  "Iran",
-  "Iraq",
-  "Ireland",
-  "Israel",
-  "Italy",
-  "Ivory Coast",
-  "Jamaica",
-  "Japan",
-  "Jordan",
-  "Kazakhstan",
-  "Kenya",
-  "Kiribati",
-  "North Korea",
-  "South Korea",
-  "Kosovo",
-  "Kuwait",
-  "Kyrgyzstan",
-  "Laos",
-  "Latvia",
-  "Lebanon",
-  "Lesotho",
-  "Liberia",
-  "Libya",
-  "Liechtenstein",
-  "Lithuania",
-  "Luxembourg",
-  "Madagascar",
-  "Malawi",
-  "Malaysia",
-  "Maldives",
-  "Mali",
-  "Malta",
-  "Marshall Islands",
-  "Mauritania",
-  "Mauritius",
-  "Mexico",
-  "Micronesia",
-  "Moldova",
-  "Monaco",
-  "Mongolia",
-  "Montenegro",
-  "Morocco",
-  "Mozambique",
-  "Myanmar",
-  "Namibia",
-  "Nauru",
-  "Nepal",
-  "Netherlands",
-  "New Zealand",
-  "Nicaragua",
-  "Niger",
-  "Nigeria",
-  "North Macedonia",
-  "Norway",
-  "Oman",
-  "Pakistan",
-  "Palau",
-  "Palestine",
-  "Panama",
-  "Papua New Guinea",
-  "Paraguay",
-  "Peru",
-  "Philippines",
-  "Poland",
-  "Portugal",
-  "Qatar",
-  "Romania",
-  "Russia",
-  "Rwanda",
-  "Saint Kitts and Nevis",
-  "Saint Lucia",
-  "Saint Vincent and the Grenadines",
-  "Samoa",
-  "San Marino",
-  "Sao Tome and Principe",
-  "Saudi Arabia",
-  "Senegal",
-  "Serbia",
-  "Seychelles",
-  "Sierra Leone",
-  "Singapore",
-  "Slovakia",
-  "Slovenia",
-  "Solomon Islands",
-  "Somalia",
-  "South Africa",
-  "South Sudan",
-  "Spain",
-  "Sri Lanka",
-  "Sudan",
-  "Suriname",
-  "Sweden",
-  "Switzerland",
-  "Syria",
-  "Taiwan",
-  "Tajikistan",
-  "Tanzania",
-  "Thailand",
-  "Timor-Leste",
-  "Togo",
-  "Tonga",
-  "Trinidad and Tobago",
-  "Tunisia",
-  "Turkey",
-  "Turkmenistan",
-  "Tuvalu",
-  "Uganda",
-  "Ukraine",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
-  "Uruguay",
-  "Uzbekistan",
-  "Vanuatu",
-  "Vatican City",
-  "Venezuela",
-  "Vietnam",
-  "Yemen",
-  "Zambia",
-  "Zimbabwe",
-  "Greenland",
-  "Faroe Islands",
-  "Puerto Rico",
-  "Guam",
-  "Hong Kong",
-  "Macau",
-  "Bermuda",
-  "Gibraltar",
-  "Aruba",
-  "Curacao",
-  "Sint Maarten",
-  "Bonaire",
-  "Saba",
-  "Sint Eustatius",
-  "French Guiana",
-  "Martinique",
-  "Guadeloupe",
-  "Reunion",
-  "Mayotte",
-  "New Caledonia",
-  "French Polynesia",
-  "Wallis and Futuna",
-  "Saint Pierre and Miquelon",
-  "Falkland Islands",
-  "South Georgia and the South Sandwich Islands",
-  "Cayman Islands",
-  "British Virgin Islands",
-  "US Virgin Islands",
-  "Anguilla",
-  "Montserrat",
-  "Turks and Caicos Islands",
-  "Pitcairn Islands",
-  "Tokelau",
-  "Norfolk Island",
-  "Christmas Island",
-  "Cocos (Keeling) Islands",
-  "Western Sahara",
-  "Isle of Man",
-  "Jersey",
-  "Guernsey",
-  "Svalbard",
-  "Jan Mayen",
-  "Northern Mariana Islands",
-  "American Samoa",
-  "Cook Islands",
-  "Niue",
-  "Aland Islands",
-  "Ceuta",
-  "Melilla",
-  "Akrotiri",
-  "Dhekelia",
-  "Saint Helena",
-  "Ascension Island",
-  "Tristan da Cunha",
-  "Bouvet Island",
-  "Heard Island",
-  "McDonald Islands",
-  "Prussia",
-  "Yugoslavia",
-  "Czechoslovakia",
-  "Soviet Union",
-  "Prinsenvlag",
-  "Anarchist flag",
-  "British Red Ensign",
-  "Pan-African flag",
-  "Ras Tafari flag",
-  "Arab Revolt flag",
-  "Egyptian Revolution flag",
-  "East Germany",
-  "West Germany",
-  "Austria-Hungary",
-  "Ottoman Empire",
-  "Byzantine Empire",
-  "Holy Roman Empire",
-  "Gran Colombia",
-  "Kingdom of Hawaii",
-  "Republic of Texas",
-  "Kingdom of Sardinia",
-  "Kingdom of Two Sicilies",
-  "Kingdom of Italy",
-  "Kingdom of Greece",
-  "Qing Empire",
-  "Mughal Empire",
-  "Assyria",
-  "Babylonia",
-  "Akkadian Empire",
-  "Sumer",
-  "Hittite Empire",
-  "Achaemenid Empire",
-  "Sassanian Empire",
-  "Parthian Empire",
-  "Seleucid Empire",
-  "Macedonian Empire",
-  "Roman Republic",
-  "Western Roman Empire",
-  "Eastern Roman Empire",
-  "Carthage",
-  "Rhodesia",
-  "South Vietnam",
-  "North Vietnam",
-  "Newfoundland Dominion",
-  "Orange Free State",
-  "Transvaal",
-  "Tibet",
-  "Sikkim",
-  "Manchukuo",
-  "Hejaz",
-  "Nejd",
-  "United Arab Republic",
-  "Confederate States",
-  "Republic of Formosa",
-  "Kingdom of Jerusalem",
-  "Kingdom of Navarra",
-  "Hanover",
-  "Burgundy",
-  "Novgorod Republic",
-  "Republic of Ragusa",
-  "Free City of Danzig",
-  "Free City of Krakow",
-  "Zulu Kingdom",
-  "Ashanti Empire",
-  "Benin Kingdom",
-  "Mali Empire",
-  "Songhai Empire",
-  "Kanem-Bornu",
-  "Kievan Rus",
-  "Golden Horde",
-  "Ilkhanate",
-  "Timurid Empire",
-  "Khwarazm",
-  "Delhi Sultanate",
-  "Maratha Empire",
-  "Mysore Kingdom",
-  "Joseon",
-  "Goryeo",
-  "Ryukyu Kingdom",
-  "Kingdom of Kongo",
-  "Kingdom of Aksum",
-  "Ciskei",
-  "Bophuthatswana",
-  "Venda",
-  "Transkei",
-  "Granadine Confederation",
-  "Federal Republic of Central America",
-  "Republic of Texas",
-  "Kingdom of Bohemia",
-  "Great Moravia",
-  "First Czechoslovak Republic",
-  "Kingdom of Galicia and Lodomeria",
-  "Polish-Lithuanian Commonwealth",
-  "Livonian Order",
-  "Teutonic Order",
-  "Republic of Venice",
-  "Genoa",
-  "Papal States",
-  "Duchy of Milan",
-  "Kingdom of Aragon",
-  "Crown of Castile",
-  "Kingdom of León",
-  "Kingdom of England",
-  "Kingdom of Scotland",
-  "Kingdom of Ireland",
-  "Kingdom of France",
-  "First French Empire",
-  "Second French Empire",
-  "Weimar Republic",
-  "German Empire",
-  "Inca Empire",
-  "Aztec Empire",
-  "Toltec Empire",
-  "Maya Civilization",
-  "Kingdom of Kush",
-  "Numidia",
-  "Kingdom of Lydia",
-  "Etruria",
-  "Nabataea",
-  "Kingdom of Armenia",
-  "Bactria",
-  "Scythia",
-  "Kingdom of Burgundy",
-  "Duchy of Normandy",
+const flags = ref([]);
+const ready = ref(false);
+const searchTerm = ref("");
+const poolMode = ref("countries");
+const selectedFlag = ref(null);
+
+const poolModes = [
+  { value: "countries", label: "flagQuiz.modes.countries" },
+  { value: "territorial", label: "flagQuiz.modes.territorial" },
+  { value: "historical", label: "flagQuiz.modes.historical" },
+  { value: "subdivisions", label: "flagQuiz.modes.subdivisions" },
+  { value: "organizations", label: "flagQuiz.modes.organizations" },
+  { value: "all", label: "flagQuiz.modes.all" },
 ];
 
-const selectedCountry = ref(randomCountry());
-const searchTerm = ref("");
+const pool = computed(() => filterFlagsByMode(flags.value, poolMode.value));
+const selectedLabel = computed(() =>
+  selectedFlag.value
+    ? shortName(selectedFlag.value)
+    : t("randomCountry.pickPrompt"),
+);
 
-const filteredCountries = computed(() => {
-  const query = searchTerm.value.trim().toLowerCase();
-  if (!query) return countries;
-
-  return countries.filter((country) => country.toLowerCase().includes(query));
+const filtered = computed(() => {
+  const query = searchTerm.value.trim().toLocaleLowerCase();
+  if (!query) return pool.value;
+  return pool.value.filter((flag) =>
+    [shortName(flag), flag.name, flag.category]
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(query),
+  );
 });
 
-function randomCountry() {
-  return countries[Math.floor(Math.random() * countries.length)];
-}
+onMounted(async () => {
+  flags.value = await loadFlags();
+  ready.value = true;
+  pickRandom();
+});
+
+watch(poolMode, () => {
+  pickRandom();
+});
 
 function pickRandom() {
-  let nextCountry = randomCountry();
-  while (countries.length > 1 && nextCountry === selectedCountry.value) {
-    nextCountry = randomCountry();
+  if (!pool.value.length) {
+    selectedFlag.value = null;
+    return;
   }
-  selectedCountry.value = nextCountry;
+  selectedFlag.value = shuffle(pool.value)[0];
+}
+
+function flagRoute(flag) {
+  return {
+    name: "flag-detail",
+    params: { flagId: String(flags.value.indexOf(flag)) },
+  };
 }
 </script>
 
@@ -466,184 +161,178 @@ function pickRandom() {
 .random-country {
   display: block;
   width: 100%;
-  max-width: 1120px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 72px 30px 100px;
-  color: #fff;
-}
-
-.random-country__hero {
-  max-width: 760px;
-  margin: 0 auto 82px;
-  text-align: center;
+  padding: 80px 30px;
 }
 
 .eyebrow {
-  margin: 0 0 16px;
-  color: #f5cf3d;
+  margin: 0 0 10px;
+  color: #888;
   font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-h1,
-h2,
-p {
-  margin-top: 0;
-}
-
 h1 {
-  margin-bottom: 22px;
-  font-size: clamp(46px, 9vw, 92px);
+  font-size: clamp(42px, 8vw, 80px);
   line-height: 0.95;
-}
-
-h2 {
-  margin-bottom: 0;
-  font-size: clamp(28px, 5vw, 48px);
-  line-height: 1;
+  margin: 0 0 18px;
+  letter-spacing: -3px;
 }
 
 .intro {
-  max-width: 540px;
-  margin: 0 auto 38px;
+  color: #888;
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 0 28px;
+  max-width: 650px;
+}
+
+.filters {
+  margin-bottom: 24px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 280px;
   color: #aaa;
-  font-size: 17px;
-  line-height: 1.7;
+  font-size: 14px;
+}
+
+.filters select {
+  width: 100%;
+  padding: 12px 14px;
+  background: #000;
+  border: 1px solid #333;
+  color: #fff;
 }
 
 .random-picker {
   padding: 28px;
-  border: 1px solid #333;
-  background: #111;
-  box-shadow: 8px 8px 0 #f5cf3d;
+  border: 1px solid #222;
+  margin-bottom: 48px;
 }
 
 .random-picker__label {
-  margin-bottom: 18px;
+  margin: 0 0 10px;
   color: #888;
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .random-picker__result {
   display: block;
-  min-height: 1.1em;
-  margin-bottom: 28px;
-  color: #f5cf3d;
-  font-size: clamp(25px, 5vw, 48px);
-  line-height: 1.2;
+  font-size: clamp(28px, 6vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
   overflow-wrap: anywhere;
 }
 
-.random-picker__button {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid #f5cf3d;
-  background: #f5cf3d;
-  color: #111;
-  font: inherit;
-  font-size: 13px;
+.random-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.random-picker__button,
+.random-picker__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  text-decoration: none;
+  font-size: 14px;
   cursor: pointer;
 }
 
-.random-picker__button:hover,
-.random-picker__button:focus-visible {
-  background: #fff;
-}
-
-.country-list {
-  border-top: 1px solid #333;
-  padding-top: 34px;
+.random-picker__link {
+  background: transparent;
+  color: #fff;
 }
 
 .country-list__header {
   display: flex;
-  align-items: end;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 28px;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.country-list__header h2 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+  letter-spacing: -1px;
 }
 
 .country-list__search {
-  display: grid;
-  gap: 9px;
-  width: min(300px, 100%);
-  color: #888;
-  font-size: 11px;
-  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(100%, 260px);
+  color: #aaa;
+  font-size: 14px;
 }
 
 .country-list__search input {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid #444;
-  border-radius: 0;
-  padding: 10px 12px;
-  background: #111;
+  padding: 12px 14px;
+  background: #000;
+  border: 1px solid #333;
   color: #fff;
-  font: inherit;
-  font-size: 13px;
-}
-
-.country-list__search input:focus {
-  outline: 2px solid #f5cf3d;
-  outline-offset: 2px;
-}
-
-.country-list__items {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 26px;
-  margin: 0;
-  padding-left: 28px;
-  color: #aaa;
-  line-height: 1.6;
-}
-
-.country-list__items li {
-  min-width: 0;
-  padding: 8px 0 8px 4px;
-  border-bottom: 1px solid #1d1d1d;
-  overflow-wrap: anywhere;
 }
 
 .country-list__empty {
   color: #888;
 }
 
+.country-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 18px;
+}
+
+.country-list__items li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.country-list__items a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.country-list__items a:hover {
+  text-decoration: underline;
+}
+
+.country-list__category {
+  color: #666;
+  font-size: 12px;
+}
+
 @media (max-width: 700px) {
   .random-country {
-    padding: 48px 20px 70px;
-  }
-
-  .random-country__hero {
-    margin-bottom: 58px;
+    padding: 48px 18px;
   }
 
   .random-picker {
-    padding: 22px 18px;
-    box-shadow: 5px 5px 0 #f5cf3d;
+    padding: 20px;
   }
 
-  .country-list__header {
-    display: grid;
-    align-items: start;
-  }
-
-  .country-list__search {
-    width: 100%;
-  }
-
-  .country-list__items {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 16px;
-    padding-left: 24px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 420px) {
   .country-list__items {
     grid-template-columns: 1fr;
   }

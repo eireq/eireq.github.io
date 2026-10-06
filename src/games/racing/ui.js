@@ -18,7 +18,7 @@ export function createUI() {
   }
 
   function playerName() {
-    return (localStorage.getItem("laneRunnerName") || "").trim() || "a guy";
+    return (window.localStorage.getItem("eirePlayerName") || localStorage.getItem("laneRunnerName") || "").trim().slice(0, 16) || "a guy";
   }
 
   function refreshName() {
@@ -34,8 +34,9 @@ export function createUI() {
   }
 
   function saveName(value) {
-    const name = value.trim().slice(0, 16);
-    localStorage.setItem("laneRunnerName", name || "a guy");
+    const name = value.trim().slice(0, 30) || "a guy";
+    localStorage.setItem("eirePlayerName", name);
+    localStorage.setItem("laneRunnerName", name.slice(0, 16));
     refreshName();
   }
 
@@ -92,7 +93,7 @@ export function createUI() {
     $("finalOvertakes").textContent = result.overtakes;
     $("finalSpeed").textContent = Math.floor(result.bestSpeed);
 
-    const hasName = Boolean(localStorage.getItem("laneRunnerName"));
+    const hasName = Boolean(localStorage.getItem("eirePlayerName") || localStorage.getItem("laneRunnerName"));
     $("namePrompt").classList.toggle("hidden", hasName);
 
     if (hasName) {
@@ -176,7 +177,7 @@ export function createUI() {
 
   $("nameBtn").onclick = () => {
     window.audio.click();
-    $("menuNameInput").value = localStorage.getItem("laneRunnerName") || "";
+    $("menuNameInput").value = localStorage.getItem("eirePlayerName") || localStorage.getItem("laneRunnerName") || "";
     show("nameModal");
     $("menuNameInput").focus();
   };
