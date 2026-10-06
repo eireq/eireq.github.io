@@ -122,7 +122,7 @@
               :src="imageUrl(flag.svgUrl)"
               :alt="''"
               loading="lazy"
-              @error="hideBrokenImage"
+              @error="hideBrokenImage($event, flag.name)"
             />
             <span class="flag-row__name">{{ flag.name }}</span>
             <span class="flag-row__category">{{ displayCategory(flag) }}</span>
@@ -546,7 +546,8 @@ function colorText(color) {
   return "";
 }
 
-function hideBrokenImage(event) {
+function hideBrokenImage(event, flagName) {
+  console.warn("Flag image failed to load:", flagName);
   event.currentTarget.hidden = true;
 }
 </script>

@@ -34,7 +34,7 @@
             :key="flag.svgUrl"
             :src="imageUrl(flag.svgUrl)"
             :alt="flag.name"
-            @error="imageFailed = true"
+            @error="handleImageError"
           />
           <p v-else class="image-fallback">Flag image unavailable</p>
           <figcaption v-if="flag.proportions">
@@ -160,6 +160,11 @@ watch(
     imageFailed.value = false;
   },
 );
+
+function handleImageError() {
+  console.warn("Flag image failed to load:", flag.value?.name);
+  imageFailed.value = true;
+}
 
 function shortName(record) {
   return record?.name?.replace(/^Flag of /, "") || "";
