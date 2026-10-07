@@ -2,33 +2,34 @@
   <main class="flag-database">
     <header class="database-heading">
       <div class="heading-line">
-        <h1>Flag database</h1>
+        <h1>{{ t("flagDb.title") }}</h1>
         <span class="total-count"
-          >{{ flagsReady ? flags.length.toLocaleString() : "…" }} records</span
+          >{{ flagsReady ? flags.length.toLocaleString() : "…" }}
+          {{ t("flagDb.records") }}</span
         >
       </div>
-      <p class="intro">browse flags <3 click on a flag to see more info.</p>
+      <p class="intro">{{ t("flagDb.intro") }}</p>
     </header>
 
-    <p v-if="!flagsReady" class="loading-state">loading flag records…</p>
+    <p v-if="!flagsReady" class="loading-state">{{ t("flagDb.loading") }}</p>
 
-    <section v-else class="directory" aria-label="Flag records">
+    <section v-else class="directory" :aria-label="t('flagDb.ariaDirectory')">
       <div class="controls">
         <label class="search-control">
-          <span>Search flags</span>
+          <span>{{ t("flagDb.search") }}</span>
           <input
             v-model="searchTerm"
             type="search"
-            placeholder="Name, detail, date, designer..."
+            :placeholder="t('flagDb.searchPlaceholder')"
             autocomplete="off"
           />
         </label>
 
         <label class="select-control">
-          <span>Category</span>
+          <span>{{ t("flagDb.category") }}</span>
           <select v-model="selectedCategory">
-            <option value="all">All categories</option>
-            <option value="territories">Territories &amp; dependencies</option>
+            <option value="all">{{ t("flagDb.allCategories") }}</option>
+            <option value="territories">{{ t("flagDb.territories") }}</option>
             <option
               v-for="category in categories"
               :key="category"
@@ -40,20 +41,24 @@
         </label>
 
         <label class="select-control sort-control">
-          <span>Sort by</span>
+          <span>{{ t("flagDb.sortBy") }}</span>
           <select v-model="sortOrder">
-            <option value="name-asc">Name, A to Z</option>
-            <option value="name-desc">Name, Z to A</option>
-            <option value="adoption-asc">Adoption date, oldest</option>
-            <option value="adoption-desc">Adoption date, newest</option>
-            <option value="cancellation-asc">Cancellation date, oldest</option>
-            <option value="cancellation-desc">Cancellation date, newest</option>
+            <option value="name-asc">{{ t("flagDb.sortNameAsc") }}</option>
+            <option value="name-desc">{{ t("flagDb.sortNameDesc") }}</option>
+            <option value="adoption-asc">{{ t("flagDb.sortAdoptOld") }}</option>
+            <option value="adoption-desc">{{ t("flagDb.sortAdoptNew") }}</option>
+            <option value="cancellation-asc">
+              {{ t("flagDb.sortCancelOld") }}
+            </option>
+            <option value="cancellation-desc">
+              {{ t("flagDb.sortCancelNew") }}
+            </option>
           </select>
         </label>
       </div>
 
-      <div class="collection-bar" aria-label="Flag collections">
-        <span class="collection-label">Collections</span>
+      <div class="collection-bar" :aria-label="t('flagDb.ariaCollections')">
+        <span class="collection-label">{{ t("flagDb.collections") }}</span>
         <div class="collection-list">
           <button
             v-for="collection in collections"
@@ -71,9 +76,9 @@
       <div
         v-if="selectedCategory === 'Subdivision'"
         class="collection-bar subdivision-collection"
-        aria-label="Subdivision countries"
+        :aria-label="t('flagDb.ariaSubdivisions')"
       >
-        <span class="collection-label">Subdivisions</span>
+        <span class="collection-label">{{ t("flagDb.subdivisions") }}</span>
         <div class="collection-list">
           <button
             type="button"
@@ -81,7 +86,7 @@
             :class="{ active: selectedSubdivisionCountry === 'all' }"
             @click="selectedSubdivisionCountry = 'all'"
           >
-            All countries
+            {{ t("flagDb.allCountries") }}
           </button>
           <button
             v-for="country in subdivisionCountries"
@@ -97,14 +102,17 @@
       </div>
 
       <div class="list-summary" aria-live="polite">
-        <span>{{ filteredFlags.length.toLocaleString() }} matching flags</span>
+        <span
+          >{{ filteredFlags.length.toLocaleString() }}
+          {{ t("flagDb.matching") }}</span
+        >
         <span v-if="filteredFlags.length"
-          >Showing {{ pageStart }}–{{ pageEnd }}</span
+          >{{ t("flagDb.showing") }} {{ pageStart }}–{{ pageEnd }}</span
         >
       </div>
 
       <p v-if="!filteredFlags.length" class="empty-state">
-        No flags match those filters. Try a broader search.
+        {{ t("flagDb.empty") }}
       </p>
 
       <ol v-else class="flag-list">
@@ -130,26 +138,33 @@
             <span class="flag-row__date">{{
               formatDate(flag.adoptionDate)
             }}</span>
-            <span class="flag-row__action">Details</span>
+            <span class="flag-row__action">{{ t("flagDb.details") }}</span>
           </RouterLink>
         </li>
       </ol>
 
-      <nav v-if="pageCount > 1" class="pagination" aria-label="Flag list pages">
+      <nav
+        v-if="pageCount > 1"
+        class="pagination"
+        :aria-label="t('flagDb.ariaPages')"
+      >
         <button
           type="button"
           :disabled="currentPage === 1"
           @click="currentPage--"
         >
-          Previous
+          {{ t("flagDb.previous") }}
         </button>
-        <span>Page {{ currentPage }} of {{ pageCount }}</span>
+        <span
+          >{{ t("flagDb.page") }} {{ currentPage }} {{ t("flagDb.of") }}
+          {{ pageCount }}</span
+        >
         <button
           type="button"
           :disabled="currentPage === pageCount"
           @click="currentPage++"
         >
-          Next
+          {{ t("flagDb.next") }}
         </button>
       </nav>
     </section>
@@ -159,6 +174,9 @@
 <script setup>
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { loadFlags } from "../data/flags.js";
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
 
 const pageSize = 48;
 const flags = shallowRef([]);

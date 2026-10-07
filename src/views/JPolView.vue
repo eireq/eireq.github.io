@@ -1,16 +1,52 @@
 <template>
   <main class="jpol-page">
     <header class="jpol-hero">
-      <h1>jPol</h1>
-      <p>
-        eire's compact political values quiz. there are no correct answers, and
-        your result is a map of tendencies rather than a box to live in.
-      </p>
+      <h1>{{ t("jpol.title") }}</h1>
+      <p>{{ t("jpol.intro") }}</p>
     </header>
 
-    <section v-if="!finished" class="quiz-panel">
+    <!-- Setup -->
+    <section v-if="phase === 'setup'" class="setup-panel">
+      <h2>{{ t("jpol.setupTitle") }}</h2>
+      <div class="mode-picks">
+        <button
+          type="button"
+          :class="{ active: quizMode === 'full' }"
+          @click="quizMode = 'full'"
+        >
+          {{ t("jpol.modeFull") }}
+        </button>
+        <button
+          type="button"
+          :class="{ active: quizMode === 'express' }"
+          @click="quizMode = 'express'"
+        >
+          {{ t("jpol.modeExpress") }}
+        </button>
+      </div>
+      <button class="primary-button" type="button" @click="startQuiz">
+        {{ t("jpol.start") }}
+      </button>
+
+      <section v-if="history.length" class="side-block">
+        <h3>{{ t("jpol.historyTitle") }}</h3>
+        <ul class="history-list">
+          <li v-for="item in history" :key="item.code + item.at">
+            <button type="button" class="text-button" @click="loadSaved(item)">
+              {{ item.label }} · {{ formatWhen(item.at) }}
+            </button>
+          </li>
+        </ul>
+      </section>
+    </section>
+
+    <!-- Quiz -->
+    <section v-else-if="phase === 'quiz'" class="quiz-panel">
       <div class="quiz-meta">
-        <span>question {{ currentIndex + 1 }} / {{ questions.length }}</span>
+        <span
+          >{{ t("jpol.question") }} {{ currentIndex + 1 }} /
+          {{ questions.length }}</span
+        >
         <span>{{ Math.round(progress) }}%</span>
       </div>
       <div class="progress-track" aria-hidden="true">
@@ -18,7 +54,7 @@
       </div>
 
       <article class="question-card">
-        <h2>{{ currentQuestion.text }}</h2>
+        <h2>{{ questionText }}</h2>
         <div class="answers" role="radiogroup" aria-label="Answer choices">
           <button
             v-for="answer in answerOptions"
@@ -42,7 +78,7 @@
           :disabled="currentIndex === 0"
           @click="previousQuestion"
         >
-          back
+          {{ t("jpol.back") }}
         </button>
         <button
           class="primary-button"
@@ -52,32 +88,38 @@
         >
           {{
             currentIndex === questions.length - 1
-              ? "see my result"
-              : "next question"
+              ? t("jpol.seeResult")
+              : t("jpol.next")
           }}
         </button>
       </div>
     </section>
 
+    <!-- Results -->
     <section v-else class="results-panel">
       <div class="results-heading">
         <div>
-          <p class="results-label">your jPol result</p>
-          <h2>{{ ideology }}</h2>
-          <p>
-            These scores describe the balance of answers you gave, not a
-            permanent political identity.
-          </p>
+          <p class="results-label">{{ t("jpol.resultLabel") }}</p>
+          <h2>{{ ideologyName }}</h2>
+          <p>{{ ideologyBlurb }}</p>
+          <p class="result-soft">{{ t("jpol.resultNote") }}</p>
         </div>
         <div class="result-actions">
           <button class="primary-button" type="button" @click="downloadResult">
-            download PNG
+            {{ t("jpol.download") }}
+          </button>
+          <button class="text-button" type="button" @click="copyShareLink">
+            {{ shareCopied ? t("jpol.shared") : t("jpol.share") }}
           </button>
           <button class="text-button" type="button" @click="restart">
-            take it again
+            {{ t("jpol.again") }}
           </button>
         </div>
       </div>
+
+      <p v-if="calibration" class="calibration">
+        {{ t(`jpol.calibration${capitalize(calibration)}`) }}
+      </p>
 
       <div class="compass-layout">
         <div class="compass-wrap">
@@ -87,100 +129,168 @@
             role="img"
             aria-label="Political compass result"
           >
+            <rect x="48" y="48" width="212" height="212" fill="#e74c3c" />
+            <rect x="260" y="48" width="212" height="212" fill="#3498db" />
+            <rect x="48" y="260" width="212" height="212" fill="#2ecc71" />
+            <rect x="260" y="260" width="212" height="212" fill="#f1c40f" />
             <rect
               x="48"
               y="48"
               width="424"
               height="424"
-              fill="#101114"
-              stroke="#343840"
+              fill="none"
+              stroke="#1a1c20"
+              stroke-width="2"
             />
-            <path d="M260 48V472M48 260H472" stroke="#343840" />
-            <path d="M48 48L472 472M472 48L48 472" stroke="#24272d" />
-            <text x="260" y="29" text-anchor="middle">LIBERTY</text>
-            <text x="260" y="507" text-anchor="middle">AUTHORITY</text>
+            <path
+              d="M260 48V472M48 260H472"
+              stroke="rgba(0,0,0,0.35)"
+              stroke-width="2"
+            />
+            <text x="260" y="28" text-anchor="middle" class="axis-label">
+              AUTHORITARIAN
+            </text>
+            <text x="260" y="508" text-anchor="middle" class="axis-label">
+              LIBERTARIAN
+            </text>
             <text
-              x="20"
+              x="18"
               y="265"
               text-anchor="middle"
-              transform="rotate(-90 20 265)"
+              class="axis-label"
+              transform="rotate(-90 18 265)"
             >
               ECONOMIC LEFT
             </text>
             <text
-              x="500"
+              x="502"
               y="265"
               text-anchor="middle"
-              transform="rotate(90 500 265)"
+              class="axis-label"
+              transform="rotate(90 502 265)"
             >
               ECONOMIC RIGHT
             </text>
             <circle
+              v-if="friendResult"
+              :cx="friendCompassX"
+              :cy="friendCompassY"
+              r="11"
+              fill="#fff"
+              stroke="#111"
+              stroke-width="3"
+              opacity="0.85"
+            />
+            <circle
               :cx="compassX"
               :cy="compassY"
-              r="12"
-              fill="#04d361"
+              r="13"
+              fill="#111"
               stroke="#fff"
               stroke-width="4"
             />
-            <line
-              x1="260"
-              y1="260"
-              :x2="compassX"
-              :y2="compassY"
-              stroke="#04d361"
-              stroke-width="2"
-              stroke-dasharray="5 5"
-            />
           </svg>
+          <p v-if="friendResult" class="legend">
+            <span class="you-dot"></span> {{ t("jpol.you") }}
+            <span class="friend-dot"></span> {{ t("jpol.friend") }}
+          </p>
         </div>
+
         <div class="result-copy">
           <div class="axis-readout">
             <div>
-              <span>economic</span
-              ><strong>{{
-                signedLabel(economicScore, "left", "right")
+              <span>{{ t("jpol.economic") }}</span>
+              <strong>{{
+                signedLabel(
+                  result.economic,
+                  t("jpol.left"),
+                  t("jpol.right"),
+                  t("jpol.balanced"),
+                )
               }}</strong>
             </div>
             <div>
-              <span>authority</span
-              ><strong>{{
-                signedLabel(authorityScore, "liberty", "authority")
+              <span>{{ t("jpol.social") }}</span>
+              <strong>{{
+                signedLabel(
+                  result.authority,
+                  t("jpol.libertarian"),
+                  t("jpol.authoritarian"),
+                  t("jpol.balanced"),
+                )
               }}</strong>
             </div>
             <div>
-              <span>social change</span
-              ><strong>{{
-                signedLabel(progressiveScore, "progressive", "conservative")
+              <span>{{ t("jpol.socialChange") }}</span>
+              <strong>{{
+                signedLabel(
+                  result.progressive,
+                  t("jpol.progressive"),
+                  t("jpol.conservative"),
+                  t("jpol.balanced"),
+                )
               }}</strong>
             </div>
           </div>
           <div class="scale-block">
             <div class="scale-label">
-              <span>progressive</span
-              ><strong>{{ percentage(progressiveScore) }}%</strong
-              ><span>conservative</span>
+              <span>{{ t("jpol.progressive") }}</span>
+              <strong>{{ percentage(result.progressive) }}%</strong>
+              <span>{{ t("jpol.conservative") }}</span>
             </div>
             <div class="scale">
               <span
-                :style="{ left: `${percentage(progressiveScore)}%` }"
+                :style="{ left: `${percentage(result.progressive)}%` }"
               ></span>
             </div>
           </div>
-          <p class="result-note">
-            Your compass coordinates are based on economic and authority
-            answers; the six value bars below preserve the detail behind that
-            headline.
-          </p>
+          <p class="result-note">{{ t("jpol.compassNote") }}</p>
+
+          <section class="side-block">
+            <h3>{{ t("jpol.compareTitle") }}</h3>
+            <div class="compare-row">
+              <input
+                v-model="compareInput"
+                type="text"
+                :placeholder="t('jpol.comparePlaceholder')"
+              />
+              <button
+                class="primary-button"
+                type="button"
+                @click="applyCompare"
+              >
+                {{ t("jpol.compareApply") }}
+              </button>
+            </div>
+            <button
+              v-if="friendResult"
+              class="text-button"
+              type="button"
+              @click="clearCompare"
+            >
+              {{ t("jpol.compareClear") }}
+            </button>
+            <p v-if="compareError" class="error">{{ compareError }}</p>
+          </section>
         </div>
       </div>
 
+      <section v-if="issues.length" class="issues-block">
+        <h3>{{ t("jpol.issuesTitle") }}</h3>
+        <div class="issue-chips">
+          <span v-for="issue in issues" :key="issue.tag" class="issue-chip">
+            {{ t(`jpol.issues.${issue.tag}`) }}
+          </span>
+        </div>
+      </section>
+
+      <h3 class="axes-heading">{{ t("jpol.axesTitle") }}</h3>
       <div class="values-grid">
         <article v-for="axis in axisResults" :key="axis.key" class="value-card">
           <div class="value-title">
-            <span>{{ axis.left }}</span
-            ><strong>{{ axis.name }}</strong
-            ><span>{{ axis.right }}</span>
+            <span>{{ axis.left }}</span>
+            <strong>{{ axis.name }}</strong>
+            <span>{{ axis.right }}</span>
           </div>
           <div class="value-bar">
             <span
@@ -188,311 +298,294 @@
             ></span>
           </div>
           <div class="value-numbers">
-            <span>{{ axis.leftPercent }}%</span
-            ><span>{{ axis.rightPercent }}%</span>
+            <span>{{ axis.leftPercent }}%</span>
+            <span>{{ axis.rightPercent }}%</span>
           </div>
         </article>
       </div>
+
+      <section v-if="history.length" class="side-block history-bottom">
+        <h3>{{ t("jpol.historyTitle") }}</h3>
+        <ul class="history-list">
+          <li v-for="item in history" :key="'h-' + item.code + item.at">
+            <button type="button" class="text-button" @click="loadSaved(item)">
+              {{ item.label }} · {{ formatWhen(item.at) }}
+            </button>
+          </li>
+        </ul>
+      </section>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import {
+  AXIS_KEYS,
+  AXIS_META,
+  buildQuiz,
+  calibrationNote,
+  decodeResult,
+  encodeResult,
+  ideologyKey,
+  issuePulls,
+  loadHistory,
+  percentage,
+  pushHistory,
+  scoreQuiz,
+  signedLabel,
+} from "@/data/jpol.js";
+import { useI18n } from "../i18n.js";
 
-const answerOptions = [
-  { value: 2, label: "Strongly agree", hint: "very much me" },
-  { value: 1, label: "Agree", hint: "mostly me" },
-  { value: 0, label: "Neutral / unsure", hint: "somewhere in between" },
-  { value: -1, label: "Disagree", hint: "mostly not me" },
-  { value: -2, label: "Strongly disagree", hint: "not me at all" },
-];
+const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
-const axisDefinitions = {
-  equality: {
-    name: "Equality",
-    left: "equality",
-    right: "property",
-    color: "#ff1460",
-  },
-  coordination: {
-    name: "Coordination",
-    left: "coordination",
-    right: "commerce",
-    color: "#bd00d4",
-  },
-  power: {
-    name: "Power",
-    left: "dominance",
-    right: "anarchy",
-    color: "#12c9a7",
-  },
-  autonomy: {
-    name: "Autonomy",
-    left: "permission",
-    right: "restriction",
-    color: "#f4e900",
-  },
-  identity: {
-    name: "Identity",
-    left: "inclusivity",
-    right: "supremacy",
-    color: "#ff179f",
-  },
-  progress: {
-    name: "Progress",
-    left: "heritage",
-    right: "novelty",
-    color: "#8bf21a",
-  },
-};
-
-const questionSets = {
-  equality: [
-    "A society is fair only when wealth differences are kept fairly small.",
-    "Essential services should be available to everyone regardless of income.",
-    "Inheritance should be taxed heavily when it creates huge advantages.",
-    "Workers deserve a meaningful say in how the companies they work for are run.",
-    "The public should share in the gains from natural resources.",
-    "Large fortunes are usually a political problem, not just a personal achievement.",
-    "A dignified life should be guaranteed even for people who cannot work.",
-    "Tax systems should ask much more from people with the most money.",
-    "Private ownership is less important than making sure everyone has a secure life.",
-    "Economic policy should prioritize reducing inequality over maximizing growth.",
-    {
-      text: "Large differences in wealth are acceptable if everyone has a chance to succeed.",
-      direction: -1,
-    },
-    {
-      text: "People should keep most of what they earn, even when public services suffer.",
-      direction: -1,
-    },
-  ],
-  coordination: [
-    "Competitive markets usually allocate resources better than public planners.",
-    "Businesses should be free to set prices without much government interference.",
-    "Public ownership is preferable in industries that are essential to daily life.",
-    "Trade unions are an important counterweight to the power of employers.",
-    "A strong public sector can coordinate long-term projects better than markets can.",
-    "Economic competition often produces useful innovation.",
-    "Rent and price controls are worth using when markets fail people.",
-    "Regulation should be strict when private profit can harm the public.",
-    "Cooperative ownership is often better than ownership by distant shareholders.",
-    "Economic decisions should be made as close as possible to the people affected by them.",
-    {
-      text: "Private companies usually respond to changing needs faster than public institutions.",
-      direction: -1,
-    },
-    {
-      text: "Some essential services work better when they are run for profit.",
-      direction: -1,
-    },
-  ],
-  power: [
-    "A decisive government is more useful than one that is constantly blocked.",
-    "Leaders should be trusted to act quickly during serious crises.",
-    "A country needs strong institutions that ordinary citizens cannot easily disrupt.",
-    "Social order sometimes matters more than individual acts of disobedience.",
-    "People should generally follow laws even when they personally dislike them.",
-    "A respected national authority can hold a divided society together.",
-    "Public officials should have broad powers when they are pursuing a clear mandate.",
-    "Strict consequences are necessary to deter behavior that threatens social stability.",
-    "Expert administrators should have more influence over policy than popular moods do.",
-    "A society becomes weaker when it treats every rule as optional.",
-    {
-      text: "A government should accept slow decisions rather than risk concentrating power.",
-      direction: -1,
-    },
-    {
-      text: "Breaking a law can be responsible when following it would cause clear harm.",
-      direction: -1,
-    },
-  ],
-  autonomy: [
-    "Adults should be free to live as they choose if they are not harming others.",
-    "The state should rarely interfere with personal lifestyle decisions.",
-    "People should be able to criticize their government without fear of punishment.",
-    "Civil disobedience can be justified against deeply unjust laws.",
-    "Privacy is more important than giving authorities convenient access to personal data.",
-    "Individuals should have wide freedom to form communities and associations.",
-    "Police and security powers should face strict limits even during emergencies.",
-    "People should be allowed to take risks with their own lives and property.",
-    "No authority should be treated as automatically above criticism.",
-    "A messy free society is preferable to an orderly society built on constant surveillance.",
-    {
-      text: "People sometimes need to give up personal freedoms to make society work well.",
-      direction: -1,
-    },
-    {
-      text: "Authorities should be able to limit public speech that threatens social cohesion.",
-      direction: -1,
-    },
-  ],
-  identity: [
-    "A person's background should never determine how welcome they are in public life.",
-    "Different cultures can share one society without needing to become identical.",
-    "Minority groups deserve active protection from majorities that can outvote them.",
-    "National belonging should be open to anyone who commits to the community.",
-    "Public institutions should make room for many forms of family and identity.",
-    "Traditions should change when they exclude people who live differently.",
-    "Patriotism is strongest when it includes criticism of one's own country.",
-    "Religious and cultural differences are usually an asset rather than a threat.",
-    "People should be free to define their own identity without state approval.",
-    "No group should be considered inherently superior to another.",
-    {
-      text: "A shared national culture should take priority over preserving every minority custom.",
-      direction: -1,
-    },
-    {
-      text: "A country should be cautious about accepting newcomers who may change its character.",
-      direction: -1,
-    },
-  ],
-  progress: [
-    "New technology is usually worth adopting even when it changes familiar habits.",
-    "Old customs should have to prove their value rather than receiving automatic respect.",
-    "Education should prepare people for a changing future, not reproduce the past.",
-    "Scientific evidence should outrank tradition when the two conflict.",
-    "Social progress often requires questioning ideas that once seemed obvious.",
-    "A society should experiment with new solutions instead of waiting for certainty.",
-    "Preserving a tradition is not a good reason to preserve its harmful parts.",
-    "Future generations deserve more consideration than nostalgia for earlier ways of life.",
-    "Cultural change is generally a sign of a living society rather than its decline.",
-    "Institutions should be redesigned when they no longer fit present conditions.",
-    {
-      text: "New ideas should be treated cautiously until their consequences are clear.",
-      direction: -1,
-    },
-    {
-      text: "A familiar custom can be valuable simply because it has lasted for generations.",
-      direction: -1,
-    },
-  ],
-};
-
-function shuffle(items) {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [
-      shuffled[swapIndex],
-      shuffled[index],
-    ];
-  }
-  return shuffled;
-}
-
-function makeQuestions() {
-  return shuffle(
-    Object.entries(questionSets).flatMap(([key, entries]) =>
-      entries.map((entry) => ({
-        key,
-        text: typeof entry === "string" ? entry : entry.text,
-        direction: typeof entry === "string" ? 1 : entry.direction,
-      })),
-    ),
-  );
-}
-
-let questions = makeQuestions();
+const phase = ref("setup");
+const quizMode = ref("full");
+const questions = ref([]);
 const currentIndex = ref(0);
-const answers = ref(Array(questions.length).fill(null));
-const finished = ref(false);
-const currentQuestion = computed(() => questions[currentIndex.value]);
-const currentAnswer = computed(() => answers.value[currentIndex.value]);
-const progress = computed(
-  () => ((currentIndex.value + 1) / questions.length) * 100,
+const answers = ref([]);
+const result = ref(null);
+const calibration = ref(null);
+const issues = ref([]);
+const resultCode = ref("");
+const ideology = ref("centrist");
+const history = ref(loadHistory());
+const shareCopied = ref(false);
+const compareInput = ref("");
+const compareError = ref("");
+const friendResult = ref(null);
+
+const answerOptions = computed(() => [
+  {
+    value: 2,
+    label: t("jpol.stronglyAgree"),
+    hint: t("jpol.hintStrongAgree"),
+  },
+  { value: 1, label: t("jpol.agree"), hint: t("jpol.hintAgree") },
+  { value: 0, label: t("jpol.neutral"), hint: t("jpol.hintNeutral") },
+  { value: -1, label: t("jpol.disagree"), hint: t("jpol.hintDisagree") },
+  {
+    value: -2,
+    label: t("jpol.stronglyDisagree"),
+    hint: t("jpol.hintStrongDisagree"),
+  },
+]);
+
+const currentQuestion = computed(
+  () => questions.value[currentIndex.value] ?? null,
 );
+const currentAnswer = computed(() => answers.value[currentIndex.value] ?? null);
+const progress = computed(() =>
+  questions.value.length
+    ? ((currentIndex.value + 1) / questions.value.length) * 100
+    : 0,
+);
+const questionText = computed(() => {
+  const id = currentQuestion.value?.id;
+  return id ? t(`jpol.q.${id}`) : "";
+});
+
+const ideologyName = computed(() =>
+  t(`jpol.ideology.${ideology.value}.name`),
+);
+const ideologyBlurb = computed(() =>
+  t(`jpol.ideology.${ideology.value}.blurb`),
+);
+
+const COMPASS_CENTER = 260;
+const COMPASS_RADIUS = 190;
+const compassX = computed(() =>
+  result.value
+    ? COMPASS_CENTER + result.value.economic * COMPASS_RADIUS
+    : COMPASS_CENTER,
+);
+const compassY = computed(() =>
+  result.value
+    ? COMPASS_CENTER - result.value.authority * COMPASS_RADIUS
+    : COMPASS_CENTER,
+);
+const friendCompassX = computed(() =>
+  friendResult.value
+    ? COMPASS_CENTER + friendResult.value.economic * COMPASS_RADIUS
+    : COMPASS_CENTER,
+);
+const friendCompassY = computed(() =>
+  friendResult.value
+    ? COMPASS_CENTER - friendResult.value.authority * COMPASS_RADIUS
+    : COMPASS_CENTER,
+);
+
+const axisLabelMap = {
+  equality: "Equality",
+  coordination: "Coordination",
+  power: "Power",
+  autonomy: "Autonomy",
+  identity: "Identity",
+  progress: "Progress",
+};
+
+const axisResults = computed(() => {
+  if (!result.value) return [];
+  return AXIS_KEYS.map((key) => {
+    const score = result.value.axes[key];
+    const pascal = axisLabelMap[key];
+    return {
+      key,
+      name: t(`jpol.axis${pascal}`),
+      left: t(`jpol.axis${pascal}Left`),
+      right: t(`jpol.axis${pascal}Right`),
+      color: AXIS_META[key].color,
+      leftPercent: percentage(-score),
+      rightPercent: percentage(score),
+    };
+  });
+});
+
+onMounted(() => {
+  const raw = route.query.r;
+  if (typeof raw === "string" && raw) {
+    const decoded = decodeResult(raw);
+    if (decoded) {
+      showDecodedResult(decoded, raw);
+    }
+  }
+});
+
+function capitalize(value) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+}
+
+function startQuiz() {
+  questions.value = buildQuiz(quizMode.value);
+  answers.value = Array(questions.value.length).fill(null);
+  currentIndex.value = 0;
+  result.value = null;
+  friendResult.value = null;
+  calibration.value = null;
+  issues.value = [];
+  phase.value = "quiz";
+}
 
 function selectAnswer(value) {
   answers.value[currentIndex.value] = value;
 }
+
 function nextQuestion() {
   if (currentAnswer.value === null) return;
-  if (currentIndex.value === questions.length - 1) finished.value = true;
+  if (currentIndex.value === questions.value.length - 1) finishQuiz();
   else currentIndex.value += 1;
 }
+
 function previousQuestion() {
   if (currentIndex.value > 0) currentIndex.value -= 1;
 }
+
+function finishQuiz() {
+  const scored = scoreQuiz(questions.value, answers.value);
+  const code = encodeResult({ ...scored, mode: quizMode.value });
+  const key = ideologyKey(scored);
+  result.value = scored;
+  resultCode.value = code;
+  ideology.value = key;
+  calibration.value = calibrationNote(answers.value);
+  issues.value = issuePulls(questions.value, answers.value);
+  phase.value = "results";
+
+  history.value = pushHistory({
+    code,
+    label: t(`jpol.ideology.${key}.name`),
+    at: Date.now(),
+    mode: quizMode.value,
+  });
+
+  router.replace({ query: { r: code } });
+}
+
+function showDecodedResult(decoded, code) {
+  result.value = decoded;
+  resultCode.value = code;
+  ideology.value = ideologyKey(decoded);
+  calibration.value = null;
+  issues.value = [];
+  phase.value = "results";
+}
+
+function loadSaved(item) {
+  const decoded = decodeResult(item.code);
+  if (!decoded) return;
+  showDecodedResult(decoded, item.code);
+  router.replace({ query: { r: item.code } });
+}
+
 function restart() {
-  questions = makeQuestions();
-  currentIndex.value = 0;
-  answers.value = Array(questions.length).fill(null);
-  finished.value = false;
+  phase.value = "setup";
+  result.value = null;
+  friendResult.value = null;
+  compareInput.value = "";
+  compareError.value = "";
+  router.replace({ query: {} });
 }
 
-function rawScore(key) {
-  const values = questions
-    .map((question, index) =>
-      question.key === key
-        ? { value: answers.value[index], direction: question.direction }
-        : null,
-    )
-    .filter((answer) => answer !== null && answer.value !== null);
-  if (!values.length) return 0;
-  return (
-    values.reduce(
-      (total, answer) => total + answer.value * answer.direction,
-      0,
-    ) /
-    (values.length * 2)
-  );
-}
-function percentage(score) {
-  return Math.round(((score + 1) / 2) * 100);
-}
-function signedLabel(score, negative, positive) {
-  const amount = Math.abs(Math.round(score * 100));
-  if (amount < 8) return "balanced";
-  return `${amount}% ${score < 0 ? negative : positive}`;
+function extractCode(input) {
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+  try {
+    const url = new URL(trimmed);
+    return url.searchParams.get("r") || trimmed;
+  } catch {
+    const match = trimmed.match(/[?&]r=([^&]+)/);
+    return match ? decodeURIComponent(match[1]) : trimmed;
+  }
 }
 
-const equalityScore = computed(() => rawScore("equality"));
-const coordinationScore = computed(() => rawScore("coordination"));
-const powerScore = computed(() => rawScore("power"));
-const autonomyScore = computed(() => rawScore("autonomy"));
-const progressScore = computed(() => rawScore("progress"));
-const economicScore = computed(
-  () => (equalityScore.value + coordinationScore.value) / 2,
-);
-const authorityScore = computed(
-  () => (powerScore.value - autonomyScore.value) / 2,
-);
-const progressiveScore = computed(() => -progressScore.value);
-const compassX = computed(() => 260 + economicScore.value * 190);
-const compassY = computed(() => 260 + authorityScore.value * 190);
-const ideology = computed(() => {
-  const economic =
-    economicScore.value < -0.22
-      ? "left"
-      : economicScore.value > 0.22
-        ? "right"
-        : "centrist";
-  const authority =
-    authorityScore.value < -0.22
-      ? "libertarian"
-      : authorityScore.value > 0.22
-        ? "authoritarian"
-        : "moderate";
-  return `${authority} ${economic}`;
-});
-const axisResults = computed(() =>
-  Object.entries(axisDefinitions).map(([key, definition]) => {
-    const score = rawScore(key);
-    return {
-      ...definition,
-      key,
-      leftPercent: percentage(-score),
-      rightPercent: percentage(score),
-    };
-  }),
-);
+function applyCompare() {
+  compareError.value = "";
+  const code = extractCode(compareInput.value);
+  const decoded = decodeResult(code);
+  if (!decoded) {
+    compareError.value = t("jpol.compareInvalid");
+    friendResult.value = null;
+    return;
+  }
+  friendResult.value = decoded;
+}
+
+function clearCompare() {
+  friendResult.value = null;
+  compareInput.value = "";
+  compareError.value = "";
+}
+
+async function copyShareLink() {
+  if (!resultCode.value) return;
+  const url = `${window.location.origin}${window.location.pathname}?r=${resultCode.value}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    shareCopied.value = true;
+    window.setTimeout(() => {
+      shareCopied.value = false;
+    }, 1600);
+  } catch {
+    window.prompt("copy link:", url);
+  }
+}
+
+function formatWhen(timestamp) {
+  try {
+    return new Date(timestamp).toLocaleString();
+  } catch {
+    return "";
+  }
+}
 
 function downloadResult() {
+  if (!result.value) return;
   const canvas = document.createElement("canvas");
   canvas.width = 1400;
-  canvas.height = 1700;
+  canvas.height = 1600;
   const context = canvas.getContext("2d");
   context.fillStyle = "#202124";
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -501,95 +594,110 @@ function downloadResult() {
   context.fillText("jPol", 80, 110);
   context.font = "28px Arial";
   context.fillStyle = "#a7adb5";
-  context.fillText("political values result", 84, 155);
+  context.fillText(t("jpol.resultLabel"), 84, 155);
   context.font = "700 42px Arial";
-  context.fillStyle = "#04d361";
-  context.fillText(ideology.value, 84, 230);
-  drawCanvasCompass(context, 80, 290, 620);
+  context.fillStyle = "#ffffff";
+  context.fillText(ideologyName.value, 84, 230);
+  context.font = "24px Arial";
+  context.fillStyle = "#a7adb5";
+  wrapText(context, ideologyBlurb.value, 84, 275, 1240, 32);
+
+  drawCanvasCompass(context, 80, 360, 620);
+
   context.font = "700 28px Arial";
   context.fillStyle = "#ffffff";
-  context.fillText("PROGRESSIVE", 850, 350);
-  context.fillText("CONSERVATIVE", 1120, 350);
-  drawCanvasBar(
-    context,
-    850,
-    390,
-    470,
-    percentage(progressiveScore.value),
-    "#04d361",
-  );
-  context.font = "26px Arial";
-  context.fillStyle = "#a7adb5";
-  context.fillText(
-    `${percentage(progressiveScore.value)}% progressive`,
-    850,
-    470,
-  );
-  context.font = "700 30px Arial";
-  context.fillStyle = "#ffffff";
-  context.fillText("SIX VALUE AXES", 850, 560);
+  context.fillText(t("jpol.axesTitle").toUpperCase(), 850, 420);
   axisResults.value.forEach((axis, index) => {
-    const y = 620 + index * 145;
-    context.font = "700 24px Arial";
+    const y = 470 + index * 130;
+    context.font = "700 22px Arial";
     context.fillStyle = "#ffffff";
     context.fillText(axis.name.toUpperCase(), 850, y);
-    context.font = "22px Arial";
+    context.font = "20px Arial";
     context.fillStyle = "#a7adb5";
-    context.fillText(axis.left, 850, y + 38);
-    context.fillText(axis.right, 1180, y + 38);
-    drawCanvasBar(context, 850, y + 55, 470, axis.leftPercent, axis.color);
-    context.fillStyle = "#ffffff";
-    context.fillText(`${axis.leftPercent}%`, 850, y + 115);
-    context.fillText(`${axis.rightPercent}%`, 1250, y + 115);
+    context.fillText(axis.left, 850, y + 32);
+    context.fillText(axis.right, 1180, y + 32);
+    context.fillStyle = "#101114";
+    context.fillRect(850, y + 48, 470, 36);
+    context.fillStyle = axis.color;
+    context.fillRect(850, y + 48, 470 * (axis.leftPercent / 100), 36);
   });
+
   context.font = "20px Arial";
   context.fillStyle = "#727983";
   context.fillText(
-    "Generated by jPol · answers are tendencies, not a permanent identity",
+    `${window.location.origin}/jpol?r=${resultCode.value}`,
     80,
-    1615,
+    1520,
   );
+
   const link = document.createElement("a");
   link.download = "jpol-result.png";
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
-function drawCanvasBar(context, x, y, width, leftPercent, color) {
-  context.fillStyle = "#101114";
-  context.fillRect(x, y, width, 42);
-  context.fillStyle = color;
-  context.fillRect(x, y, width * (leftPercent / 100), 42);
-  context.strokeStyle = "#41464e";
-  context.strokeRect(x, y, width, 42);
+
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let cursor = y;
+  for (const word of words) {
+    const test = `${line}${word} `;
+    if (context.measureText(test).width > maxWidth && line) {
+      context.fillText(line, x, cursor);
+      line = `${word} `;
+      cursor += lineHeight;
+    } else line = test;
+  }
+  context.fillText(line, x, cursor);
 }
+
 function drawCanvasCompass(context, x, y, size) {
-  context.fillStyle = "#101114";
-  context.fillRect(x, y, size, size);
-  context.strokeStyle = "#424850";
-  context.strokeRect(x, y, size, size);
-  context.strokeStyle = "#343840";
+  const half = size / 2;
+  context.fillStyle = "#e74c3c";
+  context.fillRect(x, y, half, half);
+  context.fillStyle = "#3498db";
+  context.fillRect(x + half, y, half, half);
+  context.fillStyle = "#2ecc71";
+  context.fillRect(x, y + half, half, half);
+  context.fillStyle = "#f1c40f";
+  context.fillRect(x + half, y + half, half, half);
+  context.strokeStyle = "rgba(0,0,0,0.35)";
+  context.lineWidth = 2;
   context.beginPath();
-  context.moveTo(x + size / 2, y);
-  context.lineTo(x + size / 2, y + size);
-  context.moveTo(x, y + size / 2);
-  context.lineTo(x + size, y + size / 2);
+  context.moveTo(x + half, y);
+  context.lineTo(x + half, y + size);
+  context.moveTo(x, y + half);
+  context.lineTo(x + size, y + half);
   context.stroke();
-  context.fillStyle = "#04d361";
+
+  const dotX = x + half + result.value.economic * half * 0.9;
+  const dotY = y + half - result.value.authority * half * 0.9;
+  context.fillStyle = "#111";
   context.beginPath();
-  context.arc(
-    x + size / 2 + economicScore.value * 260,
-    y + size / 2 + authorityScore.value * 260,
-    16,
-    0,
-    Math.PI * 2,
-  );
+  context.arc(dotX, dotY, 16, 0, Math.PI * 2);
   context.fill();
+  context.strokeStyle = "#fff";
+  context.lineWidth = 4;
+  context.stroke();
+
+  if (friendResult.value) {
+    const fx = x + half + friendResult.value.economic * half * 0.9;
+    const fy = y + half - friendResult.value.authority * half * 0.9;
+    context.fillStyle = "#fff";
+    context.beginPath();
+    context.arc(fx, fy, 12, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "#111";
+    context.lineWidth = 3;
+    context.stroke();
+  }
+
   context.fillStyle = "#a7adb5";
   context.font = "22px Arial";
-  context.fillText("LIBERTY", x + size / 2 - 40, y - 20);
-  context.fillText("AUTHORITY", x + size / 2 - 58, y + size + 38);
-  context.fillText("LEFT", x - 58, y + size / 2 + 8);
-  context.fillText("RIGHT", x + size + 15, y + size / 2 + 8);
+  context.fillText("AUTHORITARIAN", x + half - 78, y - 18);
+  context.fillText("LIBERTARIAN", x + half - 68, y + size + 36);
+  context.fillText("LEFT", x - 58, y + half + 8);
+  context.fillText("RIGHT", x + size + 12, y + half + 8);
 }
 </script>
 
@@ -605,11 +713,6 @@ function drawCanvasCompass(context, x, y, size) {
   max-width: 720px;
   margin-bottom: 42px;
 }
-.results-label {
-  margin: 0 0 8px;
-  color: #9ba1a9;
-  font-size: 15px;
-}
 .jpol-hero h1 {
   margin: 0;
   color: #fff;
@@ -617,17 +720,47 @@ function drawCanvasCompass(context, x, y, size) {
   line-height: 0.9;
   letter-spacing: -6px;
 }
-.jpol-hero p:last-child,
+.jpol-hero p,
+.result-soft,
 .results-heading p {
   max-width: 650px;
-  margin: 22px 0 0;
+  margin: 18px 0 0;
   color: #9ba1a9;
   font-size: 18px;
   line-height: 1.6;
 }
+.setup-panel,
 .quiz-panel,
 .results-panel {
   border-top: 1px solid #30343a;
+  padding-top: 28px;
+}
+.setup-panel h2,
+.side-block h3,
+.issues-block h3,
+.axes-heading {
+  margin: 0 0 16px;
+  color: #fff;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+.mode-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.mode-picks button {
+  padding: 14px 18px;
+  border: 1px solid #444;
+  background: transparent;
+  color: #ccc;
+  font: inherit;
+  cursor: pointer;
+}
+.mode-picks button.active {
+  border-color: #04d361;
+  color: #04d361;
 }
 .quiz-meta,
 .scale-label,
@@ -638,7 +771,7 @@ function drawCanvasCompass(context, x, y, size) {
   gap: 12px;
 }
 .quiz-meta {
-  padding: 16px 0 10px;
+  padding: 8px 0 10px;
   color: #8f959e;
   font-size: 13px;
   text-transform: uppercase;
@@ -664,14 +797,14 @@ function drawCanvasCompass(context, x, y, size) {
   transition: width 0.25s ease;
 }
 .question-card {
-  margin: 72px auto 58px;
+  margin: 56px auto 40px;
   max-width: 820px;
 }
 .question-card h2 {
-  margin: 0 0 40px;
+  margin: 0 0 36px;
   color: #fff;
-  font-size: clamp(28px, 4vw, 48px);
-  line-height: 1.12;
+  font-size: clamp(26px, 4vw, 44px);
+  line-height: 1.15;
   letter-spacing: -1px;
 }
 .answers {
@@ -681,7 +814,8 @@ function drawCanvasCompass(context, x, y, size) {
 }
 .answers button,
 .primary-button,
-.text-button {
+.text-button,
+.mode-picks button {
   font: inherit;
   cursor: pointer;
 }
@@ -740,8 +874,10 @@ function drawCanvasCompass(context, x, y, size) {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.results-panel {
-  padding-top: 42px;
+.results-label {
+  margin: 0 0 8px;
+  color: #9ba1a9;
+  font-size: 15px;
 }
 .results-heading {
   display: flex;
@@ -759,29 +895,62 @@ function drawCanvasCompass(context, x, y, size) {
 .result-actions {
   flex-direction: column;
   align-items: stretch;
-  min-width: 170px;
+  min-width: 180px;
+}
+.calibration {
+  margin: 28px 0 0;
+  padding: 14px 16px;
+  border: 1px solid #3a414b;
+  background: #15181c;
+  color: #c5ccd6;
+  line-height: 1.5;
 }
 .compass-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.8fr);
+  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.9fr);
   gap: 50px;
-  align-items: center;
-  margin: 60px 0 70px;
+  align-items: start;
+  margin: 50px 0 40px;
 }
 .compass {
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
 }
-.compass text {
+.compass .axis-label {
   fill: #a7adb5;
   font-size: 13px;
   letter-spacing: 1px;
 }
+.legend {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  color: #9ba1a9;
+  font-size: 14px;
+}
+.you-dot,
+.friend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.you-dot {
+  background: #111;
+  box-shadow: 0 0 0 2px #fff;
+}
+.friend-dot {
+  background: #fff;
+  box-shadow: 0 0 0 2px #111;
+}
 .axis-readout {
   display: grid;
   gap: 16px;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
 }
 .axis-readout div {
   display: flex;
@@ -807,10 +976,56 @@ function drawCanvasCompass(context, x, y, size) {
   transform: translateX(-6px);
 }
 .result-note {
-  margin-top: 36px;
+  margin-top: 28px;
   color: #727983;
   font-size: 14px;
   line-height: 1.6;
+}
+.compare-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.compare-row input {
+  flex: 1 1 180px;
+  padding: 12px 14px;
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+  font: inherit;
+}
+.error {
+  color: #f5a5a5;
+  font-size: 14px;
+}
+.side-block {
+  margin-top: 28px;
+}
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.history-bottom {
+  margin-top: 40px;
+}
+.issues-block {
+  margin: 10px 0 36px;
+}
+.issue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.issue-chip {
+  padding: 8px 12px;
+  border: 1px solid #333;
+  color: #ddd;
+  font-size: 13px;
+  text-transform: lowercase;
 }
 .values-grid {
   display: grid;
@@ -848,11 +1063,19 @@ function drawCanvasCompass(context, x, y, size) {
     grid-template-columns: 1fr;
   }
   .answers button {
-    min-height: 60px;
+    min-height: 64px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .answers span {
+    font-size: 16px;
   }
   .answers small {
     display: inline;
-    margin-left: 7px;
+    margin: 0;
+    white-space: nowrap;
   }
   .results-heading,
   .compass-layout {

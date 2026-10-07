@@ -2,44 +2,41 @@
   <main class="kht-page">
     <header class="kht-heading">
       <div>
-        <h1>KHT</h1>
-        <p class="intro">
-          Enter the scores for each matchup. The higher score advances, and odd
-          rounds give the last unpaired entry a bye.
-        </p>
+        <h1>{{ t("kht.title") }}</h1>
+        <p class="intro">{{ t("kht.intro") }}</p>
       </div>
       <div class="header-status" :class="{ 'is-owner': isOwner }">
         <span class="status-dot"></span>
-        {{ isOwner ? "owner editing enabled" : "public view" }}
+        {{ isOwner ? t("kht.ownerEditing") : t("kht.publicView") }}
       </div>
     </header>
 
     <section v-if="!isOwner" class="owner-panel">
       <div>
-        <strong>Owner access</strong>
-        <p>Only the tournament owner can edit item names or scores.</p>
+        <strong>{{ t("kht.ownerAccess") }}</strong>
+        <p>{{ t("kht.ownerOnly") }}</p>
       </div>
       <form class="login-form" @submit.prevent="requestLogin">
         <input
           v-model="email"
           type="email"
-          placeholder="owner email"
+          :placeholder="t('kht.ownerEmail')"
           aria-label="Owner email"
           required
         />
         <button type="submit" :disabled="loginPending">
-          {{ loginPending ? "sending..." : "send login link" }}
+          {{ loginPending ? t("kht.sending") : t("kht.sendLogin") }}
         </button>
       </form>
       <p v-if="loginMessage" class="login-message">{{ loginMessage }}</p>
     </section>
     <section v-else class="owner-panel owner-panel--active">
       <div>
-        <strong>Editing as owner</strong>
-        <p>Changes save automatically for everyone viewing this bracket.</p>
+        <strong>{{ t("kht.editingAsOwner") }}</strong>
+        <p>{{ t("kht.autosave") }}</p>
       </div>
       <button type="button" class="secondary-button" @click="logout">
-        sign out
+        {{ t("kht.signOut") }}
       </button>
     </section>
 
@@ -125,6 +122,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { useI18n } from "../i18n.js";
 import {
   khtOwnerId,
   loadBracket,
@@ -134,6 +132,7 @@ import {
   watchKhtAuth,
 } from "../games/kht/supabase.js";
 
+const { t } = useI18n();
 const ENTRY_COUNT = 370;
 const email = ref("");
 const loginMessage = ref("");

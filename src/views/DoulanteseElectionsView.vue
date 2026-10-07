@@ -1,77 +1,58 @@
 <template>
   <main class="elections-page">
     <header class="elections-heading">
-      <h1>Doulantese Elections</h1>
+      <p class="eyebrow">{{ t("elections.eyebrow") }}</p>
+      <h1>{{ t("elections.title") }}</h1>
+      <p class="intro">{{ t("elections.intro") }}</p>
     </header>
 
     <section class="elections-results">
       <table class="elections-table">
         <thead>
           <tr>
-            <th>Party Name</th>
-            <th>Votes Cast</th>
-            <th>Vote Share</th>
-            <th>Congressional Seats</th>
+            <th>{{ t("elections.party") }}</th>
+            <th>{{ t("elections.votes") }}</th>
+            <th>{{ t("elections.share") }}</th>
+            <th>{{ t("elections.seats") }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>ACT</td>
-            <td>11 votes</td>
-            <td>25.0%</td>
-            <td>3 seats</td>
-          </tr>
-          <tr>
-            <td>LAB</td>
-            <td>10 votes</td>
-            <td>22.7%</td>
-            <td>2 seats</td>
-          </tr>
-          <tr>
-            <td>UNI</td>
-            <td>5 votes</td>
-            <td>11.4%</td>
-            <td>1 seat</td>
-          </tr>
-          <tr>
-            <td>DTL</td>
-            <td>9 votes</td>
-            <td>20.5%</td>
-            <td>2 seats</td>
-          </tr>
-          <tr>
-            <td>FLF</td>
-            <td>3 votes</td>
-            <td>6.8%</td>
-            <td>1 seat</td>
-          </tr>
-          <tr>
-            <td>NFD</td>
-            <td>6 votes</td>
-            <td>13.6%</td>
-            <td>2 seats</td>
-          </tr>
-          <tr>
-            <td>CoK</td>
-            <td>0 votes</td>
-            <td>0.0%</td>
-            <td>0 seats</td>
+          <tr v-for="row in rows" :key="row.party">
+            <td>{{ row.party }}</td>
+            <td>{{ row.votes }}</td>
+            <td>{{ row.share }}</td>
+            <td>{{ row.seats }}</td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td><strong>Total</strong></td>
-            <td><strong>44 votes</strong></td>
+            <td><strong>44</strong></td>
             <td><strong>100%</strong></td>
-            <td><strong>11 seats</strong></td>
+            <td><strong>11</strong></td>
           </tr>
         </tfoot>
       </table>
     </section>
+    <p class="review">{{ t("elections.review") }}</p>
   </main>
 </template>
 
-<script setup></script>
+<script setup>
+import { useI18n } from "../i18n.js";
+
+const { t } = useI18n();
+
+const rows = [
+  { party: "ACT", votes: 11, share: "25.0%", seats: 3 },
+  { party: "LAB", votes: 10, share: "22.7%", seats: 2 },
+  { party: "UNI", votes: 5, share: "11.4%", seats: 1 },
+  { party: "DTL", votes: 9, share: "20.5%", seats: 2 },
+  { party: "FLF", votes: 3, share: "6.8%", seats: 1 },
+  { party: "NFD", votes: 6, share: "13.6%", seats: 2 },
+  { party: "CoK", votes: 0, share: "0.0%", seats: 0 },
+];
+</script>
 
 <style scoped>
 .elections-page {
@@ -86,12 +67,28 @@
   margin-bottom: 42px;
 }
 
+.eyebrow {
+  margin: 0 0 10px;
+  color: #888;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 h1 {
   margin: 0;
   color: #04d361;
   font-size: clamp(40px, 7vw, 68px);
   line-height: 1;
   letter-spacing: -3px;
+}
+
+.intro,
+.review {
+  max-width: 640px;
+  margin: 18px 0 0;
+  color: #9ba1a9;
+  line-height: 1.55;
 }
 
 .elections-results {
@@ -128,6 +125,11 @@ h1 {
 .elections-table tfoot tr {
   background: #29292e;
   font-weight: 600;
+}
+
+.review {
+  margin-top: 28px;
+  font-size: 14px;
 }
 
 @media (max-width: 800px) {

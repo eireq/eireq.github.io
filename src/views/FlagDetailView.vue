@@ -1,12 +1,12 @@
 <template>
   <main v-if="!flagsReady" class="flag-detail-page">
-    <p class="loading-state">loading flag record…</p>
+    <p class="loading-state">{{ t("flagDetail.loading") }}</p>
   </main>
   <main v-else-if="flag" class="flag-detail-page">
     <div class="flag-detail-shell">
       <nav class="detail-topbar" aria-label="Flag navigation">
         <div class="breadcrumbs">
-          <RouterLink to="/flagdb">Flag database</RouterLink>
+          <RouterLink to="/flagdb">{{ t("flagDetail.database") }}</RouterLink>
           <span aria-hidden="true">/</span>
           <span aria-current="page">{{ flagTitle }}</span>
         </div>
@@ -39,7 +39,7 @@
             :alt="flag.name"
             @error="handleImageError"
           />
-          <p v-else class="image-fallback">Flag image unavailable</p>
+          <p v-else class="image-fallback">{{ t("flagDetail.unavailable") }}</p>
           <figcaption v-if="displayProportions">
             {{ displayProportions }}
           </figcaption>
@@ -47,20 +47,20 @@
       </section>
 
       <section class="color-palette" aria-label="Flag colors">
-        <h2>Colors</h2>
-        <p v-if="metaLoading" class="muted">reading palette from svg…</p>
+        <h2>{{ t("flagDetail.colors") }}</h2>
+        <p v-if="metaLoading" class="muted">{{ t("flagDetail.readingPalette") }}</p>
         <ul v-else-if="palette.length">
           <li v-for="hex in palette" :key="hex">
             <span class="swatch" :style="{ background: hex }"></span>
             <code>{{ hex }}</code>
           </li>
         </ul>
-        <p v-else class="muted">no hex colors found in the source svg.</p>
+        <p v-else class="muted">{{ t("flagDetail.noColors") }}</p>
       </section>
 
       <section class="detail-layout">
         <article class="flag-story">
-          <p class="title-kicker">Flag of</p>
+          <p class="title-kicker">{{ t("flagDetail.flagOf") }}</p>
           <h1>{{ flagTitle }}</h1>
 
           <p v-if="article?.description" class="article-kicker">
@@ -68,7 +68,7 @@
           </p>
 
           <div v-if="articleLoading" class="story-copy muted">
-            loading wikipedia article…
+            {{ t("flagDetail.loadingWiki") }}
           </div>
           <template v-else-if="articleSections.length">
             <section
@@ -88,9 +88,9 @@
               </p>
             </section>
             <p v-if="article.url" class="source-link">
-              <a :href="article.url" target="_blank" rel="noreferrer"
-                >Read more on Wikipedia</a
-              >
+              <a :href="article.url" target="_blank" rel="noreferrer">{{
+                t("flagDetail.readMore")
+              }}</a>
             </p>
           </template>
           <template v-else>
@@ -104,30 +104,30 @@
         </article>
 
         <aside class="flag-facts" aria-label="Flag details">
-          <h2>Record details</h2>
+          <h2>{{ t("flagDetail.recordDetails") }}</h2>
           <dl>
             <div>
-              <dt>Category</dt>
+              <dt>{{ t("flagDetail.category") }}</dt>
               <dd>{{ displayCategory(flag) }}</dd>
             </div>
             <div>
-              <dt>Adopted</dt>
+              <dt>{{ t("flagDetail.adopted") }}</dt>
               <dd>{{ formatDate(flag.adoptionDate) }}</dd>
             </div>
             <div>
-              <dt>Cancelled</dt>
+              <dt>{{ t("flagDetail.cancelled") }}</dt>
               <dd>{{ formatDate(flag.cancellationDate) }}</dd>
             </div>
             <div>
-              <dt>Proportions</dt>
-              <dd>{{ displayProportions || "Not recorded" }}</dd>
+              <dt>{{ t("flagDetail.proportions") }}</dt>
+              <dd>{{ displayProportions || t("flagDetail.notRecorded") }}</dd>
             </div>
             <div>
-              <dt>Designer</dt>
-              <dd>{{ flag.designer || "Not recorded" }}</dd>
+              <dt>{{ t("flagDetail.designer") }}</dt>
+              <dd>{{ flag.designer || t("flagDetail.notRecorded") }}</dd>
             </div>
             <div v-if="palette.length">
-              <dt>Palette</dt>
+              <dt>{{ t("flagDetail.palette") }}</dt>
               <dd>
                 <div class="facts-palette">
                   <span
@@ -150,7 +150,7 @@
         class="similar-flags"
         aria-label="Similar flags"
       >
-        <h2>Similar flags</h2>
+        <h2>{{ t("flagDetail.similar") }}</h2>
         <div class="similar-grid">
           <RouterLink
             v-for="item in similarFlags"
@@ -166,7 +166,7 @@
           <RouterLink
             class="compare-link"
             :to="{ path: '/compare', query: { a: flagTitle } }"
-            >Compare with another flag</RouterLink
+            >{{ t("flagDetail.compare") }}</RouterLink
           >
         </p>
       </section>
@@ -175,10 +175,10 @@
 
   <main v-else class="flag-detail-page">
     <section class="missing-flag">
-      <h1>Flag not found</h1>
-      <RouterLink to="/flagdb" class="back-link"
-        >Back to the database</RouterLink
-      >
+      <h1>{{ t("flagDetail.notFound") }}</h1>
+      <RouterLink to="/flagdb" class="back-link">{{
+        t("flagDetail.back")
+      }}</RouterLink>
     </section>
   </main>
 </template>
@@ -195,7 +195,9 @@ import {
 } from "../data/flags.js";
 import { findSimilarFlags } from "../data/flagSimilarity.js";
 import { extractSvgMeta, fetchFlagArticle } from "../data/wikipedia.js";
+import { useI18n } from "../i18n.js";
 
+const { t } = useI18n();
 const route = useRoute();
 const flags = shallowRef([]);
 const flagsReady = ref(false);

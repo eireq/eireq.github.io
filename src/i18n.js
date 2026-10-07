@@ -1,4 +1,8 @@
 import { ref } from "vue";
+import { jpolDeu } from "./locales/jpol-deu.js";
+import { jpolRus } from "./locales/jpol-rus.js";
+import { siteDeu } from "./locales/site-deu.js";
+import { siteRus } from "./locales/site-rus.js";
 
 export const languageGroups = [
   {
@@ -6,12 +10,13 @@ export const languageGroups = [
     languages: [
       { code: "eng", label: "english" },
       { code: "deu", label: "deutsch" },
-      { code: "rus", label: "PYCCKNÑ" },
+      { code: "rus", label: "русский" },
       { code: "kgn", label: "klingon" },
     ],
   },
+  // Joke modes below: not hand-translated. They clone English and run string filters.
   {
-    label: "stereotypes",
+    label: "stereotypes (auto english jokes)",
     languages: [
       { code: "dnk", label: "drunk english" },
       { code: "prt", label: "pirate english" },
@@ -22,7 +27,7 @@ export const languageGroups = [
     ],
   },
   {
-    label: "crazy stuff and my inventions",
+    label: "crazy filters (also auto, not real translations)",
     languages: [
       { code: "jjj", label: "Jenglish (english but every consonant is J)" },
       { code: "ipa", label: "international phonetic alphabet" },
@@ -88,7 +93,7 @@ const messages = {
       featRacing: "lane runner",
       featRacingText: "change lanes, dodge traffic, chase the leaderboard.",
       featJpol: "jPol",
-      featJpolText: "a 60-question values map. no correct answers.",
+      featJpolText: "full or express values map. no correct answers.",
       weekTitle: "flag of the week",
       weekOpen: "open flag record ->",
       weekCompare: "compare it ->",
@@ -147,7 +152,7 @@ const messages = {
       politicsText: "my ideological charts and political test results.",
       jpol: "jPol",
       jpolText:
-        "take a 60-question political values quiz and generate your result.",
+        "full or express political values quiz with a shareable compass result.",
       modes: "modes",
       modesText: "another project from my collection of web experiments.",
       discordBots: "discord bots",
@@ -286,7 +291,318 @@ const messages = {
       },
     },
     elections: {
-      eyebrow: "Discord union assembly", title: "Doulantese elections.", intro: "preference results as recorded from the election ballot.", results: "election results", choice: "choice", review: "last reviewed: 2026/08/28 13:30 Central European Summer Time",
+      eyebrow: "Discord union assembly",
+      title: "Doulantese elections.",
+      intro: "preference results as recorded from the election ballot.",
+      results: "election results",
+      choice: "choice",
+      review: "last reviewed: 2026/08/28 13:30 Central European Summer Time",
+      party: "party",
+      votes: "votes",
+      share: "vote share",
+      seats: "seats",
+    },
+    flagDb: {
+      title: "Flag database",
+      records: "records",
+      intro: "browse flags <3 click on a flag to see more info.",
+      loading: "loading flag records…",
+      search: "Search flags",
+      searchPlaceholder: "Name, detail, date, designer...",
+      category: "Category",
+      allCategories: "All categories",
+      territories: "Territories & dependencies",
+      sortBy: "Sort by",
+      sortNameAsc: "Name, A to Z",
+      sortNameDesc: "Name, Z to A",
+      sortAdoptOld: "Adoption date, oldest",
+      sortAdoptNew: "Adoption date, newest",
+      sortCancelOld: "Cancellation date, oldest",
+      sortCancelNew: "Cancellation date, newest",
+      collections: "Collections",
+      subdivisions: "Subdivisions",
+      allSubdivisions: "All subdivisions",
+      empty: "No flags match those filters. Try a broader search.",
+      matching: "matching flags",
+      showing: "Showing",
+      details: "Details",
+      previous: "Previous",
+      next: "Next",
+      page: "Page",
+      of: "of",
+      allCountries: "All countries",
+      ariaDirectory: "Flag records",
+      ariaCollections: "Flag collections",
+      ariaSubdivisions: "Subdivision countries",
+      ariaPages: "Flag list pages",
+    },
+    flagDetail: {
+      loading: "loading flag record…",
+      database: "Flag database",
+      unavailable: "Flag image unavailable",
+      colors: "Colors",
+      readingPalette: "reading palette from svg…",
+      noColors: "no hex colors found in the source svg.",
+      flagOf: "Flag of",
+      loadingWiki: "loading wikipedia article…",
+      readMore: "Read more on Wikipedia",
+      recordDetails: "Record details",
+      category: "Category",
+      adopted: "Adopted",
+      cancelled: "Cancelled",
+      proportions: "Proportions",
+      designer: "Designer",
+      palette: "Palette",
+      similar: "Similar flags",
+      compare: "Compare with another flag",
+      notFound: "Flag not found",
+      back: "Back to the database",
+      notRecorded: "Not recorded",
+    },
+    kht: {
+      title: "KHT",
+      intro:
+        "Enter the scores for each matchup. The higher score advances, and odd rounds give the last unpaired entry a bye.",
+      ownerEditing: "owner editing enabled",
+      publicView: "public view",
+      ownerAccess: "Owner access",
+      ownerOnly: "Only the tournament owner can edit item names or scores.",
+      ownerEmail: "owner email",
+      sending: "sending...",
+      sendLogin: "send login link",
+      editingAsOwner: "Editing as owner",
+      autosave: "Changes save automatically for everyone viewing this bracket.",
+      signOut: "sign out",
+      match: "match",
+      matches: "matches",
+    },
+    jpol: {
+      title: "jPol",
+      intro:
+        "a political values quiz inspired by the political compass, 8values, and sapplyvalues. no correct answers — just a map of tendencies.",
+      modeFull: "full · 60 questions",
+      modeExpress: "express · 18 questions",
+      start: "start quiz",
+      question: "question",
+      back: "back",
+      next: "next question",
+      seeResult: "see my result",
+      stronglyAgree: "Strongly agree",
+      agree: "Agree",
+      neutral: "Neutral / unsure",
+      disagree: "Disagree",
+      stronglyDisagree: "Strongly disagree",
+      hintStrongAgree: "very much me",
+      hintAgree: "mostly me",
+      hintNeutral: "somewhere in between",
+      hintDisagree: "mostly not me",
+      hintStrongDisagree: "not me at all",
+      resultLabel: "your jPol result",
+      resultNote:
+        "These scores describe the balance of answers you gave, not a permanent political identity.",
+      download: "download PNG",
+      share: "copy result link",
+      shared: "link copied",
+      again: "take it again",
+      economic: "economic",
+      social: "social",
+      socialChange: "social change",
+      progressive: "progressive",
+      conservative: "conservative",
+      left: "left",
+      right: "right",
+      libertarian: "libertarian",
+      authoritarian: "authoritarian",
+      balanced: "balanced",
+      compassNote:
+        "Authoritarian is up, libertarian is down — same layout as the classic political compass.",
+      axesTitle: "six value axes",
+      issuesTitle: "topics that pulled hardest",
+      calibrationNeutral:
+        "lots of neutral answers — your dot is near the middle partly because you skipped strong opinions.",
+      calibrationExtreme:
+        "almost every answer was strongly agree/disagree — your result is sharp, maybe sharper than you feel day to day.",
+      calibrationFlat:
+        "answers stayed mild overall — treat the exact coordinates as a soft estimate.",
+      historyTitle: "recent results on this device",
+      historyEmpty: "no saved runs yet.",
+      compareTitle: "compare with a friend",
+      comparePlaceholder: "paste their result code or link",
+      compareApply: "show on compass",
+      compareClear: "clear",
+      compareInvalid: "could not read that result code.",
+      you: "you",
+      friend: "friend",
+      setupTitle: "choose a path",
+      axisEquality: "Equality",
+      axisEqualityLeft: "equality",
+      axisEqualityRight: "markets",
+      axisCoordination: "Economy",
+      axisCoordinationLeft: "public",
+      axisCoordinationRight: "private",
+      axisPower: "Authority",
+      axisPowerLeft: "liberty",
+      axisPowerRight: "order",
+      axisAutonomy: "Freedom",
+      axisAutonomyLeft: "personal freedom",
+      axisAutonomyRight: "social control",
+      axisIdentity: "Identity",
+      axisIdentityLeft: "pluralism",
+      axisIdentityRight: "homogeneity",
+      axisProgress: "Progress",
+      axisProgressLeft: "tradition",
+      axisProgressRight: "progress",
+      issues: {
+        economy: "economy",
+        welfare: "welfare",
+        labor: "labor",
+        speech: "speech",
+        privacy: "privacy",
+        order: "order & security",
+        immigration: "immigration",
+        nation: "nation & culture",
+        tradition: "tradition",
+        science: "science & change",
+      },
+      ideology: {
+        authLeft: {
+          name: "authoritarian left",
+          blurb:
+            "you lean toward collective economic goals paired with a stronger guiding state.",
+        },
+        authLeftProgressive: {
+          name: "progressive authoritarian left",
+          blurb:
+            "left economics, comfort with authority, and openness to social change.",
+        },
+        authRight: {
+          name: "authoritarian right",
+          blurb:
+            "you favor markets or hierarchy alongside firm order and national cohesion.",
+        },
+        authRightConservative: {
+          name: "conservative authoritarian right",
+          blurb:
+            "order, tradition, and economic right instincts sit near the top of your map.",
+        },
+        libLeft: {
+          name: "libertarian left",
+          blurb:
+            "you want a fairer economy without handing everyday life to a heavy state.",
+        },
+        libLeftProgressive: {
+          name: "progressive libertarian left",
+          blurb:
+            "equality-minded, freedom-first, and usually impatient with inherited norms.",
+        },
+        libRight: {
+          name: "libertarian right",
+          blurb:
+            "personal freedom and market choice matter more to you than managed equality.",
+        },
+        libRightConservative: {
+          name: "conservative libertarian right",
+          blurb:
+            "small government instincts with a preference for familiar cultural norms.",
+        },
+        centerLeft: {
+          name: "center-left",
+          blurb:
+            "mildly left on economics, without a strong authoritarian or libertarian tilt.",
+        },
+        centerRight: {
+          name: "center-right",
+          blurb:
+            "mildly right on economics, without a strong authoritarian or libertarian tilt.",
+        },
+        authCenter: {
+          name: "authoritarian center",
+          blurb:
+            "you prioritize order and capable institutions over a sharp left/right economic fight.",
+        },
+        libCenter: {
+          name: "libertarian center",
+          blurb:
+            "you prioritize personal freedom while staying near the economic middle.",
+        },
+        centristProgressive: {
+          name: "progressive centrist",
+          blurb:
+            "centrist coordinates with a clear pull toward social and cultural change.",
+        },
+        centristConservative: {
+          name: "conservative centrist",
+          blurb:
+            "centrist coordinates with a clear pull toward continuity and tradition.",
+        },
+        centrist: {
+          name: "centrist",
+          blurb:
+            "your answers balance across the map — a mixed, moderate profile.",
+        },
+      },
+      q: {
+        eq1: "A fair society keeps the gap between rich and poor from getting huge.",
+        eq2: "Healthcare, education, and basic housing should be guaranteed for everyone.",
+        eq3: "Very large inheritances should be taxed so wealth does not stay locked in a few families.",
+        eq4: "Workers should have a real say in how the companies they work for are run.",
+        eq5: "Natural resources should mainly benefit the public, not only private owners.",
+        eq6: "Taxes on the wealthy should be much higher than taxes on ordinary workers.",
+        eq7: "People should keep most of what they earn, even if public services get thinner.",
+        eq8: "Big differences in wealth are fine if people had a fair chance to succeed.",
+        eq9: "Private property rights matter more than trying to equalize outcomes.",
+        eq10: "Economic growth matters more than reducing inequality.",
+        co1: "Free markets usually allocate resources better than government planners.",
+        co2: "The freer the market, the freer the people.",
+        co3: "Businesses should mostly set their own prices without heavy state control.",
+        co4: "Private companies usually adapt to new needs faster than public agencies.",
+        co5: "Some essential services work better when run for profit.",
+        co6: "Key industries should be publicly owned or tightly controlled by the state.",
+        co7: "Trade unions are an important check on employer power.",
+        co8: "Rent controls are justified when markets price people out of housing.",
+        co9: "Government should intervene in the economy to protect consumers and workers.",
+        co10: "Long-term national projects are often better run by the public sector.",
+        po1: "A government that can act quickly is better than one constantly blocked.",
+        po2: "In a serious crisis, leaders should be trusted with extra powers.",
+        po3: "People should generally obey the law even when they dislike it.",
+        po4: "Social order sometimes matters more than protest or disobedience.",
+        po5: "Strict punishments are needed to deter crime and keep society stable.",
+        po6: "It is better for government to decide slowly than to concentrate too much power.",
+        po7: "Breaking an unjust law can be the responsible thing to do.",
+        po8: "Ordinary people should be able to challenge institutions that fail them.",
+        po9: "No leader or office should be treated as above criticism.",
+        po10: "Popular opinion should restrain officials, not the other way around.",
+        au1: "Adults should be free to live how they want if they are not harming others.",
+        au2: "The state should stay out of most personal lifestyle choices.",
+        au3: "People must be free to criticize the government without fear of punishment.",
+        au4: "Privacy matters more than giving police easy access to everyone's data.",
+        au5: "A messy free society is better than an orderly one built on constant surveillance.",
+        au6: "People sometimes need to give up personal freedoms so society can function.",
+        au7: "Authorities should be able to restrict speech that threatens social cohesion.",
+        au8: "Police need broad powers, even if that reduces privacy.",
+        au9: "The government should guide citizens toward healthier or more moral choices.",
+        au10: "Public safety justifies tighter controls on what people can say online.",
+        id1: "Nobody should be less welcome in public life because of their background.",
+        id2: "Different cultures can share one country without becoming the same.",
+        id3: "Minorities need active protection from majorities that can outvote them.",
+        id4: "National belonging should be open to anyone who commits to the community's rules.",
+        id5: "No ethnic or cultural group is inherently superior to another.",
+        id6: "A shared national culture should come before preserving every minority custom.",
+        id7: "A country should be cautious about immigration that may change its character.",
+        id8: "It is natural to feel pride mainly in one's own nation or people.",
+        id9: "Immigrants should be expected to assimilate into the majority culture.",
+        id10: "International bodies should not override a nation's right to decide its identity.",
+        pr1: "Scientific evidence should beat tradition when the two conflict.",
+        pr2: "Old customs should have to prove their value rather than get automatic respect.",
+        pr3: "Society should try new solutions instead of waiting for perfect certainty.",
+        pr4: "Education should prepare people for a changing future, not mainly preserve the past.",
+        pr5: "Cultural change is usually a sign of a living society, not of decline.",
+        pr6: "New ideas should be treated cautiously until their consequences are clear.",
+        pr7: "A custom can be valuable simply because it has lasted for generations.",
+        pr8: "Traditional family structures are usually better for society than newer alternatives.",
+        pr9: "We should be careful about discarding norms that held society together.",
+        pr10: "Maintaining continuity with the past matters more than chasing social novelty.",
+      },
     },
     footer: { contact: "contact", text: "you can contact me via", email: "email" },
     about: {
@@ -404,6 +720,9 @@ const messages = {
       dailyFlagText: "rate die Flagge des Tages. Serien bleiben auf dem Gerät.",
       flagQuiz: "flaggenquiz",
       flagQuizText: "Quiz-Modi aus derselben Flaggendatenbank.",
+      compare: "flaggen vergleichen",
+      compareText:
+        "zwei flaggen, farben, proportionen und ein ähnlichkeitswert.",
     },
     misc: {
       title: "sonstiges.",
@@ -414,7 +733,7 @@ const messages = {
         "meine ideologischen Diagramme und Ergebnisse politischer Tests.",
       jpol: "jPol",
       jpolText:
-        "mach ein 60-Fragen-Wertequiz und erzeuge dein Ergebnis.",
+        "volles oder express-wertequiz mit teilbarem kompass-ergebnis.",
       modes: "modi",
       modesText:
         "ein weiteres Projekt aus meiner Sammlung von Web-Experimenten.",
@@ -549,6 +868,19 @@ const messages = {
   },
 };
 
+// Hand-written German packs for newer surfaces (flag db/detail, jPol, etc.).
+Object.assign(messages.deu, siteDeu, { jpol: jpolDeu });
+
+/**
+ * JOKE LOCALES (ttt, jjj, ipa, emj, tkp, sew, drunk/pirate/uwu/…)
+ * -------------------------------------------------------------
+ * These are NOT real translations sitting "in front of" German/Russian.
+ * Real locales are: eng, deu, rus (+ playful kgn).
+ *
+ * Everything in this block clones English and runs silly string transformers
+ * so the language menu can offer meme modes. Skip this whole section if you
+ * are looking for actual translated copy.
+ */
 const variantTransformers = {
   dnk: (text) => text
     .replace(/\byou\b/gi, "ya")
@@ -1042,6 +1374,8 @@ function mergeMessages(base, overrides) {
 }
 
 messages.rus = mergeMessages(messages.eng, {
+  ...siteRus,
+  jpol: jpolRus,
   nav: {
     about: "обо мне",
     randomCountry: "случайная страна",
@@ -1067,6 +1401,8 @@ messages.rus = mergeMessages(messages.eng, {
     flagQuiz: "викторина о флагах",
     flagQuizText:
       "узнай флаги со всего мира. сколько ответов будет правильными?",
+    dailyFlag: "флаг дня",
+    dailyFlagText: "один общий флаг каждый день. стрик на этом устройстве.",
     kht: "турнир KHT",
     khtText: "огромная турнирная сетка. обновляется вживую.",
   },
@@ -1079,6 +1415,12 @@ messages.rus = mergeMessages(messages.eng, {
       "ищи и просматривай 1700+ флагов с деталями, категориями и коллекциями.",
     randomCountry: "случайная страна",
     randomCountryText: "получи случайную страну и узнай что-нибудь новое.",
+    dailyFlag: "флаг дня",
+    dailyFlagText: "угадай сегодняшний флаг. стрик остаётся на устройстве.",
+    flagQuiz: "викторина о флагах",
+    flagQuizText: "режимы викторины на той же базе флагов.",
+    compare: "сравнить флаги",
+    compareText: "два флага, цвета, пропорции и оценка схожести.",
   },
   misc: {
     title: "разное.",
@@ -1088,7 +1430,8 @@ messages.rus = mergeMessages(messages.eng, {
     politicsText:
       "мои идеологические диаграммы и результаты политических тестов.",
     jpol: "jPol",
-    jpolText: "пройди квиз из 60 вопросов о ценностях и получи результат.",
+    jpolText:
+      "полная или короткая викторина ценностей с результатом на компасе.",
     modes: "режимы",
     modesText: "ещё один проект из моей коллекции веб-экспериментов.",
     discordBots: "боты Discord",
