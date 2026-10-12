@@ -124,12 +124,15 @@ export function createJworldMap(container, options = {}) {
     zoomControl: true,
   }).setView([20, 10], 2);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: "abcd",
-    maxZoom: 19,
-  }).addTo(map);
+  // Free dark XYZ tiles — no API key (CARTO basemaps now require one).
+  L.tileLayer(
+    "https://basemap.queeniemella.cc/tiles/countries/{z}/{x}/{y}.png",
+    {
+      attribution:
+        '&copy; <a href="https://basemap.queeniemella.cc/">queeniemella.cc</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 20,
+    },
+  ).addTo(map);
 
   const countriesLayer = L.featureGroup().addTo(map);
   const drawLayer = new L.FeatureGroup().addTo(map);
