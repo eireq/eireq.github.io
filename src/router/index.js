@@ -94,6 +94,24 @@ const router = createRouter({
       meta: { title: "KHT tournament - eire" },
     },
     {
+      path: "/jworld",
+      name: "jworld",
+      component: () => import("../views/JWorldView.vue"),
+      meta: {
+        title: "jWorld",
+        hideChrome: true,
+      },
+    },
+    {
+      path: "/jworld/c/:id",
+      name: "jworld-country",
+      component: () => import("../views/JWorldCountryView.vue"),
+      meta: {
+        title: "jWorld country",
+        hideChrome: true,
+      },
+    },
+    {
       path: "/games/racing",
       name: "game-racing",
       component: () => import("../views/GameRacingView.vue"),
