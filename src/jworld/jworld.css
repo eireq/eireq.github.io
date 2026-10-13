@@ -196,12 +196,6 @@
   background: #0a1018;
 }
 
-/* Soften the HOT label overlay so it reads as names over flags, not a second basemap. */
-.jworld-map .jworld-label-tiles {
-  filter: grayscale(0.35) brightness(0.85) contrast(1.15);
-  mix-blend-mode: screen;
-}
-
 .jworld-map-banner {
   position: absolute;
   z-index: 500;
