@@ -2,7 +2,7 @@
 -- Adds passwords so the same member can sign in on multiple devices.
 -- New installs: you can also re-run the updated supabase.sql, or just this file.
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 alter table public.jworld_members
   add column if not exists password_hash text;
@@ -84,7 +84,7 @@ create or replace function public.jworld_join(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   world public.jworld_world;
@@ -115,14 +115,14 @@ begin
     end if;
     -- Legacy member (joined before passwords): claim with invite + set password
     update public.jworld_members
-    set password_hash = crypt(p_password, gen_salt('bf'))
+    set password_hash = extensions.crypt(p_password, extensions.gen_salt('bf'))
     where id = m.id
     returning * into m;
     return public.jworld_session_payload(m);
   end if;
 
   insert into public.jworld_members (display_name, password_hash)
-  values (clean_name, crypt(p_password, gen_salt('bf')))
+  values (clean_name, extensions.crypt(p_password, extensions.gen_salt('bf')))
   returning * into m;
 
   return public.jworld_session_payload(m);
@@ -136,7 +136,7 @@ create or replace function public.jworld_login(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   m public.jworld_members;
@@ -158,7 +158,7 @@ begin
   if m.password_hash is null then
     raise exception 'This account has no password yet. Register once with the invite code to set one.';
   end if;
-  if crypt(p_password, m.password_hash) is distinct from m.password_hash then
+  if extensions.crypt(p_password, m.password_hash) is distinct from m.password_hash then
     raise exception 'Wrong password';
   end if;
 
@@ -173,7 +173,7 @@ create or replace function public.jworld_set_password(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   m public.jworld_members;
@@ -182,7 +182,7 @@ begin
   perform public.jworld_assert_password(p_password);
 
   update public.jworld_members
-  set password_hash = crypt(p_password, gen_salt('bf'))
+  set password_hash = extensions.crypt(p_password, extensions.gen_salt('bf'))
   where id = m.id
   returning * into m;
 

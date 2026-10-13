@@ -49,12 +49,16 @@ function ensureDefs(svg) {
   return defs;
 }
 
+/** Keep flags see-through so basemap cities / labels stay readable. */
+const FLAG_FILL_OPACITY = 0.58;
+const EMPTY_FILL_OPACITY = 0.4;
+
 function updateFlagPattern(map, layer, countryId, flagUrl) {
   const path = layer.getElement?.() || layer._path;
   if (!path || !flagUrl) {
     if (path) {
       path.setAttribute("fill", "rgba(90, 140, 200, 0.45)");
-      path.setAttribute("fill-opacity", "0.55");
+      path.setAttribute("fill-opacity", String(EMPTY_FILL_OPACITY));
     }
     return;
   }
@@ -113,18 +117,18 @@ function updateFlagPattern(map, layer, countryId, flagUrl) {
   }
 
   path.setAttribute("fill", `url(#${patternId})`);
-  path.setAttribute("fill-opacity", "1");
+  path.setAttribute("fill-opacity", String(FLAG_FILL_OPACITY));
 }
 
 export function createJworldMap(container, options = {}) {
   const map = L.map(container, {
     worldCopyJump: true,
     minZoom: 2,
-    maxZoom: 8,
+    maxZoom: 12,
     zoomControl: true,
   }).setView([20, 10], 2);
 
-  // Free dark XYZ tiles — no API key (CARTO basemaps now require one).
+  // Base geography (dark). Free XYZ — no API key.
   L.tileLayer(
     "https://basemap.queeniemella.cc/tiles/countries/{z}/{x}/{y}.png",
     {
@@ -134,8 +138,30 @@ export function createJworldMap(container, options = {}) {
     },
   ).addTo(map);
 
-  const countriesLayer = L.featureGroup().addTo(map);
-  const drawLayer = new L.FeatureGroup().addTo(map);
+  // Country fills sit under place labels.
+  map.createPane("jworldFlags");
+  map.getPane("jworldFlags").style.zIndex = 350;
+  map.getPane("jworldFlags").style.pointerEvents = "auto";
+
+  map.createPane("jworldLabels");
+  map.getPane("jworldLabels").style.zIndex = 450;
+  map.getPane("jworldLabels").style.pointerEvents = "none";
+
+  // Light place-name overlay on top of flags (cities, towns).
+  // OSM Humanitarian has readable settlement labels; kept light so dark base still reads.
+  L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles courtesy of Humanitarian OpenStreetMap Team',
+    subdomains: "abc",
+    maxZoom: 20,
+    minZoom: 4,
+    opacity: 0.42,
+    pane: "jworldLabels",
+    className: "jworld-label-tiles",
+  }).addTo(map);
+
+  const countriesLayer = L.featureGroup({ pane: "jworldFlags" }).addTo(map);
+  const drawLayer = new L.FeatureGroup({ pane: "jworldFlags" }).addTo(map);
 
   const countryLayers = new Map();
   let drawControl = null;
@@ -162,7 +188,8 @@ export function createJworldMap(container, options = {}) {
       weight: isMine ? 2.5 : 1.5,
       opacity: 0.95,
       fillColor: "#5a8cc8",
-      fillOpacity: country.flag_path ? 1 : 0.45,
+      fillOpacity: country.flag_path ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY,
+      pane: "jworldFlags",
     };
   }
 
