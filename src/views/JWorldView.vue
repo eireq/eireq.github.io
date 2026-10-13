@@ -153,14 +153,20 @@
           >
             Edit borders
           </button>
-          <button
-            v-if="selected"
-            class="jw-btn jw-btn--ghost"
-            type="button"
-            @click="openWiki(selected)"
-          >
-            Open wiki
-          </button>
+          <div v-if="selected" class="jw-wiki-spotlight">
+            <span class="jw-wiki-arrow jw-wiki-arrow--1" aria-hidden="true"></span>
+            <span class="jw-wiki-arrow jw-wiki-arrow--2" aria-hidden="true"></span>
+            <span class="jw-wiki-arrow jw-wiki-arrow--3" aria-hidden="true"></span>
+            <span class="jw-wiki-arrow jw-wiki-arrow--4" aria-hidden="true"></span>
+            <span class="jw-wiki-arrow jw-wiki-arrow--5" aria-hidden="true"></span>
+            <button
+              class="jw-btn jw-btn--wiki"
+              type="button"
+              @click="openWiki(selected)"
+            >
+              Open wiki
+            </button>
+          </div>
           <button
             v-if="draftGeometry || editingCountryId"
             class="jw-btn"

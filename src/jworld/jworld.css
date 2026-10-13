@@ -263,6 +263,122 @@
   border-color: var(--jw-border);
 }
 
+.jw-btn--wiki {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #ffe566 0%, #ffb020 45%, #ff4d2e 100%);
+  border-color: #ff3b1f;
+  color: #1a0a00;
+  box-shadow: 0 0 0 2px rgba(255, 80, 40, 0.35), 0 6px 18px rgba(255, 60, 20, 0.35);
+  animation: jw-wiki-pulse 1.4s ease-in-out infinite;
+}
+
+.jw-wiki-spotlight {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 22px;
+}
+
+.jw-wiki-arrow {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffe566 0%, #ff8a1a 50%, #ff2a1a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 2px #ff1a00) drop-shadow(0 1px 0 #7a0000);
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+}
+
+.jw-wiki-arrow::after {
+  content: "➤";
+  display: block;
+  animation: jw-wiki-point 0.85s ease-in-out infinite;
+}
+
+.jw-wiki-arrow--1 {
+  top: -1.25rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+.jw-wiki-arrow--1::after {
+  animation-delay: 0s;
+}
+
+.jw-wiki-arrow--2 {
+  top: 50%;
+  right: -1.4rem;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.jw-wiki-arrow--2::after {
+  animation-delay: 0.1s;
+}
+
+.jw-wiki-arrow--3 {
+  bottom: -1.25rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
+}
+
+.jw-wiki-arrow--3::after {
+  animation-delay: 0.2s;
+}
+
+.jw-wiki-arrow--4 {
+  top: 50%;
+  left: -1.4rem;
+  transform: translateY(-50%);
+}
+
+.jw-wiki-arrow--4::after {
+  animation-delay: 0.3s;
+}
+
+.jw-wiki-arrow--5 {
+  top: -1.05rem;
+  right: -0.95rem;
+  transform: rotate(135deg);
+}
+
+.jw-wiki-arrow--5::after {
+  animation-delay: 0.15s;
+}
+
+@keyframes jw-wiki-point {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 0.7;
+  }
+}
+
+@keyframes jw-wiki-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
 .jw-btn--danger {
   background: transparent;
   border-color: var(--jw-danger);
