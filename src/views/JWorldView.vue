@@ -298,6 +298,8 @@ function leave() {
   teardownMap();
 }
 
+let bootToken = 0;
+
 async function refreshCountries() {
   const { data, error } = await listCountries(session.value?.token);
   if (error) {
@@ -306,17 +308,25 @@ async function refreshCountries() {
   }
   loadError.value = "";
   countries.value = data;
-  mapApi?.setCountries(data, session.value?.memberId);
+  const stats = mapApi?.setCountries(data, session.value?.memberId);
+  if (stats && stats.total > 0 && stats.rendered === 0) {
+    banner.value = `Loaded ${stats.total} countries but none had drawable borders. Re-save borders on each.`;
+  } else if (stats && stats.skipped > 0) {
+    banner.value = `Showing ${stats.rendered}/${stats.total} countries (${stats.skipped} missing borders).`;
+  }
 }
 
 async function bootMap() {
+  const myBoot = ++bootToken;
   const meta = await loadWorldMeta();
   if (meta.data?.name) worldName.value = meta.data.name;
 
   await nextTick();
-  if (!mapEl.value) return;
+  if (!mapEl.value || myBoot !== bootToken) return;
 
   teardownMap();
+  if (myBoot !== bootToken) return;
+
   mapApi = createJworldMap(mapEl.value, {
     onCountryClick: (country) => {
       selectedId.value = country.id;
@@ -341,7 +351,11 @@ async function bootMap() {
   });
   mapApi.enableDrawing();
   await refreshCountries();
+  if (myBoot !== bootToken) return;
   mapApi.invalidateSize();
+  setTimeout(() => {
+    if (myBoot === bootToken) mapApi?.invalidateSize();
+  }, 200);
 }
 
 function teardownMap() {
@@ -384,10 +398,7 @@ function openWiki(country) {
 function selectCountry(country) {
   selectedId.value = country.id;
   banner.value = `${country.official_name} · ${country.owner_display_name}`;
-  const layerBounds = country.geometry;
-  if (layerBounds && mapApi) {
-    // soft focus via setView on centroid-ish of first ring if possible
-  }
+  mapApi?.focusCountry(country);
 }
 
 function openSavePanel() {
@@ -477,13 +488,6 @@ async function saveCountry(payload) {
     saving.value = false;
   }
 }
-
-watch(session, async (value) => {
-  if (value) {
-    await nextTick();
-    await bootMap();
-  }
-});
 
 onMounted(async () => {
   if (session.value) await bootMap();

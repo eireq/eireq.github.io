@@ -4,7 +4,6 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { flagPublicUrl } from "./supabase.js";
 
-// Vite + Leaflet default marker icons break without this; we mostly use polygons.
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -16,22 +15,53 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-function geometryToLatLngs(geometry) {
-  if (!geometry || !geometry.type) return null;
+const FLAG_FILL_OPACITY = 0.85;
+const EMPTY_FILL_OPACITY = 0.5;
 
-  if (geometry.type === "Polygon") {
-    return (geometry.coordinates || []).map((ring) =>
+/** SPA-safe SVG paint server URL (bare url(#id) breaks on /jworld). */
+function svgPaintUrl(patternId) {
+  const base = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+  return `url("${base}#${patternId}")`;
+}
+
+export function normalizeGeometry(geometry) {
+  if (!geometry) return null;
+  let geo = geometry;
+  if (typeof geo === "string") {
+    try {
+      geo = JSON.parse(geo);
+    } catch {
+      return null;
+    }
+  }
+  if (geo.type === "Feature") geo = geo.geometry;
+  if (!geo || !geo.type || !geo.coordinates) return null;
+
+  if (geo.type === "Polygon") {
+    const ring = geo.coordinates?.[0];
+    if (!ring || ring.length < 3) return null;
+  }
+  if (geo.type === "MultiPolygon") {
+    const ring = geo.coordinates?.[0]?.[0];
+    if (!ring || ring.length < 3) return null;
+  }
+  if (geo.type !== "Polygon" && geo.type !== "MultiPolygon") return null;
+  return geo;
+}
+
+function geometryToLatLngs(geometry) {
+  const geo = normalizeGeometry(geometry);
+  if (!geo) return null;
+
+  if (geo.type === "Polygon") {
+    return geo.coordinates.map((ring) =>
       ring.map(([lng, lat]) => [lat, lng]),
     );
   }
 
-  if (geometry.type === "MultiPolygon") {
-    return (geometry.coordinates || []).map((polygon) =>
-      polygon.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
-    );
-  }
-
-  return null;
+  return geo.coordinates.map((polygon) =>
+    polygon.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
+  );
 }
 
 export function layerToGeoJSONGeometry(layer) {
@@ -49,31 +79,29 @@ function ensureDefs(svg) {
   return defs;
 }
 
-/** Slightly see-through so basemap labels can peek through the flag. */
-const FLAG_FILL_OPACITY = 0.72;
-const EMPTY_FILL_OPACITY = 0.45;
+function applySolidFill(path, opacity) {
+  path.setAttribute("fill", "#5a8cc8");
+  path.setAttribute("fill-opacity", String(opacity));
+}
 
 function updateFlagPattern(map, layer, countryId, flagUrl) {
   const path = layer.getElement?.() || layer._path;
-  if (!path || !flagUrl) {
-    if (path) {
-      path.setAttribute("fill", "rgba(90, 140, 200, 0.45)");
-      path.setAttribute("fill-opacity", String(EMPTY_FILL_OPACITY));
-    }
-    return;
-  }
+  if (!path) return;
+
+  // Always keep a visible solid fill so countries never "vanish".
+  applySolidFill(path, flagUrl ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY);
+  if (!flagUrl) return;
 
   const svg = path.ownerSVGElement;
   if (!svg) return;
 
   const defs = ensureDefs(svg);
-  const patternId = `jworld-flag-${countryId}`;
-  let pattern = defs.querySelector(`#${CSS.escape(patternId)}`);
+  // Avoid hyphens-only issues in CSS selectors: strip non-alnum from id.
+  const safeId = String(countryId).replace(/[^a-zA-Z0-9]/g, "");
+  const patternId = `jworldflag${safeId}`;
+  let pattern = svg.getElementById(patternId);
   if (!pattern) {
-    pattern = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "pattern",
-    );
+    pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
     pattern.setAttribute("id", patternId);
     pattern.setAttribute("patternUnits", "userSpaceOnUse");
     const image = document.createElementNS(
@@ -116,7 +144,8 @@ function updateFlagPattern(map, layer, countryId, flagUrl) {
     image.setAttribute("height", String(height));
   }
 
-  path.setAttribute("fill", `url(#${patternId})`);
+  // Progressive enhancement: only switch to pattern after we have a paint server.
+  path.setAttribute("fill", svgPaintUrl(patternId));
   path.setAttribute("fill-opacity", String(FLAG_FILL_OPACITY));
 }
 
@@ -128,7 +157,6 @@ export function createJworldMap(container, options = {}) {
     zoomControl: true,
   }).setView([20, 10], 2);
 
-  // Free dark XYZ tiles — no API key.
   L.tileLayer(
     "https://basemap.queeniemella.cc/tiles/countries/{z}/{x}/{y}.png",
     {
@@ -153,8 +181,7 @@ export function createJworldMap(container, options = {}) {
 
   function refreshFlagFills() {
     for (const [id, layer] of countryLayers.entries()) {
-      const flagUrl = layer.__jworldFlagUrl;
-      updateFlagPattern(map, layer, id, flagUrl);
+      updateFlagPattern(map, layer, id, layer.__jworldFlagUrl);
     }
   }
 
@@ -162,9 +189,9 @@ export function createJworldMap(container, options = {}) {
 
   function styleFor(country, isMine) {
     return {
-      color: isMine ? "#f0d78c" : "#9ab4c8",
-      weight: isMine ? 2.5 : 1.5,
-      opacity: 0.95,
+      color: isMine ? "#f0d78c" : "#c9d7e6",
+      weight: isMine ? 3 : 2,
+      opacity: 1,
       fillColor: "#5a8cc8",
       fillOpacity: country.flag_path ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY,
     };
@@ -174,32 +201,50 @@ export function createJworldMap(container, options = {}) {
     countriesLayer.clearLayers();
     countryLayers.clear();
 
+    let rendered = 0;
+    let skipped = 0;
+
     for (const country of countries || []) {
-      const latlngs = geometryToLatLngs(country.geometry);
-      if (!latlngs || !latlngs.length) continue;
+      try {
+        const geometry = normalizeGeometry(country.geometry);
+        const latlngs = geometryToLatLngs(geometry);
+        if (!latlngs || !latlngs.length) {
+          skipped += 1;
+          continue;
+        }
 
-      const isMine = memberId && country.owner_member_id === memberId;
-      const isMulti = country.geometry?.type === "MultiPolygon";
-      const layer = isMulti
-        ? L.polygon(latlngs, styleFor(country, isMine))
-        : L.polygon(latlngs, styleFor(country, isMine));
+        const isMine = memberId && country.owner_member_id === memberId;
+        const layer = L.polygon(latlngs, styleFor(country, isMine));
 
-      layer.__jworldCountryId = country.id;
-      layer.__jworldFlagUrl = flagPublicUrl(country.flag_path);
-      layer.bindTooltip(country.official_name || "Country", {
-        sticky: true,
-        direction: "top",
-        opacity: 0.9,
-      });
-      layer.on("click", () => handlers.onCountryClick(country));
-      countriesLayer.addLayer(layer);
-      countryLayers.set(country.id, layer);
+        layer.__jworldCountryId = country.id;
+        layer.__jworldFlagUrl = flagPublicUrl(country.flag_path);
+        layer.bindTooltip(country.official_name || "Country", {
+          sticky: true,
+          direction: "top",
+          opacity: 0.9,
+        });
+        layer.on("click", () => handlers.onCountryClick(country));
+        countriesLayer.addLayer(layer);
+        countryLayers.set(country.id, layer);
+        rendered += 1;
 
-      // Patterns need the path in the DOM.
-      requestAnimationFrame(() => {
-        updateFlagPattern(map, layer, country.id, layer.__jworldFlagUrl);
-      });
+        // Double rAF: wait until Leaflet has inserted the SVG path.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            updateFlagPattern(map, layer, country.id, layer.__jworldFlagUrl);
+          });
+        });
+      } catch (err) {
+        console.warn("jWorld: failed to render country", country?.official_name, err);
+        skipped += 1;
+      }
     }
+
+    // Keep countries visible after tiles settle.
+    setTimeout(refreshFlagFills, 100);
+    setTimeout(refreshFlagFills, 500);
+
+    return { rendered, skipped, total: (countries || []).length };
   }
 
   function enableDrawing() {
@@ -257,7 +302,6 @@ export function createJworldMap(container, options = {}) {
   function beginNewCountry() {
     enableDrawing();
     drawLayer.clearLayers();
-    // Programmatically start polygon draw if available
     const drawer = new L.Draw.Polygon(map, drawControl?.options?.draw?.polygon);
     drawer.enable();
     return drawer;
@@ -268,12 +312,27 @@ export function createJworldMap(container, options = {}) {
     drawLayer.clearLayers();
     const latlngs = geometryToLatLngs(country.geometry);
     if (!latlngs) return null;
-    const isMulti = country.geometry?.type === "MultiPolygon";
-    const layer = isMulti
-      ? L.polygon(latlngs, styleFor(country, true))
-      : L.polygon(latlngs, styleFor(country, true));
+    const layer = L.polygon(latlngs, styleFor(country, true));
     drawLayer.addLayer(layer);
     return layer;
+  }
+
+  function focusCountry(country) {
+    const layer = countryLayers.get(country?.id);
+    if (layer?.getBounds?.()?.isValid()) {
+      map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 6 });
+      return;
+    }
+    const latlngs = geometryToLatLngs(country?.geometry);
+    if (!latlngs) return;
+    try {
+      const temp = L.polygon(latlngs);
+      if (temp.getBounds().isValid()) {
+        map.fitBounds(temp.getBounds(), { padding: [40, 40], maxZoom: 6 });
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
   function clearDraw() {
@@ -285,7 +344,6 @@ export function createJworldMap(container, options = {}) {
     map.remove();
   }
 
-  // Fix grey tiles when container was hidden during join gate.
   setTimeout(() => map.invalidateSize(), 50);
 
   return {
@@ -295,6 +353,7 @@ export function createJworldMap(container, options = {}) {
     disableDrawing,
     beginNewCountry,
     loadCountryIntoDraw,
+    focusCountry,
     clearDraw,
     refreshFlagFills,
     invalidateSize: () => map.invalidateSize(),
