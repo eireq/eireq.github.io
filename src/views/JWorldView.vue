@@ -77,7 +77,10 @@
       <aside class="jworld-sidebar">
         <header>
           <h1>{{ worldName }}</h1>
-          <p>Playing as {{ session.displayName }}</p>
+          <p>
+            Playing as {{ session.displayName
+            }}{{ session.isAdmin ? " · admin" : "" }}
+          </p>
         </header>
         <div
           v-if="session && session.hasPassword === false"
@@ -122,7 +125,13 @@
               {{ c.official_name }}
               <span class="meta">
                 {{ c.owner_display_name
-                }}{{ c.owner_member_id === session.memberId ? " · you" : "" }}
+                }}{{
+                  c.owner_member_id === session.memberId
+                    ? " · you"
+                    : session.isAdmin
+                      ? " · admin edit"
+                      : ""
+                }}
               </span>
             </button>
           </li>
@@ -137,7 +146,7 @@
         <div class="jworld-map-banner">
           <span v-if="banner" class="jworld-toast">{{ banner }}</span>
           <button
-            v-if="selected && isMine(selected)"
+            v-if="selected && canEdit(selected)"
             class="jw-btn jw-btn--ghost"
             type="button"
             @click="editBorders(selected)"
@@ -252,6 +261,10 @@ function isMine(country) {
   return session.value && country?.owner_member_id === session.value.memberId;
 }
 
+function canEdit(country) {
+  return Boolean(session.value?.isAdmin || isMine(country));
+}
+
 function applySession(data) {
   saveSession(data);
   session.value = data;
@@ -308,7 +321,11 @@ async function refreshCountries() {
   }
   loadError.value = "";
   countries.value = data;
-  const stats = mapApi?.setCountries(data, session.value?.memberId);
+  const stats = mapApi?.setCountries(
+    data,
+    session.value?.memberId,
+    session.value?.isAdmin,
+  );
   if (stats && stats.total > 0 && stats.rendered === 0) {
     banner.value = `Loaded ${stats.total} countries but none had drawable borders. Re-save borders on each.`;
   } else if (stats && stats.skipped > 0) {
@@ -382,7 +399,7 @@ function startCreate() {
 }
 
 function editBorders(country) {
-  if (!isMine(country)) return;
+  if (!canEdit(country)) return;
   editingCountryId.value = country.id;
   draftGeometry.value = country.geometry;
   pendingFlag.value = null;

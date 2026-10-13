@@ -20,6 +20,7 @@ create table if not exists public.jworld_members (
   id uuid primary key default gen_random_uuid(),
   display_name text not null,
   password_hash text,
+  is_admin boolean not null default false,
   token uuid not null unique default gen_random_uuid(),
   created_at timestamptz not null default now(),
   constraint jworld_members_name_len check (
@@ -29,6 +30,11 @@ create table if not exists public.jworld_members (
 
 create unique index if not exists jworld_members_name_unique
   on public.jworld_members (lower(trim(display_name)));
+
+-- Seed admin by display name when present.
+update public.jworld_members
+set is_admin = true
+where lower(trim(display_name)) = 'eire';
 
 create table if not exists public.jworld_countries (
   id uuid primary key default gen_random_uuid(),
@@ -102,8 +108,20 @@ as $$
     'memberId', m.id,
     'token', m.token,
     'displayName', m.display_name,
-    'hasPassword', m.password_hash is not null
+    'hasPassword', m.password_hash is not null,
+    'isAdmin', coalesce(m.is_admin, false)
   );
+$$;
+
+create or replace function public.jworld_can_edit_country(
+  m public.jworld_members,
+  c public.jworld_countries
+)
+returns boolean
+language sql
+immutable
+as $$
+  select coalesce(m.is_admin, false) or (c.owner_member_id = m.id);
 $$;
 
 create or replace function public.jworld_assert_password(p_password text)
@@ -333,7 +351,7 @@ begin
   if c.id is null then
     raise exception 'Country not found';
   end if;
-  if c.owner_member_id is distinct from m.id then
+  if not public.jworld_can_edit_country(m, c) then
     raise exception 'You can only edit your own countries';
   end if;
 
@@ -388,7 +406,7 @@ begin
   if c.id is null then
     raise exception 'Country not found';
   end if;
-  if c.owner_member_id is distinct from m.id then
+  if not public.jworld_can_edit_country(m, c) then
     raise exception 'You can only delete your own countries';
   end if;
 

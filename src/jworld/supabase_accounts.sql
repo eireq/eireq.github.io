@@ -57,7 +57,8 @@ as $$
     'memberId', m.id,
     'token', m.token,
     'displayName', m.display_name,
-    'hasPassword', m.password_hash is not null
+    'hasPassword', m.password_hash is not null,
+    'isAdmin', coalesce(m.is_admin, false)
   );
 $$;
 

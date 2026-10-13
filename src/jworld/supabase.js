@@ -25,6 +25,7 @@ function sessionFromRpc(data) {
     token: data.token,
     displayName: data.displayName,
     hasPassword: Boolean(data.hasPassword),
+    isAdmin: Boolean(data.isAdmin),
   };
 }
 

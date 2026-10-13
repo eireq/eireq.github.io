@@ -14,6 +14,7 @@ export function loadSession() {
       hasPassword: Object.prototype.hasOwnProperty.call(parsed, "hasPassword")
         ? Boolean(parsed.hasPassword)
         : false,
+      isAdmin: Boolean(parsed.isAdmin),
     };
   } catch {
     return null;
@@ -28,6 +29,7 @@ export function saveSession(session) {
       token: session.token,
       displayName: session.displayName,
       hasPassword: Boolean(session.hasPassword),
+      isAdmin: Boolean(session.isAdmin),
     }),
   );
 }

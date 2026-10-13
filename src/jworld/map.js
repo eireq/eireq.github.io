@@ -197,7 +197,7 @@ export function createJworldMap(container, options = {}) {
     };
   }
 
-  function setCountries(countries, memberId) {
+  function setCountries(countries, memberId, isAdmin = false) {
     countriesLayer.clearLayers();
     countryLayers.clear();
 
@@ -213,8 +213,10 @@ export function createJworldMap(container, options = {}) {
           continue;
         }
 
-        const isMine = memberId && country.owner_member_id === memberId;
-        const layer = L.polygon(latlngs, styleFor(country, isMine));
+        const editable = Boolean(
+          isAdmin || (memberId && country.owner_member_id === memberId),
+        );
+        const layer = L.polygon(latlngs, styleFor(country, editable));
 
         layer.__jworldCountryId = country.id;
         layer.__jworldFlagUrl = flagPublicUrl(country.flag_path);

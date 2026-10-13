@@ -184,9 +184,10 @@ const pendingFlag = ref(null);
 
 const canEdit = computed(
   () =>
-    session.value &&
-    country.value &&
-    country.value.owner_member_id === session.value.memberId,
+    Boolean(session.value) &&
+    Boolean(country.value) &&
+    (session.value.isAdmin ||
+      country.value.owner_member_id === session.value.memberId),
 );
 
 const flagUrl = computed(() => flagPublicUrl(country.value?.flag_path));
