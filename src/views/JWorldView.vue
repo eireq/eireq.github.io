@@ -1,15 +1,40 @@
 <template>
   <div class="jworld-app">
     <div v-if="!session" class="jworld-join">
-      <form class="jworld-join-card" @submit.prevent="doJoin">
+      <form class="jworld-join-card" @submit.prevent="submitAuth">
         <h1>jWorld</h1>
         <p>
-          Private Earth sim. Enter the invite code and a display name to join
-          the map.
+          Private Earth sim. Create an account with the invite code, then sign
+          in from any device.
         </p>
-        <label>
+        <div class="jworld-auth-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            :class="{ 'is-active': authMode === 'login' }"
+            :aria-selected="authMode === 'login'"
+            @click="authMode = 'login'"
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :class="{ 'is-active': authMode === 'register' }"
+            :aria-selected="authMode === 'register'"
+            @click="authMode = 'register'"
+          >
+            Register
+          </button>
+        </div>
+        <label v-if="authMode === 'register'">
           Invite code
-          <input v-model="inviteCode" type="password" autocomplete="off" required />
+          <input
+            v-model="inviteCode"
+            type="password"
+            autocomplete="off"
+            required
+          />
         </label>
         <label>
           Display name
@@ -17,12 +42,28 @@
             v-model="displayName"
             type="text"
             maxlength="40"
-            autocomplete="nickname"
+            autocomplete="username"
+            required
+          />
+        </label>
+        <label>
+          Password
+          <input
+            v-model="password"
+            type="password"
+            minlength="6"
+            autocomplete="current-password"
             required
           />
         </label>
         <button class="jw-btn" type="submit" :disabled="joining">
-          {{ joining ? "Joining…" : "Enter jWorld" }}
+          {{
+            joining
+              ? "Please wait…"
+              : authMode === "login"
+                ? "Sign in"
+                : "Create account"
+          }}
         </button>
         <p v-if="joinError" class="jw-error">{{ joinError }}</p>
         <p v-if="!configured" class="jw-error">
@@ -38,12 +79,34 @@
           <h1>{{ worldName }}</h1>
           <p>Playing as {{ session.displayName }}</p>
         </header>
+        <div
+          v-if="session && session.hasPassword === false"
+          class="jworld-password-banner"
+        >
+          <p>Set a password so you can sign in on other devices.</p>
+          <input
+            v-model="newPassword"
+            type="password"
+            minlength="6"
+            placeholder="New password (6+)"
+            autocomplete="new-password"
+          />
+          <button
+            class="jw-btn"
+            type="button"
+            :disabled="passwordSaving"
+            @click="savePassword"
+          >
+            {{ passwordSaving ? "Saving…" : "Save password" }}
+          </button>
+          <p v-if="passwordError" class="jw-error">{{ passwordError }}</p>
+        </div>
         <div class="jworld-sidebar-actions">
           <button class="jw-btn" type="button" @click="startCreate">
             Create country
           </button>
           <button class="jw-btn jw-btn--ghost" type="button" @click="leave">
-            Leave
+            Sign out
           </button>
         </div>
         <ul class="jworld-country-list">
@@ -138,6 +201,8 @@ import {
   joinWorld,
   listCountries,
   loadWorldMeta,
+  loginWorld,
+  setWorldPassword,
   updateCountry,
   uploadFlag,
 } from "../jworld/supabase.js";
@@ -145,10 +210,15 @@ import {
 const router = useRouter();
 const configured = isJworldConfigured();
 const session = ref(loadSession());
+const authMode = ref("login");
 const inviteCode = ref("");
 const displayName = ref("");
+const password = ref("");
 const joining = ref(false);
 const joinError = ref("");
+const newPassword = ref("");
+const passwordSaving = ref(false);
+const passwordError = ref("");
 const worldName = ref("jWorld");
 const countries = ref([]);
 const loadError = ref("");
@@ -182,24 +252,44 @@ function isMine(country) {
   return session.value && country?.owner_member_id === session.value.memberId;
 }
 
-async function doJoin() {
+function applySession(data) {
+  saveSession(data);
+  session.value = data;
+}
+
+async function submitAuth() {
   joining.value = true;
   joinError.value = "";
-  const { data, error } = await joinWorld(inviteCode.value, displayName.value);
+  const result =
+    authMode.value === "login"
+      ? await loginWorld(displayName.value, password.value)
+      : await joinWorld(inviteCode.value, displayName.value, password.value);
   joining.value = false;
-  if (error) {
-    joinError.value = error;
+  if (result.error) {
+    joinError.value = result.error;
     return;
   }
-  const next = {
-    memberId: data.memberId,
-    token: data.token,
-    displayName: data.displayName,
-  };
-  saveSession(next);
-  session.value = next;
+  applySession(result.data);
+  password.value = "";
   await nextTick();
   await bootMap();
+}
+
+async function savePassword() {
+  if (!session.value) return;
+  passwordSaving.value = true;
+  passwordError.value = "";
+  const { data, error } = await setWorldPassword(
+    session.value.token,
+    newPassword.value,
+  );
+  passwordSaving.value = false;
+  if (error) {
+    passwordError.value = error;
+    return;
+  }
+  applySession(data);
+  newPassword.value = "";
 }
 
 function leave() {

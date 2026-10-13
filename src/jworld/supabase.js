@@ -18,15 +18,57 @@ function rpcError(error) {
   return error?.message || "Request failed.";
 }
 
-export async function joinWorld(inviteCode, displayName) {
+function sessionFromRpc(data) {
+  if (!data) return null;
+  return {
+    memberId: data.memberId,
+    token: data.token,
+    displayName: data.displayName,
+    hasPassword: Boolean(data.hasPassword),
+  };
+}
+
+export async function joinWorld(inviteCode, displayName, password) {
   if (!jworldDb) return { data: null, error: "Supabase is not configured." };
 
   const { data, error } = await jworldDb.rpc("jworld_join", {
     p_invite_code: inviteCode,
     p_display_name: displayName,
+    p_password: password,
   });
 
-  return { data, error: error ? rpcError(error) : null };
+  return {
+    data: error ? null : sessionFromRpc(data),
+    error: error ? rpcError(error) : null,
+  };
+}
+
+export async function loginWorld(displayName, password) {
+  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+
+  const { data, error } = await jworldDb.rpc("jworld_login", {
+    p_display_name: displayName,
+    p_password: password,
+  });
+
+  return {
+    data: error ? null : sessionFromRpc(data),
+    error: error ? rpcError(error) : null,
+  };
+}
+
+export async function setWorldPassword(token, password) {
+  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+
+  const { data, error } = await jworldDb.rpc("jworld_set_password", {
+    p_token: token,
+    p_password: password,
+  });
+
+  return {
+    data: error ? null : sessionFromRpc(data),
+    error: error ? rpcError(error) : null,
+  };
 }
 
 export async function listCountries(token) {

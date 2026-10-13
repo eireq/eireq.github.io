@@ -6,7 +6,15 @@ export function loadSession() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed?.memberId || !parsed?.token || !parsed?.displayName) return null;
-    return parsed;
+    return {
+      memberId: parsed.memberId,
+      token: parsed.token,
+      displayName: parsed.displayName,
+      // Missing flag = legacy session; prompt to set a password for multi-device.
+      hasPassword: Object.prototype.hasOwnProperty.call(parsed, "hasPassword")
+        ? Boolean(parsed.hasPassword)
+        : false,
+    };
   } catch {
     return null;
   }
@@ -19,6 +27,7 @@ export function saveSession(session) {
       memberId: session.memberId,
       token: session.token,
       displayName: session.displayName,
+      hasPassword: Boolean(session.hasPassword),
     }),
   );
 }

@@ -19,12 +19,16 @@ on conflict (id) do nothing;
 create table if not exists public.jworld_members (
   id uuid primary key default gen_random_uuid(),
   display_name text not null,
+  password_hash text,
   token uuid not null unique default gen_random_uuid(),
   created_at timestamptz not null default now(),
   constraint jworld_members_name_len check (
     char_length(trim(display_name)) between 1 and 40
   )
 );
+
+create unique index if not exists jworld_members_name_unique
+  on public.jworld_members (lower(trim(display_name)));
 
 create table if not exists public.jworld_countries (
   id uuid primary key default gen_random_uuid(),
@@ -89,7 +93,38 @@ begin
 end;
 $$;
 
-create or replace function public.jworld_join(p_invite_code text, p_display_name text)
+create or replace function public.jworld_session_payload(m public.jworld_members)
+returns jsonb
+language sql
+immutable
+as $$
+  select jsonb_build_object(
+    'memberId', m.id,
+    'token', m.token,
+    'displayName', m.display_name,
+    'hasPassword', m.password_hash is not null
+  );
+$$;
+
+create or replace function public.jworld_assert_password(p_password text)
+returns void
+language plpgsql
+as $$
+begin
+  if p_password is null or char_length(p_password) < 6 then
+    raise exception 'Password must be at least 6 characters';
+  end if;
+end;
+$$;
+
+drop function if exists public.jworld_join(text, text);
+drop function if exists public.jworld_join(text, text, text);
+
+create or replace function public.jworld_join(
+  p_invite_code text,
+  p_display_name text,
+  p_password text
+)
 returns jsonb
 language plpgsql
 security definer
@@ -104,6 +139,7 @@ begin
   if clean_name is null or char_length(clean_name) < 1 or char_length(clean_name) > 40 then
     raise exception 'Display name must be 1–40 characters';
   end if;
+  perform public.jworld_assert_password(p_password);
 
   select * into world from public.jworld_world where id = 1;
   if world.id is null then
@@ -113,15 +149,87 @@ begin
     raise exception 'Invalid invite code';
   end if;
 
-  insert into public.jworld_members (display_name)
-  values (clean_name)
+  select * into m
+  from public.jworld_members
+  where lower(trim(display_name)) = lower(clean_name);
+
+  if m.id is not null then
+    if m.password_hash is not null then
+      raise exception 'That name is taken — sign in instead';
+    end if;
+    update public.jworld_members
+    set password_hash = crypt(p_password, gen_salt('bf'))
+    where id = m.id
+    returning * into m;
+    return public.jworld_session_payload(m);
+  end if;
+
+  insert into public.jworld_members (display_name, password_hash)
+  values (clean_name, crypt(p_password, gen_salt('bf')))
   returning * into m;
 
-  return jsonb_build_object(
-    'memberId', m.id,
-    'token', m.token,
-    'displayName', m.display_name
-  );
+  return public.jworld_session_payload(m);
+end;
+$$;
+
+create or replace function public.jworld_login(
+  p_display_name text,
+  p_password text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  m public.jworld_members;
+  clean_name text;
+begin
+  clean_name := trim(p_display_name);
+  if clean_name is null or char_length(clean_name) < 1 then
+    raise exception 'Enter your display name';
+  end if;
+  perform public.jworld_assert_password(p_password);
+
+  select * into m
+  from public.jworld_members
+  where lower(trim(display_name)) = lower(clean_name);
+
+  if m.id is null then
+    raise exception 'Unknown account — register with the invite code first';
+  end if;
+  if m.password_hash is null then
+    raise exception 'This account has no password yet. Register once with the invite code to set one.';
+  end if;
+  if crypt(p_password, m.password_hash) is distinct from m.password_hash then
+    raise exception 'Wrong password';
+  end if;
+
+  return public.jworld_session_payload(m);
+end;
+$$;
+
+create or replace function public.jworld_set_password(
+  p_token uuid,
+  p_password text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  m public.jworld_members;
+begin
+  m := public.jworld_member_from_token(p_token);
+  perform public.jworld_assert_password(p_password);
+
+  update public.jworld_members
+  set password_hash = crypt(p_password, gen_salt('bf'))
+  where id = m.id
+  returning * into m;
+
+  return public.jworld_session_payload(m);
 end;
 $$;
 
@@ -381,7 +489,9 @@ as $$
   where id = 1;
 $$;
 
-grant execute on function public.jworld_join(text, text) to anon, authenticated;
+grant execute on function public.jworld_join(text, text, text) to anon, authenticated;
+grant execute on function public.jworld_login(text, text) to anon, authenticated;
+grant execute on function public.jworld_set_password(uuid, text) to anon, authenticated;
 grant execute on function public.jworld_create_country(uuid, text, jsonb, jsonb) to anon, authenticated;
 grant execute on function public.jworld_update_country(uuid, uuid, jsonb, jsonb) to anon, authenticated;
 grant execute on function public.jworld_delete_country(uuid, uuid) to anon, authenticated;
