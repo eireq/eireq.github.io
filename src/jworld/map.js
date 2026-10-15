@@ -220,9 +220,23 @@ export function createJworldMap(container, options = {}) {
     onDrawEdited: options.onDrawEdited || (() => {}),
   };
 
+  function stopLayerEditing() {
+    drawLayer.eachLayer((layer) => {
+      try {
+        if (layer.editing?.enabled?.()) layer.editing.disable();
+        else if (layer.editing?.disable) layer.editing.disable();
+      } catch {
+        /* ignore */
+      }
+    });
+  }
+
   function stopActiveTool() {
+    stopLayerEditing();
     if (!activeTool) return;
     try {
+      // Commit in-progress vertex edits before disable (disable can revert).
+      if (typeof activeTool.save === "function") activeTool.save();
       activeTool.disable();
     } catch {
       /* ignore */
@@ -258,29 +272,76 @@ export function createJworldMap(container, options = {}) {
     });
   }
 
+  function collectEditMarkers(layer) {
+    const editing = layer.editing;
+    if (!editing) return [];
+    const markers = [];
+    const pushRing = (ring) => {
+      if (!Array.isArray(ring)) return;
+      ring.forEach((marker) => {
+        if (marker?.setIcon) markers.push(marker);
+      });
+    };
+
+    if (Array.isArray(editing._markers)) {
+      if (editing._markers[0]?.setIcon) pushRing(editing._markers);
+      else editing._markers.forEach(pushRing);
+    }
+
+    const handlers = editing._verticesHandlers;
+    if (Array.isArray(handlers)) {
+      handlers.forEach((handler) => {
+        const hMarkers = handler?._markers;
+        if (!Array.isArray(hMarkers)) return;
+        if (hMarkers[0]?.setIcon) pushRing(hMarkers);
+        else hMarkers.forEach(pushRing);
+      });
+    }
+
+    return markers;
+  }
+
   function highlightEditFirstVertices() {
     drawLayer.eachLayer((layer) => {
-      const handlers = layer.editing?._verticesHandlers;
-      if (!handlers?.length) return;
-      handlers.forEach((handler) => {
-        const markers = handler._markers;
-        if (!Array.isArray(markers) || !markers.length) return;
-        // Poly may nest marker rings: [ringMarkers] or flat.
-        const rings = Array.isArray(markers[0]) ? markers : [markers];
-        rings.forEach((ring) => {
-          if (!Array.isArray(ring)) return;
-          ring.forEach((marker, index) => {
-            if (!marker?.setIcon) return;
-            marker.setIcon(vertexIcon(index === 0));
-            if (index === 0) {
-              marker.setZIndexOffset?.(1000);
-              const el = marker.getElement?.() || marker._icon;
-              if (el) el.title = "Start point of this ring";
-            }
-          });
-        });
+      const markers = collectEditMarkers(layer);
+      if (!markers.length) return;
+      markers.forEach((marker, index) => {
+        marker.setIcon(vertexIcon(index === 0));
+        if (index === 0) {
+          marker.setZIndexOffset?.(1000);
+          const el = marker.getElement?.() || marker._icon;
+          if (el) el.title = "Start point of this ring";
+        }
       });
     });
+  }
+
+  function enableVertexEditingOnDrawLayer() {
+    // Prefer the toolbar pencil handler (same code path as clicking it).
+    const toolbarEdit = drawControl?._toolbars?.edit?._modes?.edit?.handler;
+    if (toolbarEdit) {
+      try {
+        if (toolbarEdit.enabled?.()) toolbarEdit.disable();
+      } catch {
+        /* ignore */
+      }
+      toolbarEdit.enable();
+      activeTool = toolbarEdit;
+      return true;
+    }
+
+    // Fallback: enable each polygon's built-in editor.
+    let enabledAny = false;
+    drawLayer.eachLayer((layer) => {
+      if (!layer.editing) return;
+      try {
+        layer.editing.enable();
+        enabledAny = true;
+      } catch (err) {
+        console.warn("jWorld: could not enable vertex editing", err);
+      }
+    });
+    return enabledAny;
   }
 
   function refreshFlagFills() {
@@ -448,26 +509,34 @@ export function createJworldMap(container, options = {}) {
     enableDrawing();
     stopActiveTool();
     drawLayer.clearLayers();
-    const latlngs = geometryToLatLngs(country.geometry);
-    if (!latlngs) return null;
-    const layer = L.polygon(latlngs, styleFor(country, true));
-    drawLayer.addLayer(layer);
 
-    // Start edit mode immediately — same as clicking the tiny pencil.
-    const editor = new L.EditToolbar.Edit(map, {
-      featureGroup: drawLayer,
-      selectedPathOptions: {
-        maintainColor: true,
-        opacity: 0.4,
-        dashArray: null,
-      },
+    // Split MultiPolygon into simple polygons — leaflet-draw won't show
+    // vertex handles reliably on a single multi-polygon layer.
+    const territories = territoryLatLngList(country.geometry);
+    if (!territories.length) return null;
+
+    const style = {
+      ...styleFor(country, true),
+      fillOpacity: 0.25,
+    };
+    territories.forEach((latlngs) => {
+      drawLayer.addLayer(L.polygon(latlngs, style));
     });
-    editor.enable();
-    activeTool = editor;
+
+    // Same as clicking the pencil — must run after layers are in the group.
+    const ok = enableVertexEditingOnDrawLayer();
+    if (!ok) {
+      console.warn("jWorld: edit handler did not enable");
+    }
+
     requestAnimationFrame(() => {
       requestAnimationFrame(highlightEditFirstVertices);
+      // Second pass: toolbar enable is sometimes async for marker creation.
+      setTimeout(highlightEditFirstVertices, 50);
+      setTimeout(highlightEditFirstVertices, 200);
     });
-    return layer;
+
+    return drawLayer;
   }
 
   function focusCountry(country) {
@@ -515,11 +584,18 @@ export function createJworldMap(container, options = {}) {
     invalidateSize: () => map.invalidateSize(),
     destroy,
     getDrawGeometry: () => {
-      let geometry = null;
+      const parts = [];
       drawLayer.eachLayer((layer) => {
-        geometry = layerToGeoJSONGeometry(layer);
+        const geo = normalizeGeometry(layerToGeoJSONGeometry(layer));
+        if (!geo) return;
+        if (geo.type === "Polygon") parts.push(geo.coordinates);
+        else if (geo.type === "MultiPolygon") parts.push(...geo.coordinates);
       });
-      return geometry;
+      if (!parts.length) return null;
+      if (parts.length === 1) {
+        return { type: "Polygon", coordinates: parts[0] };
+      }
+      return { type: "MultiPolygon", coordinates: parts };
     },
   };
 }
