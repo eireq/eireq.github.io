@@ -193,7 +193,7 @@ export function createJworldMap(container, options = {}) {
   const map = L.map(container, {
     worldCopyJump: true,
     minZoom: 2,
-    maxZoom: 8,
+    maxZoom: 11,
     zoomControl: true,
   }).setView([20, 10], 2);
 
