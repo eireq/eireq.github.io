@@ -64,9 +64,41 @@ function geometryToLatLngs(geometry) {
   );
 }
 
+/** One latlng-ring-list per territory (so each can get its own flag). */
+function territoryLatLngList(geometry) {
+  const geo = normalizeGeometry(geometry);
+  if (!geo) return [];
+
+  if (geo.type === "Polygon") {
+    return [
+      geo.coordinates.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
+    ];
+  }
+
+  return geo.coordinates.map((polygon) =>
+    polygon.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
+  );
+}
+
 export function layerToGeoJSONGeometry(layer) {
   const geo = layer.toGeoJSON();
   return geo?.geometry || null;
+}
+
+/** Combine polygons into one MultiPolygon (e.g. UK + Gibraltar). */
+export function mergeGeometries(existing, addition) {
+  const base = normalizeGeometry(existing);
+  const add = normalizeGeometry(addition);
+  if (!add) return base;
+  if (!base) return add;
+
+  const asMultiCoords = (geo) =>
+    geo.type === "MultiPolygon" ? geo.coordinates : [geo.coordinates];
+
+  return {
+    type: "MultiPolygon",
+    coordinates: [...asMultiCoords(base), ...asMultiCoords(add)],
+  };
 }
 
 function ensureDefs(svg) {
@@ -84,7 +116,7 @@ function applySolidFill(path, opacity) {
   path.setAttribute("fill-opacity", String(opacity));
 }
 
-function updateFlagPattern(map, layer, countryId, flagUrl) {
+function updateFlagPattern(map, layer, patternKey, flagUrl) {
   const path = layer.getElement?.() || layer._path;
   if (!path) return;
 
@@ -96,8 +128,8 @@ function updateFlagPattern(map, layer, countryId, flagUrl) {
   if (!svg) return;
 
   const defs = ensureDefs(svg);
-  // Avoid hyphens-only issues in CSS selectors: strip non-alnum from id.
-  const safeId = String(countryId).replace(/[^a-zA-Z0-9]/g, "");
+  // Unique pattern per territory so each gets a full flag in its own bounds.
+  const safeId = String(patternKey).replace(/[^a-zA-Z0-9]/g, "");
   const patternId = `jworldflag${safeId}`;
   let pattern = svg.getElementById(patternId);
   if (!pattern) {
@@ -121,6 +153,7 @@ function updateFlagPattern(map, layer, countryId, flagUrl) {
     }
   }
 
+  // Size the flag to THIS territory only (not the whole MultiPolygon bbox).
   const bounds = layer.getBounds?.();
   if (!bounds || !bounds.isValid()) return;
 
@@ -144,9 +177,16 @@ function updateFlagPattern(map, layer, countryId, flagUrl) {
     image.setAttribute("height", String(height));
   }
 
-  // Progressive enhancement: only switch to pattern after we have a paint server.
   path.setAttribute("fill", svgPaintUrl(patternId));
   path.setAttribute("fill-opacity", String(FLAG_FILL_OPACITY));
+}
+
+function eachTerritoryPart(entry, fn) {
+  if (entry?.__jworldParts?.length) {
+    entry.__jworldParts.forEach((layer, index) => fn(layer, index));
+    return;
+  }
+  fn(entry, 0);
 }
 
 export function createJworldMap(container, options = {}) {
@@ -191,8 +231,11 @@ export function createJworldMap(container, options = {}) {
   }
 
   function refreshFlagFills() {
-    for (const [id, layer] of countryLayers.entries()) {
-      updateFlagPattern(map, layer, id, layer.__jworldFlagUrl);
+    for (const [id, entry] of countryLayers.entries()) {
+      const flagUrl = entry.__jworldFlagUrl;
+      eachTerritoryPart(entry, (layer, index) => {
+        updateFlagPattern(map, layer, `${id}p${index}`, flagUrl);
+      });
     }
   }
 
@@ -218,8 +261,8 @@ export function createJworldMap(container, options = {}) {
     for (const country of countries || []) {
       try {
         const geometry = normalizeGeometry(country.geometry);
-        const latlngs = geometryToLatLngs(geometry);
-        if (!latlngs || !latlngs.length) {
+        const territories = territoryLatLngList(geometry);
+        if (!territories.length) {
           skipped += 1;
           continue;
         }
@@ -227,24 +270,36 @@ export function createJworldMap(container, options = {}) {
         const editable = Boolean(
           isAdmin || (memberId && country.owner_member_id === memberId),
         );
-        const layer = L.polygon(latlngs, styleFor(country, editable));
+        const style = styleFor(country, editable);
+        const flagUrl = flagPublicUrl(country.flag_path);
+        const parts = [];
+        const group = L.featureGroup();
 
-        layer.__jworldCountryId = country.id;
-        layer.__jworldFlagUrl = flagPublicUrl(country.flag_path);
-        layer.bindTooltip(country.official_name || "Country", {
-          sticky: true,
-          direction: "top",
-          opacity: 0.9,
-        });
-        layer.on("click", () => handlers.onCountryClick(country));
-        countriesLayer.addLayer(layer);
-        countryLayers.set(country.id, layer);
+        // One polygon layer per territory → each gets a full flag fill.
+        for (const latlngs of territories) {
+          const part = L.polygon(latlngs, style);
+          part.bindTooltip(country.official_name || "Country", {
+            sticky: true,
+            direction: "top",
+            opacity: 0.9,
+          });
+          part.on("click", () => handlers.onCountryClick(country));
+          group.addLayer(part);
+          parts.push(part);
+        }
+
+        group.__jworldCountryId = country.id;
+        group.__jworldFlagUrl = flagUrl;
+        group.__jworldParts = parts;
+        countriesLayer.addLayer(group);
+        countryLayers.set(country.id, group);
         rendered += 1;
 
-        // Double rAF: wait until Leaflet has inserted the SVG path.
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            updateFlagPattern(map, layer, country.id, layer.__jworldFlagUrl);
+            parts.forEach((part, index) => {
+              updateFlagPattern(map, part, `${country.id}p${index}`, flagUrl);
+            });
           });
         });
       } catch (err) {
@@ -253,7 +308,6 @@ export function createJworldMap(container, options = {}) {
       }
     }
 
-    // Keep countries visible after tiles settle.
     setTimeout(refreshFlagFills, 100);
     setTimeout(refreshFlagFills, 500);
 
@@ -323,6 +377,11 @@ export function createJworldMap(container, options = {}) {
     return drawer;
   }
 
+  /** Draw an extra polygon to attach to an existing country. */
+  function beginAddTerritory() {
+    return beginNewCountry();
+  }
+
   function loadCountryIntoDraw(country) {
     enableDrawing();
     stopActiveTool();
@@ -383,6 +442,7 @@ export function createJworldMap(container, options = {}) {
     enableDrawing,
     disableDrawing,
     beginNewCountry,
+    beginAddTerritory,
     loadCountryIntoDraw,
     focusCountry,
     clearDraw,

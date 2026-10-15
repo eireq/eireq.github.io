@@ -153,6 +153,14 @@
           >
             Edit borders
           </button>
+          <button
+            v-if="selected && canEdit(selected)"
+            class="jw-btn jw-btn--ghost"
+            type="button"
+            @click="addTerritory(selected)"
+          >
+            Add territory
+          </button>
           <div v-if="selected" class="jw-wiki-spotlight">
             <span class="jw-wiki-arrow jw-wiki-arrow--1" aria-hidden="true"></span>
             <span class="jw-wiki-arrow jw-wiki-arrow--2" aria-hidden="true"></span>
@@ -168,7 +176,7 @@
             </button>
           </div>
           <button
-            v-if="draftGeometry || editingCountryId"
+            v-if="(draftGeometry || editingCountryId) && !addingTerritory"
             class="jw-btn"
             type="button"
             @click="openSavePanel"
@@ -203,8 +211,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router";
 import "../jworld/jworld.css";
 import CountryForm from "../jworld/CountryForm.vue";
-import { createJworldMap } from "../jworld/map.js";
-import { emptyCountryPayload } from "../jworld/countryFields.js";
+import { createJworldMap, mergeGeometries } from "../jworld/map.js";
+import {
+  countryToPayload,
+  emptyCountryPayload,
+} from "../jworld/countryFields.js";
 import {
   clearSession,
   loadSession,
@@ -242,6 +253,7 @@ const selectedId = ref(null);
 const banner = ref("Click a country or create one with the polygon tool.");
 const draftGeometry = ref(null);
 const editingCountryId = ref(null);
+const addingTerritory = ref(false);
 const showSavePanel = ref(false);
 const saving = ref(false);
 const saveError = ref("");
@@ -314,6 +326,8 @@ async function savePassword() {
 function leave() {
   clearSession();
   session.value = null;
+  addingTerritory.value = false;
+  editingCountryId.value = null;
   teardownMap();
 }
 
@@ -356,6 +370,10 @@ async function bootMap() {
       banner.value = `${country.official_name} · ${country.owner_display_name}`;
     },
     onDrawCreated: (geometry) => {
+      if (addingTerritory.value && editingCountryId.value) {
+        commitAddedTerritory(geometry);
+        return;
+      }
       draftGeometry.value = geometry;
       if (!editingCountryId.value) {
         formSeed.value = emptyCountryPayload();
@@ -367,6 +385,7 @@ async function bootMap() {
       }
     },
     onDrawEdited: (geometry) => {
+      addingTerritory.value = false;
       draftGeometry.value = geometry;
       banner.value = "Borders edited — save when ready.";
       showSavePanel.value = true;
@@ -396,6 +415,7 @@ function teardownMap() {
 
 function startCreate() {
   editingCountryId.value = null;
+  addingTerritory.value = false;
   draftGeometry.value = null;
   pendingFlag.value = null;
   formSeed.value = emptyCountryPayload();
@@ -407,6 +427,7 @@ function startCreate() {
 function editBorders(country) {
   if (!canEdit(country)) return;
   editingCountryId.value = country.id;
+  addingTerritory.value = false;
   draftGeometry.value = country.geometry;
   pendingFlag.value = null;
   showSavePanel.value = false;
@@ -414,6 +435,58 @@ function editBorders(country) {
     "Drag the corner points to reshape the border, then click Save borders.";
   mapApi?.loadCountryIntoDraw(country);
   mapApi?.focusCountry(country);
+}
+
+function addTerritory(country) {
+  if (!canEdit(country)) return;
+  editingCountryId.value = country.id;
+  addingTerritory.value = true;
+  draftGeometry.value = null;
+  pendingFlag.value = null;
+  showSavePanel.value = false;
+  banner.value =
+    "Draw the extra territory (e.g. an island or enclave), then finish the shape to save it.";
+  activeDrawer = mapApi?.beginAddTerritory() || null;
+}
+
+async function commitAddedTerritory(newPolygon) {
+  const country = countries.value.find((c) => c.id === editingCountryId.value);
+  if (!session.value || !country) {
+    addingTerritory.value = false;
+    return;
+  }
+
+  saving.value = true;
+  saveError.value = "";
+  banner.value = "Saving new territory…";
+
+  try {
+    const merged = mergeGeometries(country.geometry, newPolygon);
+    if (!merged) throw new Error("Could not merge territory geometry.");
+
+    const payload = countryToPayload(country);
+    const { error } = await updateCountry(
+      session.value.token,
+      country.id,
+      payload,
+      merged,
+    );
+    if (error) throw new Error(error);
+
+    addingTerritory.value = false;
+    editingCountryId.value = null;
+    draftGeometry.value = null;
+    showSavePanel.value = false;
+    mapApi?.clearDraw();
+    banner.value = `Added territory to ${country.official_name}.`;
+    await refreshCountries();
+    mapApi?.focusCountry({ ...country, geometry: merged });
+  } catch (err) {
+    banner.value = err.message || "Failed to add territory.";
+    saveError.value = err.message || "Failed to add territory.";
+  } finally {
+    saving.value = false;
+  }
 }
 
 function openWiki(country) {
