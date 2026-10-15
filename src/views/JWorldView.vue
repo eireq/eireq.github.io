@@ -410,8 +410,10 @@ function editBorders(country) {
   draftGeometry.value = country.geometry;
   pendingFlag.value = null;
   showSavePanel.value = false;
-  banner.value = "Use the edit tools (pencil / trash) on your outline, then save.";
+  banner.value =
+    "Drag the corner points to reshape the border, then click Save borders.";
   mapApi?.loadCountryIntoDraw(country);
+  mapApi?.focusCountry(country);
 }
 
 function openWiki(country) {

@@ -172,12 +172,23 @@ export function createJworldMap(container, options = {}) {
   const countryLayers = new Map();
   let drawControl = null;
   let drawingEnabled = false;
+  let activeTool = null;
 
   const handlers = {
     onCountryClick: options.onCountryClick || (() => {}),
     onDrawCreated: options.onDrawCreated || (() => {}),
     onDrawEdited: options.onDrawEdited || (() => {}),
   };
+
+  function stopActiveTool() {
+    if (!activeTool) return;
+    try {
+      activeTool.disable();
+    } catch {
+      /* ignore */
+    }
+    activeTool = null;
+  }
 
   function refreshFlagFills() {
     for (const [id, layer] of countryLayers.entries()) {
@@ -294,6 +305,7 @@ export function createJworldMap(container, options = {}) {
   function disableDrawing() {
     if (!drawingEnabled) return;
     drawingEnabled = false;
+    stopActiveTool();
     if (drawControl) {
       map.removeControl(drawControl);
       drawControl = null;
@@ -303,19 +315,34 @@ export function createJworldMap(container, options = {}) {
 
   function beginNewCountry() {
     enableDrawing();
+    stopActiveTool();
     drawLayer.clearLayers();
     const drawer = new L.Draw.Polygon(map, drawControl?.options?.draw?.polygon);
     drawer.enable();
+    activeTool = drawer;
     return drawer;
   }
 
   function loadCountryIntoDraw(country) {
     enableDrawing();
+    stopActiveTool();
     drawLayer.clearLayers();
     const latlngs = geometryToLatLngs(country.geometry);
     if (!latlngs) return null;
     const layer = L.polygon(latlngs, styleFor(country, true));
     drawLayer.addLayer(layer);
+
+    // Start edit mode immediately — same as clicking the tiny pencil.
+    const editor = new L.EditToolbar.Edit(map, {
+      featureGroup: drawLayer,
+      selectedPathOptions: {
+        maintainColor: true,
+        opacity: 0.4,
+        dashArray: null,
+      },
+    });
+    editor.enable();
+    activeTool = editor;
     return layer;
   }
 
@@ -338,10 +365,12 @@ export function createJworldMap(container, options = {}) {
   }
 
   function clearDraw() {
+    stopActiveTool();
     drawLayer.clearLayers();
   }
 
   function destroy() {
+    stopActiveTool();
     map.off();
     map.remove();
   }
