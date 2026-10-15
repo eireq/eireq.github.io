@@ -161,20 +161,14 @@
           >
             Add territory
           </button>
-          <div v-if="selected" class="jw-wiki-spotlight">
-            <span class="jw-wiki-arrow jw-wiki-arrow--1" aria-hidden="true"></span>
-            <span class="jw-wiki-arrow jw-wiki-arrow--2" aria-hidden="true"></span>
-            <span class="jw-wiki-arrow jw-wiki-arrow--3" aria-hidden="true"></span>
-            <span class="jw-wiki-arrow jw-wiki-arrow--4" aria-hidden="true"></span>
-            <span class="jw-wiki-arrow jw-wiki-arrow--5" aria-hidden="true"></span>
-            <button
-              class="jw-btn jw-btn--wiki"
-              type="button"
-              @click="openWiki(selected)"
-            >
-              Open wiki
-            </button>
-          </div>
+          <button
+            v-if="selected"
+            class="jw-btn jw-btn--ghost"
+            type="button"
+            @click="openWiki(selected)"
+          >
+            Open wiki
+          </button>
           <button
             v-if="(draftGeometry || editingCountryId) && !addingTerritory"
             class="jw-btn"
@@ -420,7 +414,8 @@ function startCreate() {
   pendingFlag.value = null;
   formSeed.value = emptyCountryPayload();
   showSavePanel.value = false;
-  banner.value = "Click points to draw a polygon. Double-click / finish to close it.";
+  banner.value =
+    "Click points to draw. The yellow/red point is the start — click it again to close.";
   activeDrawer = mapApi?.beginNewCountry() || null;
 }
 
@@ -432,7 +427,7 @@ function editBorders(country) {
   pendingFlag.value = null;
   showSavePanel.value = false;
   banner.value =
-    "Drag the corner points to reshape the border, then click Save borders.";
+    "Drag corner points to reshape. The yellow/red point is the ring start. Then Save borders.";
   mapApi?.loadCountryIntoDraw(country);
   mapApi?.focusCountry(country);
 }
@@ -445,7 +440,7 @@ function addTerritory(country) {
   pendingFlag.value = null;
   showSavePanel.value = false;
   banner.value =
-    "Draw the extra territory (e.g. an island or enclave), then finish the shape to save it.";
+    "Draw the extra territory. Click the yellow/red start point to close, then it saves.";
   activeDrawer = mapApi?.beginAddTerritory() || null;
 }
 

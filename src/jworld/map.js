@@ -230,6 +230,59 @@ export function createJworldMap(container, options = {}) {
     activeTool = null;
   }
 
+  const vertexIcon = (isFirst) =>
+    L.divIcon({
+      className: isFirst
+        ? "leaflet-div-icon leaflet-editing-icon jworld-first-vertex"
+        : "leaflet-div-icon leaflet-editing-icon",
+      iconSize: isFirst ? [14, 14] : [10, 10],
+      iconAnchor: isFirst ? [7, 7] : [5, 5],
+    });
+
+  /** Make the first draw/edit vertex obvious (the one you click to close). */
+  function highlightFirstVertex() {
+    const markers = activeTool?._markers;
+    if (!Array.isArray(markers) || !markers.length) return;
+
+    markers.forEach((marker, index) => {
+      if (!marker?.setIcon) return;
+      marker.setIcon(vertexIcon(index === 0));
+      if (index === 0) {
+        marker.setZIndexOffset?.(1000);
+        const el = marker.getElement?.() || marker._icon;
+        if (el) {
+          el.title = "Start point — click here to close the shape";
+          el.setAttribute("aria-label", "Start point — click here to close the shape");
+        }
+      }
+    });
+  }
+
+  function highlightEditFirstVertices() {
+    drawLayer.eachLayer((layer) => {
+      const handlers = layer.editing?._verticesHandlers;
+      if (!handlers?.length) return;
+      handlers.forEach((handler) => {
+        const markers = handler._markers;
+        if (!Array.isArray(markers) || !markers.length) return;
+        // Poly may nest marker rings: [ringMarkers] or flat.
+        const rings = Array.isArray(markers[0]) ? markers : [markers];
+        rings.forEach((ring) => {
+          if (!Array.isArray(ring)) return;
+          ring.forEach((marker, index) => {
+            if (!marker?.setIcon) return;
+            marker.setIcon(vertexIcon(index === 0));
+            if (index === 0) {
+              marker.setZIndexOffset?.(1000);
+              const el = marker.getElement?.() || marker._icon;
+              if (el) el.title = "Start point of this ring";
+            }
+          });
+        });
+      });
+    });
+  }
+
   function refreshFlagFills() {
     for (const [id, entry] of countryLayers.entries()) {
       const flagUrl = entry.__jworldFlagUrl;
@@ -354,6 +407,11 @@ export function createJworldMap(container, options = {}) {
         handlers.onDrawEdited(layerToGeoJSONGeometry(layer), layer);
       });
     });
+
+    map.on(L.Draw.Event.DRAWVERTEX, () => {
+      // Defer so leaflet-draw finishes adding the marker first.
+      requestAnimationFrame(highlightFirstVertex);
+    });
   }
 
   function disableDrawing() {
@@ -371,7 +429,11 @@ export function createJworldMap(container, options = {}) {
     enableDrawing();
     stopActiveTool();
     drawLayer.clearLayers();
-    const drawer = new L.Draw.Polygon(map, drawControl?.options?.draw?.polygon);
+    const drawer = new L.Draw.Polygon(map, {
+      ...drawControl?.options?.draw?.polygon,
+      icon: vertexIcon(false),
+      touchIcon: vertexIcon(false),
+    });
     drawer.enable();
     activeTool = drawer;
     return drawer;
@@ -402,6 +464,9 @@ export function createJworldMap(container, options = {}) {
     });
     editor.enable();
     activeTool = editor;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(highlightEditFirstVertices);
+    });
     return layer;
   }
 
