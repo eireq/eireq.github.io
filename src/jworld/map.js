@@ -532,7 +532,7 @@ export function createJworldMap(container, options = {}) {
    * Click a real-world country/island to use its outline.
    * Loads Natural Earth shapes on first use.
    */
-  async function beginSnapToShape({ onSelect } = {}) {
+  async function beginSnapToShape({ onSelect, onReady } = {}) {
     enableDrawing();
     stopActiveTool();
     drawLayer.clearLayers();
@@ -548,8 +548,18 @@ export function createJworldMap(container, options = {}) {
     const overlay = map.getPane("overlayPane");
     if (overlay) overlay.style.pointerEvents = "none";
 
-    snapCollection = await loadWorldShapes();
+    try {
+      snapCollection = await loadWorldShapes();
+    } catch (err) {
+      endSnapToShape();
+      throw err;
+    }
+
     if (!snapMode) return false;
+    onReady?.();
+
+    const snapPane = map.getPane("jworldSnap");
+    if (snapPane) snapPane.style.pointerEvents = "auto";
 
     snapLayer = L.geoJSON(snapCollection, {
       pane: "jworldSnap",
@@ -567,13 +577,18 @@ export function createJworldMap(container, options = {}) {
           "Land";
         layer.bindTooltip(label, { sticky: true, opacity: 0.9 });
         layer.on("mouseover", () => {
-          layer.setStyle({ fillOpacity: 0.28, weight: 2, opacity: 0.95 });
+          if (layer.setStyle) {
+            layer.setStyle({ fillOpacity: 0.28, weight: 2, opacity: 0.95 });
+          }
         });
         layer.on("mouseout", () => {
-          layer.setStyle({ fillOpacity: 0.06, weight: 1, opacity: 0.55 });
+          if (layer.setStyle) {
+            layer.setStyle({ fillOpacity: 0.06, weight: 1, opacity: 0.55 });
+          }
         });
         layer.on("click", (event) => {
           L.DomEvent.stopPropagation(event);
+          L.DomEvent.preventDefault(event);
           if (!snapMode) return;
           // Prefer the clicked island/part over the whole MultiPolygon country.
           const hit =

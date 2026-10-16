@@ -1,28 +1,51 @@
 /**
  * Real-world country / island outlines for "Snap to shape".
- * Natural Earth 50m — decent coasts without a huge download.
+ * Prefer the local Natural Earth 110m copy (works offline / no CORS).
  */
-const WORLD_SHAPES_URL =
-  "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson";
+const LOCAL_SHAPES_URL = `${import.meta.env.BASE_URL}jworld/ne_110m_admin_0_countries.geojson`;
+const FALLBACK_SHAPES_URL =
+  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
 
 let cachedCollection = null;
 let loadPromise = null;
+
+async function fetchJson(url, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Failed to load world shapes (${res.status})`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export async function loadWorldShapes() {
   if (cachedCollection) return cachedCollection;
   if (loadPromise) return loadPromise;
 
-  loadPromise = fetch(WORLD_SHAPES_URL)
-    .then(async (res) => {
-      if (!res.ok) throw new Error(`Failed to load world shapes (${res.status})`);
-      const data = await res.json();
+  loadPromise = (async () => {
+    try {
+      const data = await fetchJson(LOCAL_SHAPES_URL);
       cachedCollection = data;
       return data;
-    })
-    .catch((err) => {
-      loadPromise = null;
-      throw err;
-    });
+    } catch (localErr) {
+      console.warn("jWorld: local world shapes failed, trying fallback", localErr);
+      try {
+        const data = await fetchJson(FALLBACK_SHAPES_URL);
+        cachedCollection = data;
+        return data;
+      } catch (fallbackErr) {
+        loadPromise = null;
+        throw new Error(
+          fallbackErr?.name === "AbortError"
+            ? "Timed out loading world shapes. Check your connection and try again."
+            : "Could not load world shapes. Try again in a moment.",
+        );
+      }
+    }
+  })();
 
   return loadPromise;
 }
@@ -46,7 +69,6 @@ function pointInRing(lng, lat, ring) {
 function pointInPolygonCoords(lng, lat, coordinates) {
   if (!coordinates?.length) return false;
   if (!pointInRing(lng, lat, coordinates[0])) return false;
-  // Holes
   for (let h = 1; h < coordinates.length; h += 1) {
     if (pointInRing(lng, lat, coordinates[h])) return false;
   }
@@ -66,8 +88,7 @@ function featureName(props = {}) {
 
 /**
  * Find the real-world shape under a map click.
- * For MultiPolygon countries, returns only the clicked island/part as a Polygon
- * so you can snap Gibraltar-style pieces without grabbing the whole state.
+ * For MultiPolygon countries, returns only the clicked island/part as a Polygon.
  */
 export function findShapeAtLatLng(collection, latlng) {
   if (!collection?.features || !latlng) return null;
