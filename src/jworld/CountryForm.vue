@@ -35,7 +35,29 @@
       <h3>Infobox</h3>
       <label v-for="field in INFOBOX_FIELDS" :key="field.key">
         {{ field.label }}
-        <input v-model="model[field.key]" type="text" />
+        <template v-if="field.computed">
+          <input
+            type="text"
+            :value="computedArea || model[field.key] || 'Draw borders to calculate'"
+            readonly
+            class="jw-computed"
+          />
+          <span v-if="field.hint" class="jw-field-hint">{{ field.hint }}</span>
+        </template>
+        <select
+          v-else-if="field.options"
+          v-model="model[field.key]"
+        >
+          <option value="">— select —</option>
+          <option
+            v-for="opt in selectOptions(field, model[field.key])"
+            :key="opt"
+            :value="opt"
+          >
+            {{ opt }}
+          </option>
+        </select>
+        <input v-else v-model="model[field.key]" type="text" />
       </label>
       <label>
         Religion
@@ -51,11 +73,30 @@
       <h3>{{ sectionTitle(sectionKey) }}</h3>
       <label v-for="field in fields" :key="field.key">
         {{ field.label }}
+        <template v-if="field.computed">
+          <input
+            type="text"
+            :value="computedArea || model[sectionKey][field.key] || 'Draw borders to calculate'"
+            readonly
+            class="jw-computed"
+          />
+          <span v-if="field.hint" class="jw-field-hint">{{ field.hint }}</span>
+        </template>
+        <select
+          v-else-if="field.options"
+          v-model="model[sectionKey][field.key]"
+        >
+          <option value="">— select —</option>
+          <option
+            v-for="opt in selectOptions(field, model[sectionKey][field.key])"
+            :key="opt"
+            :value="opt"
+          >
+            {{ opt }}
+          </option>
+        </select>
         <textarea
-          v-if="
-            field.key === 'admin_divisions' ||
-            field.key === 'political_orientation'
-          "
+          v-else-if="field.multiline || field.key === 'admin_divisions'"
           v-model="model[sectionKey][field.key]"
           rows="3"
         />
@@ -94,10 +135,12 @@ import {
   SECTION_FIELDS,
   countryToPayload,
 } from "./countryFields.js";
+import { formatLandArea } from "./geometryArea.js";
 import { flagPublicUrl } from "./supabase.js";
 
 const props = defineProps({
   country: { type: Object, default: null },
+  geometry: { type: Object, default: null },
   saving: { type: Boolean, default: false },
   submitLabel: { type: String, default: "Save" },
   showDelete: { type: Boolean, default: false },
@@ -116,6 +159,22 @@ watch(
   { deep: true },
 );
 
+const computedArea = computed(() => {
+  const geo = props.geometry || props.country?.geometry || null;
+  return formatLandArea(geo);
+});
+
+watch(
+  computedArea,
+  (area) => {
+    if (!area) return;
+    model.land_area = area;
+    if (!model.geography) model.geography = {};
+    model.geography.area = area;
+  },
+  { immediate: true },
+);
+
 const localPreviewUrl = computed(() => {
   if (!props.pendingFlagFile) return null;
   return URL.createObjectURL(props.pendingFlagFile);
@@ -124,6 +183,13 @@ const localPreviewUrl = computed(() => {
 const flagPreview = computed(() => {
   return localPreviewUrl.value || flagPublicUrl(model.flag_path);
 });
+
+/** Keep legacy free-text values selectable even if not in the preset list. */
+function selectOptions(field, current) {
+  const opts = [...(field.options || [])];
+  if (current && !opts.includes(current)) opts.unshift(current);
+  return opts;
+}
 
 function sectionTitle(key) {
   return (

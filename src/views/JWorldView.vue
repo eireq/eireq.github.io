@@ -215,6 +215,7 @@
           </p>
           <CountryForm
             :country="formCountry"
+            :geometry="draftGeometry || formCountry?.geometry || null"
             :saving="saving"
             :pending-flag-file="pendingFlag"
             :submit-label="editingCountryId ? 'Save changes' : 'Create country'"
@@ -239,6 +240,7 @@ import {
   countryToPayload,
   emptyCountryPayload,
 } from "../jworld/countryFields.js";
+import { withCalculatedArea } from "../jworld/geometryArea.js";
 import {
   clearSession,
   loadSession,
@@ -583,7 +585,7 @@ async function commitAddedTerritory(newPolygon) {
     const merged = mergeGeometries(country.geometry, newPolygon);
     if (!merged) throw new Error("Could not merge territory geometry.");
 
-    const payload = countryToPayload(country);
+    const payload = withCalculatedArea(countryToPayload(country), merged);
     const { error } = await updateCountry(
       session.value.token,
       country.id,
@@ -646,7 +648,8 @@ async function saveCountry(payload) {
       return;
     }
 
-    let flagPath = payload.flag_path || null;
+    const areaPayload = withCalculatedArea(payload, geometry);
+    let flagPath = areaPayload.flag_path || null;
     const targetId = editingCountryId.value;
 
     if (editingCountryId.value) {
@@ -663,16 +666,16 @@ async function saveCountry(payload) {
       const { error } = await updateCountry(
         session.value.token,
         editingCountryId.value,
-        { ...payload, flag_path: flagPath },
+        { ...areaPayload, flag_path: flagPath },
         geometry || null,
       );
       if (error) throw new Error(error);
     } else {
       const { data, error } = await createCountry(
         session.value.token,
-        payload.official_name,
+        areaPayload.official_name,
         geometry,
-        { ...payload, flag_path: null },
+        { ...areaPayload, flag_path: null },
       );
       if (error) throw new Error(error);
 
@@ -684,7 +687,7 @@ async function saveCountry(payload) {
         );
         if (!up.error && up.path) {
           await updateCountry(session.value.token, data.id, {
-            ...payload,
+            ...areaPayload,
             flag_path: up.path,
           });
         }

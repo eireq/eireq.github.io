@@ -29,6 +29,7 @@
       <div v-if="editing && canEdit" class="jworld-country-inner" style="grid-template-columns: 1fr">
         <CountryForm
           :country="country"
+          :geometry="country.geometry"
           :saving="saving"
           :pending-flag-file="pendingFlag"
           :show-delete="true"
@@ -163,6 +164,7 @@ import {
   INFOBOX_FIELDS,
   SECTION_FIELDS,
 } from "../jworld/countryFields.js";
+import { withCalculatedArea } from "../jworld/geometryArea.js";
 import { loadSession } from "../jworld/session.js";
 import {
   deleteCountry,
@@ -229,10 +231,14 @@ async function saveWiki(payload) {
       if (up.error) throw new Error(up.error);
       flagPath = up.path;
     }
+    const areaPayload = withCalculatedArea(
+      { ...payload, flag_path: flagPath },
+      country.value.geometry,
+    );
     const { data, error } = await updateCountry(
       session.value.token,
       country.value.id,
-      { ...payload, flag_path: flagPath },
+      areaPayload,
     );
     if (error) throw new Error(error);
     country.value = {
