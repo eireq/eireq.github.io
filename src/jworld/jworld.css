@@ -151,6 +151,14 @@
   border-bottom: 1px solid var(--jw-border);
 }
 
+.jw-beta-note {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--jw-muted);
+  line-height: 1.35;
+}
+
 .jworld-country-list {
   list-style: none;
   margin: 0;

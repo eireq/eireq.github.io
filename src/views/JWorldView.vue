@@ -111,6 +111,7 @@
           <button
             class="jw-btn jw-btn--ghost"
             type="button"
+            title="Beta — may not work reliably"
             :disabled="snapLoading"
             @click="snapActive ? cancelSnap() : startSnapCreate()"
           >
@@ -119,9 +120,10 @@
                 ? "Loading shapes…"
                 : snapActive
                   ? "Cancel snap"
-                  : "Snap to shape"
+                  : "Snap to shape (beta)"
             }}
           </button>
+          <p class="jw-beta-note">Snap to shape is in beta and may not work.</p>
           <button class="jw-btn jw-btn--ghost" type="button" @click="leave">
             Sign out
           </button>
@@ -179,6 +181,7 @@
             v-if="selected && canEdit(selected)"
             class="jw-btn jw-btn--ghost"
             type="button"
+            title="Beta — may not work reliably"
             :disabled="snapLoading"
             @click="snapActive ? cancelSnap() : snapTerritory(selected)"
           >
@@ -187,7 +190,7 @@
                 ? "Loading shapes…"
                 : snapActive
                   ? "Cancel snap"
-                  : "Snap territory"
+                  : "Snap territory (beta)"
             }}
           </button>
           <button
@@ -481,7 +484,7 @@ async function startSnapCreate() {
         snapLoading.value = false;
         snapActive.value = true;
         banner.value =
-          "Snap mode: click a real country or island to use its outline.";
+          "Snap mode (beta): click a real country or island. May not work.";
       },
       onSelect: (hit) => {
         snapLoading.value = false;
@@ -553,7 +556,7 @@ async function snapTerritory(country) {
       onReady: () => {
         snapLoading.value = false;
         snapActive.value = true;
-        banner.value = `Snap territory: click land to add it to ${country.official_name}.`;
+        banner.value = `Snap territory (beta): click land to add to ${country.official_name}. May not work.`;
       },
       onSelect: (hit) => {
         snapLoading.value = false;
