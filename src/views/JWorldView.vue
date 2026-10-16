@@ -108,6 +108,14 @@
           <button class="jw-btn" type="button" @click="startCreate">
             Create country
           </button>
+          <button
+            class="jw-btn jw-btn--ghost"
+            type="button"
+            :disabled="snapping"
+            @click="startSnapCreate"
+          >
+            {{ snapping ? "Loading shapes…" : "Snap to shape" }}
+          </button>
           <button class="jw-btn jw-btn--ghost" type="button" @click="leave">
             Sign out
           </button>
@@ -160,6 +168,15 @@
             @click="addTerritory(selected)"
           >
             Add territory
+          </button>
+          <button
+            v-if="selected && canEdit(selected)"
+            class="jw-btn jw-btn--ghost"
+            type="button"
+            :disabled="snapping"
+            @click="snapTerritory(selected)"
+          >
+            {{ snapping ? "Loading shapes…" : "Snap territory" }}
           </button>
           <button
             v-if="selected"
@@ -248,6 +265,7 @@ const banner = ref("Click a country or create one with the polygon tool.");
 const draftGeometry = ref(null);
 const editingCountryId = ref(null);
 const addingTerritory = ref(false);
+const snapping = ref(false);
 const showSavePanel = ref(false);
 const saving = ref(false);
 const saveError = ref("");
@@ -321,6 +339,7 @@ function leave() {
   clearSession();
   session.value = null;
   addingTerritory.value = false;
+  snapping.value = false;
   editingCountryId.value = null;
   teardownMap();
 }
@@ -410,13 +429,56 @@ function teardownMap() {
 function startCreate() {
   editingCountryId.value = null;
   addingTerritory.value = false;
+  snapping.value = false;
   draftGeometry.value = null;
   pendingFlag.value = null;
   formSeed.value = emptyCountryPayload();
   showSavePanel.value = false;
+  mapApi?.endSnapToShape?.();
   banner.value =
     "Click points to draw. The yellow/red point is the start — click it again to close.";
   activeDrawer = mapApi?.beginNewCountry() || null;
+}
+
+async function startSnapCreate() {
+  editingCountryId.value = null;
+  addingTerritory.value = false;
+  draftGeometry.value = null;
+  pendingFlag.value = null;
+  formSeed.value = emptyCountryPayload();
+  showSavePanel.value = false;
+  snapping.value = true;
+  banner.value = "Loading real-world outlines…";
+
+  try {
+    await mapApi?.beginSnapToShape({
+      onSelect: (hit) => {
+        snapping.value = false;
+        editingCountryId.value = null;
+        draftGeometry.value = hit.geometry;
+        formSeed.value = {
+          ...emptyCountryPayload(),
+          official_name: hit.name || "",
+        };
+        showSavePanel.value = true;
+        banner.value = `Snapped to ${hit.name}. Tweak handles if you want, then save.`;
+        // Put shape in draw layer so Save uses it / user can still edit.
+        mapApi?.loadCountryIntoDraw?.({
+          id: "snap-draft",
+          geometry: hit.geometry,
+          flag_path: null,
+          owner_member_id: session.value?.memberId,
+        });
+      },
+    });
+    if (snapping.value) {
+      banner.value =
+        "Snap mode: click a real country or island to use its outline.";
+    }
+  } catch (err) {
+    snapping.value = false;
+    banner.value = err.message || "Could not load world shapes.";
+  }
 }
 
 function editBorders(country) {
@@ -436,12 +498,40 @@ function addTerritory(country) {
   if (!canEdit(country)) return;
   editingCountryId.value = country.id;
   addingTerritory.value = true;
+  snapping.value = false;
   draftGeometry.value = null;
   pendingFlag.value = null;
   showSavePanel.value = false;
+  mapApi?.endSnapToShape?.();
   banner.value =
     "Draw the extra territory. Click the yellow/red start point to close, then it saves.";
   activeDrawer = mapApi?.beginAddTerritory() || null;
+}
+
+async function snapTerritory(country) {
+  if (!canEdit(country)) return;
+  editingCountryId.value = country.id;
+  addingTerritory.value = true;
+  draftGeometry.value = null;
+  pendingFlag.value = null;
+  showSavePanel.value = false;
+  snapping.value = true;
+  banner.value = "Loading real-world outlines…";
+
+  try {
+    await mapApi?.beginSnapToShape({
+      onSelect: (hit) => {
+        snapping.value = false;
+        banner.value = `Snapping ${hit.name} onto ${country.official_name}…`;
+        commitAddedTerritory(hit.geometry);
+      },
+    });
+    banner.value = `Snap territory: click an island or country to add it to ${country.official_name}.`;
+  } catch (err) {
+    snapping.value = false;
+    addingTerritory.value = false;
+    banner.value = err.message || "Could not load world shapes.";
+  }
 }
 
 async function commitAddedTerritory(newPolygon) {

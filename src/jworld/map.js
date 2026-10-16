@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { flagPublicUrl } from "./supabase.js";
+import { findShapeAtLatLng, loadWorldShapes } from "./worldShapes.js";
 
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -213,6 +214,13 @@ export function createJworldMap(container, options = {}) {
   let drawControl = null;
   let drawingEnabled = false;
   let activeTool = null;
+  let snapMode = false;
+  let snapLayer = null;
+  let snapCollection = null;
+  let onSnapSelect = null;
+
+  map.createPane("jworldSnap");
+  map.getPane("jworldSnap").style.zIndex = 455;
 
   const handlers = {
     onCountryClick: options.onCountryClick || (() => {}),
@@ -505,6 +513,84 @@ export function createJworldMap(container, options = {}) {
     return beginNewCountry();
   }
 
+  function endSnapToShape() {
+    snapMode = false;
+    onSnapSelect = null;
+    if (snapLayer) {
+      map.removeLayer(snapLayer);
+      snapLayer = null;
+    }
+    // Restore clicks on player countries.
+    const overlay = map.getPane("overlayPane");
+    if (overlay) overlay.style.pointerEvents = "";
+    if (map.getContainer()) {
+      map.getContainer().classList.remove("jworld-snap-cursor");
+    }
+  }
+
+  /**
+   * Click a real-world country/island to use its outline.
+   * Loads Natural Earth shapes on first use.
+   */
+  async function beginSnapToShape({ onSelect } = {}) {
+    enableDrawing();
+    stopActiveTool();
+    drawLayer.clearLayers();
+    endSnapToShape();
+
+    snapMode = true;
+    onSnapSelect = onSelect || null;
+    if (map.getContainer()) {
+      map.getContainer().classList.add("jworld-snap-cursor");
+    }
+
+    // Let the snap overlay receive clicks instead of jWorld countries.
+    const overlay = map.getPane("overlayPane");
+    if (overlay) overlay.style.pointerEvents = "none";
+
+    snapCollection = await loadWorldShapes();
+    if (!snapMode) return false;
+
+    snapLayer = L.geoJSON(snapCollection, {
+      pane: "jworldSnap",
+      style: {
+        color: "#f0d78c",
+        weight: 1,
+        opacity: 0.55,
+        fillColor: "#f0d78c",
+        fillOpacity: 0.06,
+      },
+      onEachFeature: (feature, layer) => {
+        const label =
+          feature.properties?.NAME ||
+          feature.properties?.ADMIN ||
+          "Land";
+        layer.bindTooltip(label, { sticky: true, opacity: 0.9 });
+        layer.on("mouseover", () => {
+          layer.setStyle({ fillOpacity: 0.28, weight: 2, opacity: 0.95 });
+        });
+        layer.on("mouseout", () => {
+          layer.setStyle({ fillOpacity: 0.06, weight: 1, opacity: 0.55 });
+        });
+        layer.on("click", (event) => {
+          L.DomEvent.stopPropagation(event);
+          if (!snapMode) return;
+          // Prefer the clicked island/part over the whole MultiPolygon country.
+          const hit =
+            findShapeAtLatLng(snapCollection, event.latlng) || {
+              name: label,
+              geometry: feature.geometry,
+            };
+          const cb = onSnapSelect;
+          endSnapToShape();
+          cb?.(hit);
+        });
+      },
+    }).addTo(map);
+
+    return true;
+  }
+
   function loadCountryIntoDraw(country) {
     enableDrawing();
     stopActiveTool();
@@ -559,11 +645,13 @@ export function createJworldMap(container, options = {}) {
 
   function clearDraw() {
     stopActiveTool();
+    endSnapToShape();
     drawLayer.clearLayers();
   }
 
   function destroy() {
     stopActiveTool();
+    endSnapToShape();
     map.off();
     map.remove();
   }
@@ -577,6 +665,8 @@ export function createJworldMap(container, options = {}) {
     disableDrawing,
     beginNewCountry,
     beginAddTerritory,
+    beginSnapToShape,
+    endSnapToShape,
     loadCountryIntoDraw,
     focusCountry,
     clearDraw,

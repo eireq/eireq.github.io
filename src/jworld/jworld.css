@@ -196,6 +196,11 @@
   background: #0a1018;
 }
 
+.jworld-map.jworld-snap-cursor,
+.jworld-map.jworld-snap-cursor .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
 /* First polygon vertex — yellow ring, red center (no glow). */
 .jworld-map .jworld-first-vertex {
   width: 14px !important;
