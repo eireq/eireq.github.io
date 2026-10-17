@@ -1,18 +1,4 @@
-function normalizeGeometry(geometry) {
-  if (!geometry) return null;
-  let geo = geometry;
-  if (typeof geo === "string") {
-    try {
-      geo = JSON.parse(geo);
-    } catch {
-      return null;
-    }
-  }
-  if (geo.type === "Feature") geo = geo.geometry;
-  if (!geo || !geo.type || !geo.coordinates) return null;
-  if (geo.type !== "Polygon" && geo.type !== "MultiPolygon") return null;
-  return geo;
-}
+import { normalizeGeometry } from "./geometry.js";
 
 /** Polygon coordinate arrays for each territory part. */
 export function listTerritoryPolygons(geometry) {

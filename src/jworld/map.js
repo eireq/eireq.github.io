@@ -8,7 +8,10 @@ import {
   listTerritoryNames,
   syncTerritoryNames,
 } from "./territories.js";
+import { normalizeGeometry, unwrapRing } from "./geometry.js";
 import { findShapeAtLatLng, loadWorldShapes } from "./worldShapes.js";
+
+export { normalizeGeometry };
 
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -32,29 +35,8 @@ function svgPaintUrl(patternId) {
   return `url(#${patternId})`;
 }
 
-export function normalizeGeometry(geometry) {
-  if (!geometry) return null;
-  let geo = geometry;
-  if (typeof geo === "string") {
-    try {
-      geo = JSON.parse(geo);
-    } catch {
-      return null;
-    }
-  }
-  if (geo.type === "Feature") geo = geo.geometry;
-  if (!geo || !geo.type || !geo.coordinates) return null;
-
-  if (geo.type === "Polygon") {
-    const ring = geo.coordinates?.[0];
-    if (!ring || ring.length < 3) return null;
-  }
-  if (geo.type === "MultiPolygon") {
-    const ring = geo.coordinates?.[0]?.[0];
-    if (!ring || ring.length < 3) return null;
-  }
-  if (geo.type !== "Polygon" && geo.type !== "MultiPolygon") return null;
-  return geo;
+function ringToLatLngs(ring) {
+  return unwrapRing(ring).map(([lng, lat]) => [lat, lng]);
 }
 
 function geometryToLatLngs(geometry) {
@@ -62,13 +44,11 @@ function geometryToLatLngs(geometry) {
   if (!geo) return null;
 
   if (geo.type === "Polygon") {
-    return geo.coordinates.map((ring) =>
-      ring.map(([lng, lat]) => [lat, lng]),
-    );
+    return geo.coordinates.map((ring) => ringToLatLngs(ring));
   }
 
   return geo.coordinates.map((polygon) =>
-    polygon.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
+    polygon.map((ring) => ringToLatLngs(ring)),
   );
 }
 
@@ -78,13 +58,11 @@ function territoryLatLngList(geometry) {
   if (!geo) return [];
 
   if (geo.type === "Polygon") {
-    return [
-      geo.coordinates.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
-    ];
+    return [geo.coordinates.map((ring) => ringToLatLngs(ring))];
   }
 
   return geo.coordinates.map((polygon) =>
-    polygon.map((ring) => ring.map(([lng, lat]) => [lat, lng])),
+    polygon.map((ring) => ringToLatLngs(ring)),
   );
 }
 
@@ -201,7 +179,7 @@ export function createJworldMap(container, options = {}) {
   const map = L.map(container, {
     worldCopyJump: true,
     minZoom: 2,
-    maxZoom: 11,
+    maxZoom: 20,
     zoomControl: true,
   }).setView([20, 10], 2);
 
@@ -226,6 +204,8 @@ export function createJworldMap(container, options = {}) {
   let snapCollection = null;
   let onSnapSelect = null;
   let onSnapMiss = null;
+  let onSnapApproximate = null;
+  let onSnapLowRes = null;
 
   map.createPane("jworldSnap");
   const snapPaneEl = map.getPane("jworldSnap");
@@ -362,7 +342,22 @@ export function createJworldMap(container, options = {}) {
     return enabledAny;
   }
 
+  function pruneFlagPatterns() {
+    const live = new Set();
+    for (const [id, entry] of countryLayers.entries()) {
+      eachTerritoryPart(entry, (_layer, index) => {
+        const safeId = String(`${id}p${index}`).replace(/[^a-zA-Z0-9]/g, "");
+        live.add(`jworldflag${safeId}`);
+      });
+    }
+    const pane = map.getPane("overlayPane");
+    pane?.querySelectorAll("defs.jworld-flag-defs pattern").forEach((node) => {
+      if (!live.has(node.id)) node.remove();
+    });
+  }
+
   function refreshFlagFills() {
+    pruneFlagPatterns();
     for (const [id, entry] of countryLayers.entries()) {
       const flagUrl = entry.__jworldFlagUrl;
       eachTerritoryPart(entry, (layer, index) => {
@@ -373,14 +368,32 @@ export function createJworldMap(container, options = {}) {
 
   map.on("zoomend moveend viewreset", refreshFlagFills);
 
-  function styleFor(country, isMine) {
+  let selectedCountryId = null;
+
+  function styleFor(country, isMine, isSelected = false) {
     return {
-      color: isMine ? "#f0d78c" : "#c9d7e6",
-      weight: isMine ? 3 : 2,
+      color: isSelected ? "#fff7d6" : isMine ? "#f0d78c" : "#c9d7e6",
+      weight: isSelected ? 5 : isMine ? 3 : 2,
       opacity: 1,
       fillColor: "#5a8cc8",
       fillOpacity: country.flag_path ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY,
     };
+  }
+
+  function applySelectionStyles() {
+    for (const [id, entry] of countryLayers.entries()) {
+      const style = styleFor(
+        entry.__jworldCountry || {},
+        Boolean(entry.__jworldEditable),
+        id === selectedCountryId,
+      );
+      eachTerritoryPart(entry, (layer) => layer.setStyle(style));
+    }
+  }
+
+  function setSelected(id) {
+    selectedCountryId = id || null;
+    applySelectionStyles();
   }
 
   function setCountries(countries, memberId, isAdmin = false) {
@@ -402,7 +415,11 @@ export function createJworldMap(container, options = {}) {
         const editable = Boolean(
           isAdmin || (memberId && country.owner_member_id === memberId),
         );
-        const style = styleFor(country, editable);
+        const style = styleFor(
+          country,
+          editable,
+          country.id === selectedCountryId,
+        );
         const flagUrl = flagPublicUrl(country.flag_path);
         const parts = [];
         const group = L.featureGroup();
@@ -430,6 +447,8 @@ export function createJworldMap(container, options = {}) {
         });
 
         group.__jworldCountryId = country.id;
+        group.__jworldCountry = country;
+        group.__jworldEditable = editable;
         group.__jworldFlagUrl = flagUrl;
         group.__jworldParts = parts;
         countriesLayer.addLayer(group);
@@ -451,6 +470,7 @@ export function createJworldMap(container, options = {}) {
 
     setTimeout(refreshFlagFills, 100);
     setTimeout(refreshFlagFills, 500);
+    pruneFlagPatterns();
 
     return { rendered, skipped, total: (countries || []).length };
   }
@@ -463,8 +483,13 @@ export function createJworldMap(container, options = {}) {
       position: "topright",
       draw: {
         polygon: {
-          allowIntersection: true,
+          allowIntersection: false,
           showArea: false,
+          drawError: {
+            color: "#d96a6a",
+            timeout: 2000,
+            message: "Edges can't cross",
+          },
           shapeOptions: {
             color: "#f0d78c",
             weight: 2,
@@ -480,6 +505,9 @@ export function createJworldMap(container, options = {}) {
       edit: {
         featureGroup: drawLayer,
         remove: true,
+        poly: {
+          allowIntersection: false,
+        },
       },
     });
     map.addControl(drawControl);
@@ -553,6 +581,14 @@ export function createJworldMap(container, options = {}) {
       onSnapMiss?.();
       return;
     }
+    if (hit.lowResolution) {
+      onSnapLowRes?.(hit);
+      return;
+    }
+    if (hit.approximate) {
+      onSnapApproximate?.(hit);
+      return;
+    }
     const cb = onSnapSelect;
     endSnapToShape();
     cb?.(hit);
@@ -562,6 +598,8 @@ export function createJworldMap(container, options = {}) {
     snapMode = false;
     onSnapSelect = null;
     onSnapMiss = null;
+    onSnapApproximate = null;
+    onSnapLowRes = null;
     map.off("click", handleSnapMapClick);
     if (snapLayer) {
       map.removeLayer(snapLayer);
@@ -577,7 +615,13 @@ export function createJworldMap(container, options = {}) {
    * Click a real-world country/island to use its outline.
    * Uses map-level hit testing (country layers otherwise steal clicks).
    */
-  async function beginSnapToShape({ onSelect, onMiss, onReady } = {}) {
+  async function beginSnapToShape({
+    onSelect,
+    onMiss,
+    onApproximate,
+    onLowResolution,
+    onReady,
+  } = {}) {
     enableDrawing();
     stopActiveTool();
     drawLayer.clearLayers();
@@ -586,6 +630,8 @@ export function createJworldMap(container, options = {}) {
     snapMode = true;
     onSnapSelect = onSelect || null;
     onSnapMiss = onMiss || null;
+    onSnapApproximate = onApproximate || null;
+    onSnapLowRes = onLowResolution || null;
     if (map.getContainer()) {
       map.getContainer().classList.add("jworld-snap-cursor");
     }
@@ -652,17 +698,37 @@ export function createJworldMap(container, options = {}) {
     return drawLayer;
   }
 
+  function boundsAreUsable(bounds) {
+    if (!bounds?.isValid?.()) return false;
+    const width = Math.abs(bounds.getEast() - bounds.getWest());
+    return width > 0 && width <= 180;
+  }
+
   function focusCountry(country) {
     const layer = countryLayers.get(country?.id);
-    if (layer?.getBounds?.()?.isValid()) {
-      map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 6 });
+    const parts = layer?.__jworldParts || [];
+    let best = null;
+    let bestArea = 0;
+    for (const part of parts) {
+      const bounds = part.getBounds?.();
+      if (!boundsAreUsable(bounds)) continue;
+      const area =
+        Math.abs(bounds.getEast() - bounds.getWest()) *
+        Math.abs(bounds.getNorth() - bounds.getSouth());
+      if (area > bestArea) {
+        best = bounds;
+        bestArea = area;
+      }
+    }
+    if (best) {
+      map.fitBounds(best, { padding: [40, 40], maxZoom: 6 });
       return;
     }
     const latlngs = geometryToLatLngs(country?.geometry);
     if (!latlngs) return;
     try {
       const temp = L.polygon(latlngs);
-      if (temp.getBounds().isValid()) {
+      if (boundsAreUsable(temp.getBounds())) {
         map.fitBounds(temp.getBounds(), { padding: [40, 40], maxZoom: 6 });
       }
     } catch {
@@ -688,6 +754,7 @@ export function createJworldMap(container, options = {}) {
   return {
     map,
     setCountries,
+    setSelected,
     enableDrawing,
     disableDrawing,
     beginNewCountry,
@@ -713,6 +780,59 @@ export function createJworldMap(container, options = {}) {
         return { type: "Polygon", coordinates: parts[0] };
       }
       return { type: "MultiPolygon", coordinates: parts };
+    },
+  };
+}
+
+const BASEMAP_URL =
+  "https://basemap.queeniemella.cc/tiles/countries/{z}/{x}/{y}.png";
+const BASEMAP_ATTR =
+  '&copy; <a href="https://basemap.queeniemella.cc/">queeniemella.cc</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+/** Small read-only map of one country's borders, for the wiki page. */
+export function createCountryPreview(container, geometry) {
+  const map = L.map(container, {
+    zoomControl: false,
+    attributionControl: true,
+    scrollWheelZoom: false,
+    minZoom: 1,
+    maxZoom: 8,
+  });
+
+  L.tileLayer(BASEMAP_URL, {
+    attribution: BASEMAP_ATTR,
+    maxZoom: 20,
+  }).addTo(map);
+
+  const territories = territoryLatLngList(geometry);
+  let best = null;
+  let bestArea = 0;
+  for (const latlngs of territories) {
+    const layer = L.polygon(latlngs, {
+      color: "#f0d78c",
+      weight: 2,
+      fillColor: "#5a8cc8",
+      fillOpacity: 0.45,
+    }).addTo(map);
+    const bounds = layer.getBounds?.();
+    if (!bounds?.isValid?.()) continue;
+    const width = Math.abs(bounds.getEast() - bounds.getWest());
+    if (width <= 0 || width > 180) continue;
+    const area = width * Math.abs(bounds.getNorth() - bounds.getSouth());
+    if (area > bestArea) {
+      best = bounds;
+      bestArea = area;
+    }
+  }
+
+  if (best) map.fitBounds(best, { padding: [18, 18], maxZoom: 5 });
+  else map.setView([20, 10], 1);
+
+  setTimeout(() => map.invalidateSize(), 50);
+  return {
+    destroy() {
+      map.off();
+      map.remove();
     },
   };
 }

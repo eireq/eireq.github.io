@@ -1,26 +1,12 @@
 /** WGS84 equatorial radius (m) — same as Mapbox geojson-area. */
+import { normalizeGeometry } from "./geometry.js";
+
 const EARTH_RADIUS_M = 6378137;
 const M2_PER_KM2 = 1_000_000;
 const M2_PER_SQ_MI = 2_589_988.110336;
 
 function toRad(deg) {
   return (deg * Math.PI) / 180;
-}
-
-function normalizeGeometry(geometry) {
-  if (!geometry) return null;
-  let geo = geometry;
-  if (typeof geo === "string") {
-    try {
-      geo = JSON.parse(geo);
-    } catch {
-      return null;
-    }
-  }
-  if (geo.type === "Feature") geo = geo.geometry;
-  if (!geo || !geo.type || !geo.coordinates) return null;
-  if (geo.type !== "Polygon" && geo.type !== "MultiPolygon") return null;
-  return geo;
 }
 
 /** Signed spherical ring area in m² (outer rings positive, holes negative). */

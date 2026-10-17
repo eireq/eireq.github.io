@@ -32,8 +32,15 @@
     <p v-if="loadError" class="jw-error">{{ loadError }}</p>
     <p v-else-if="!country" class="jw-error">Loading…</p>
 
+    <div
+      v-if="country && !editing"
+      ref="previewEl"
+      class="jworld-country-preview"
+      aria-label="Country borders"
+    />
+
     <template v-else>
-      <div v-if="editing && canEdit" class="jworld-country-inner" style="grid-template-columns: 1fr">
+      <div v-if="editing && canEdit" class="jworld-country-inner jworld-country-inner--stack">
         <CountryForm
           :country="country"
           :geometry="country.geometry"
@@ -134,7 +141,7 @@
             </dl>
           </section>
 
-          <p class="lede" style="margin-top: 28px">
+          <p class="lede jw-ruled-by">
             Ruled by {{ country.owner_display_name }}
           </p>
         </article>
@@ -146,9 +153,7 @@
               :src="flagUrl"
               :alt="`Flag of ${country.official_name}`"
             />
-            <span v-else style="color: #9aa8b8; font-size: 0.85rem"
-              >No flag yet</span
-            >
+            <span v-else class="jw-flag-empty">No flag yet</span>
           </div>
           <div class="title">{{ country.official_name }}</div>
           <table>
@@ -172,9 +177,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import "../jworld/jworld.css";
+import { createCountryPreview } from "../jworld/map.js";
+import { savableGeometryError } from "../jworld/geometry.js";
 import CountryForm from "../jworld/CountryForm.vue";
 import TransferOwnership from "../jworld/TransferOwnership.vue";
 import {
@@ -206,6 +213,21 @@ const editing = ref(false);
 const saving = ref(false);
 const saveError = ref("");
 const pendingFlag = ref(null);
+const previewEl = ref(null);
+let previewMap = null;
+
+function destroyPreview() {
+  previewMap?.destroy();
+  previewMap = null;
+}
+
+async function mountPreview() {
+  destroyPreview();
+  if (editing.value || !country.value?.geometry) return;
+  await nextTick();
+  if (!previewEl.value) return;
+  previewMap = createCountryPreview(previewEl.value, country.value.geometry);
+}
 
 const canEdit = computed(
   () =>
@@ -272,14 +294,17 @@ async function saveWiki(payload, geometry = null) {
     let flagPath = payload.flag_path || null;
     if (pendingFlag.value) {
       const up = await uploadFlag(
-        session.value.memberId,
+        session.value.token,
         country.value.id,
         pendingFlag.value,
+        session.value.memberId,
       );
       if (up.error) throw new Error(up.error);
       flagPath = up.path;
     }
     const nextGeometry = geometry || country.value.geometry;
+    const borderError = savableGeometryError(nextGeometry);
+    if (borderError) throw new Error(borderError);
     const areaPayload = withCalculatedArea(
       { ...payload, flag_path: flagPath },
       nextGeometry,
@@ -289,6 +314,7 @@ async function saveWiki(payload, geometry = null) {
       country.value.id,
       areaPayload,
       geometry,
+      country.value.updated_at || null,
     );
     if (error) throw new Error(error);
     country.value = {
@@ -332,9 +358,16 @@ watch(
   () => route.params.id,
   () => {
     editing.value = false;
+    destroyPreview();
     load();
   },
 );
 
+watch([country, editing], () => {
+  if (editing.value || !country.value) destroyPreview();
+  else mountPreview();
+});
+
 onMounted(load);
+onBeforeUnmount(destroyPreview);
 </script>

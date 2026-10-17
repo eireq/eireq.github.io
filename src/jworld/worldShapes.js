@@ -1,14 +1,29 @@
 /**
- * Real-world country / island outlines for "Snap to shape".
- * Prefer the local Natural Earth 110m copy (works offline / no CORS).
- * Kept under /data/ so it is not confused with the /jworld SPA route.
+ * Real-world country outlines for "Snap to shape".
+ * 50m is what gets saved. 110m is only a visual guide — too coarse to store.
+ * Files live under /data/ so they are not confused with the /jworld SPA route.
  */
-const LOCAL_SHAPES_URL = `${import.meta.env.BASE_URL}data/ne_110m_admin_0_countries.geojson`;
-const FALLBACK_SHAPES_URL =
-  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
+const BASE = import.meta.env.BASE_URL;
+const SHAPE_SOURCES = [
+  {
+    url: `${BASE}data/ne_50m_admin_0_countries.geojson`,
+    lowResolution: false,
+  },
+  {
+    url: "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    lowResolution: false,
+  },
+  {
+    url: `${BASE}data/ne_110m_admin_0_countries.geojson`,
+    lowResolution: true,
+  },
+];
 
-/** How far off a simplified 110m coastline still counts as a hit (km). */
-const NEAR_COAST_KM = 120;
+/**
+ * Clicks this close to a simplified coast are reported as "near", not saved.
+ * Only a point inside the outline becomes a border.
+ */
+const NEAR_COAST_KM = 40;
 
 let cachedCollection = null;
 let loadPromise = null;
@@ -36,25 +51,24 @@ export async function loadWorldShapes() {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    try {
-      const data = await fetchJson(LOCAL_SHAPES_URL);
-      cachedCollection = data;
-      return data;
-    } catch (localErr) {
-      console.warn("jWorld: local world shapes failed, trying fallback", localErr);
+    let lastErr = null;
+    for (const source of SHAPE_SOURCES) {
       try {
-        const data = await fetchJson(FALLBACK_SHAPES_URL);
+        const data = await fetchJson(source.url);
+        data.__jworldLowResolution = source.lowResolution;
         cachedCollection = data;
         return data;
-      } catch (fallbackErr) {
-        loadPromise = null;
-        throw new Error(
-          fallbackErr?.name === "AbortError"
-            ? "Timed out loading world shapes. Check your connection and try again."
-            : "Could not load world shapes. Try again in a moment.",
-        );
+      } catch (err) {
+        lastErr = err;
+        console.warn("jWorld: world shapes failed", source.url, err);
       }
     }
+    loadPromise = null;
+    throw new Error(
+      lastErr?.name === "AbortError"
+        ? "Timed out loading world shapes. Check your connection and try again."
+        : "Could not load world shapes. Try again in a moment.",
+    );
   })();
 
   return loadPromise;
@@ -146,20 +160,32 @@ function distToPolygonKm(lat, lng, coordinates) {
   return distToRingKm(lat, lng, coordinates[0]);
 }
 
-function hitFromPolygon(name, coordinates) {
+function cloneGeometry(geometry) {
   return {
-    name,
-    geometry: {
+    type: geometry.type,
+    coordinates: geometry.coordinates,
+  };
+}
+
+function hitFromFeature(collection, feature, partCoordinates, approximate) {
+  const geom = feature.geometry;
+  return {
+    name: featureName(feature.properties),
+    // Whole country. Snap-to-create stores this, not a single island.
+    geometry: cloneGeometry(geom),
+    partGeometry: {
       type: "Polygon",
-      coordinates,
+      coordinates: partCoordinates,
     },
+    approximate,
+    lowResolution: Boolean(collection?.__jworldLowResolution),
   };
 }
 
 /**
- * Find the real-world shape under a map click.
- * For MultiPolygon countries, returns only the clicked island/part as a Polygon.
- * Handles wrapped longitudes (Pacific / world copies) and coarse 110m coasts.
+ * Find the real-world country under a map click.
+ * An exact hit includes the full country plus the clicked part.
+ * A near-coast hit is marked approximate and must not be saved.
  */
 export function findShapeAtLatLng(collection, latlng) {
   if (!collection?.features || !latlng) return null;
@@ -172,29 +198,22 @@ export function findShapeAtLatLng(collection, latlng) {
   for (const feature of collection.features) {
     const geom = feature.geometry;
     if (!geom) continue;
-    const name = featureName(feature.properties);
 
-    if (geom.type === "Polygon") {
-      if (pointInPolygonCoords(lng, lat, geom.coordinates)) {
-        return hitFromPolygon(name, geom.coordinates);
+    const parts =
+      geom.type === "Polygon"
+        ? [geom.coordinates]
+        : geom.type === "MultiPolygon"
+          ? geom.coordinates
+          : [];
+
+    for (const poly of parts) {
+      if (pointInPolygonCoords(lng, lat, poly)) {
+        return hitFromFeature(collection, feature, poly, false);
       }
-      const d = distToPolygonKm(lat, lng, geom.coordinates);
+      const d = distToPolygonKm(lat, lng, poly);
       if (d < nearestDist) {
         nearestDist = d;
-        nearest = hitFromPolygon(name, geom.coordinates);
-      }
-    }
-
-    if (geom.type === "MultiPolygon") {
-      for (const poly of geom.coordinates) {
-        if (pointInPolygonCoords(lng, lat, poly)) {
-          return hitFromPolygon(name, poly);
-        }
-        const d = distToPolygonKm(lat, lng, poly);
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearest = hitFromPolygon(name, poly);
-        }
+        nearest = hitFromFeature(collection, feature, poly, true);
       }
     }
   }

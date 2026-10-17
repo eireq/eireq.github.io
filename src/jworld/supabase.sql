@@ -2,6 +2,7 @@
 -- Run once in the Supabase SQL Editor.
 -- Then set your invite code:
 --   update public.jworld_world set invite_code = 'your-secret' where id = 1;
+-- Then run supabase_improve.sql (sessions, conflict checks, lighter reads, flag grants).
 
 create extension if not exists pgcrypto with schema extensions;
 

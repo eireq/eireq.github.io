@@ -32,6 +32,13 @@
         Common names
         <input v-model="model.common_names" type="text" />
       </label>
+      <p v-if="variant === 'create'" class="jw-field-hint">
+        A name and a flag are enough here. Fill in the wiki from the country page.
+      </p>
+      <p v-else-if="variant === 'borders'" class="jw-field-hint">
+        This saves the borders and the name. The rest of the wiki stays on the country page.
+      </p>
+      <template v-if="variant === 'full'">
       <label>
         Motto
         <input v-model="model.motto" type="text" />
@@ -44,6 +51,7 @@
         Lore
         <textarea v-model="model.lore" rows="6" />
       </label>
+      </template>
       <label class="jw-flag-upload">
         Flag image
         <input type="file" accept="image/*" @change="onFlag" />
@@ -53,7 +61,7 @@
       </div>
     </section>
 
-    <section v-if="territoryNames.length" class="jw-form-section">
+    <section v-if="variant !== 'create' && territoryNames.length" class="jw-form-section">
       <h3>Territories</h3>
       <p class="jw-field-hint">
         Shown as “Name ({{ model.official_name || "country" }})” on the wiki.
@@ -91,7 +99,7 @@
       </div>
     </section>
 
-    <section class="jw-form-section">
+    <section v-if="variant === 'full'" class="jw-form-section">
       <h3>Infobox</h3>
       <label v-for="field in INFOBOX_FIELDS" :key="field.key">
         {{ field.label }}
@@ -125,6 +133,7 @@
       </label>
     </section>
 
+    <template v-if="variant === 'full'">
     <section
       v-for="(fields, sectionKey) in SECTION_FIELDS"
       :key="sectionKey"
@@ -163,11 +172,12 @@
         <input v-else v-model="model[sectionKey][field.key]" type="text" />
       </label>
     </section>
+    </template>
   </form>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 import {
   INFOBOX_FIELDS,
   SECTION_FIELDS,
@@ -190,6 +200,7 @@ const props = defineProps({
   submitLabel: { type: String, default: "Save" },
   showDelete: { type: Boolean, default: false },
   pendingFlagFile: { type: File, default: null },
+  variant: { type: String, default: "full" },
 });
 
 const emit = defineEmits(["submit", "cancel", "delete", "flag-change"]);
@@ -249,13 +260,23 @@ watch(
   { immediate: true },
 );
 
-const localPreviewUrl = computed(() => {
-  if (!props.pendingFlagFile) return null;
-  return URL.createObjectURL(props.pendingFlagFile);
+const previewUrl = ref(null);
+
+watch(
+  () => props.pendingFlagFile,
+  (file) => {
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = file ? URL.createObjectURL(file) : null;
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
 });
 
 const flagPreview = computed(() => {
-  return localPreviewUrl.value || flagPublicUrl(model.flag_path);
+  return previewUrl.value || flagPublicUrl(model.flag_path);
 });
 
 function selectOptions(field, current) {
