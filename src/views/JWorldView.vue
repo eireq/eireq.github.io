@@ -127,26 +127,50 @@
             Sign out
           </button>
         </div>
+        <div class="jworld-country-search">
+          <input
+            v-model="countrySearch"
+            type="search"
+            placeholder="Search countries…"
+            autocomplete="off"
+            aria-label="Search countries"
+          />
+        </div>
         <ul class="jworld-country-list">
           <li v-if="!countries.length && !loadError">
             <button type="button" disabled>No countries yet</button>
           </li>
-          <li v-for="c in countries" :key="c.id">
+          <li v-else-if="!filteredCountries.length">
+            <button type="button" disabled>No matches</button>
+          </li>
+          <li v-for="c in filteredCountries" :key="c.id">
             <button
               type="button"
               :class="{ 'is-active': selectedId === c.id }"
               @click="selectCountry(c)"
             >
-              {{ c.official_name }}
-              <span class="meta">
-                {{ c.owner_display_name
-                }}{{
-                  c.owner_member_id === session.memberId
-                    ? " · you"
-                    : session.isAdmin
-                      ? " · admin edit"
-                      : ""
-                }}
+              <span class="jw-country-row">
+                <span class="jw-country-flag" aria-hidden="true">
+                  <img
+                    v-if="flagUrl(c)"
+                    :src="flagUrl(c)"
+                    :alt="''"
+                    loading="lazy"
+                  />
+                </span>
+                <span class="jw-country-text">
+                  {{ c.official_name }}
+                  <span class="meta">
+                    {{ c.owner_display_name
+                    }}{{
+                      c.owner_member_id === session.memberId
+                        ? " · you"
+                        : session.isAdmin
+                          ? " · admin edit"
+                          : ""
+                    }}
+                  </span>
+                </span>
               </span>
             </button>
           </li>
@@ -275,6 +299,7 @@ import {
 } from "../jworld/session.js";
 import {
   createCountry,
+  flagPublicUrl,
   isJworldConfigured,
   joinWorld,
   listCountries,
@@ -304,6 +329,7 @@ const passwordSaving = ref(false);
 const passwordError = ref("");
 const worldName = ref("jWorld");
 const countries = ref([]);
+const countrySearch = ref("");
 const loadError = ref("");
 const mapEl = ref(null);
 const selectedId = ref(null);
@@ -341,6 +367,22 @@ let activeDrawer = null;
 const selected = computed(
   () => countries.value.find((c) => c.id === selectedId.value) || null,
 );
+
+const filteredCountries = computed(() => {
+  const q = countrySearch.value.trim().toLowerCase();
+  const list = countries.value || [];
+  if (!q) return list;
+  return list.filter((c) => {
+    const name = String(c.official_name || "").toLowerCase();
+    const common = String(c.common_names || "").toLowerCase();
+    const owner = String(c.owner_display_name || "").toLowerCase();
+    return name.includes(q) || common.includes(q) || owner.includes(q);
+  });
+});
+
+function flagUrl(country) {
+  return flagPublicUrl(country?.flag_path);
+}
 
 const formCountry = computed(() => {
   if (editingCountryId.value) {
