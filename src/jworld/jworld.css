@@ -205,7 +205,9 @@
 }
 
 .jworld-map.jworld-snap-cursor,
-.jworld-map.jworld-snap-cursor .leaflet-interactive {
+.jworld-map.jworld-snap-cursor .leaflet-interactive,
+.jworld-map.jworld-snap-cursor .leaflet-container,
+.jworld-map.jworld-snap-cursor path {
   cursor: crosshair !important;
 }
 

@@ -112,12 +112,11 @@
             class="jw-btn jw-btn--ghost"
             type="button"
             title="Beta — may not work reliably"
-            :disabled="snapLoading"
-            @click="snapActive ? cancelSnap() : startSnapCreate()"
+            @click="snapLoading || snapActive ? cancelSnap() : startSnapCreate()"
           >
             {{
               snapLoading
-                ? "Loading shapes…"
+                ? "Cancel loading…"
                 : snapActive
                   ? "Cancel snap"
                   : "Snap to shape (beta)"
@@ -182,12 +181,15 @@
             class="jw-btn jw-btn--ghost"
             type="button"
             title="Beta — may not work reliably"
-            :disabled="snapLoading"
-            @click="snapActive ? cancelSnap() : snapTerritory(selected)"
+            @click="
+              snapLoading || snapActive
+                ? cancelSnap()
+                : snapTerritory(selected)
+            "
           >
             {{
               snapLoading
-                ? "Loading shapes…"
+                ? "Cancel loading…"
                 : snapActive
                   ? "Cancel snap"
                   : "Snap territory (beta)"
@@ -484,7 +486,11 @@ async function startSnapCreate() {
         snapLoading.value = false;
         snapActive.value = true;
         banner.value =
-          "Snap mode (beta): click a real country or island. May not work.";
+          "Snap mode (beta): click inside a yellow outline (e.g. Greenland).";
+      },
+      onMiss: () => {
+        banner.value =
+          "No land there — click inside a yellow country outline.";
       },
       onSelect: (hit) => {
         snapLoading.value = false;
@@ -556,7 +562,11 @@ async function snapTerritory(country) {
       onReady: () => {
         snapLoading.value = false;
         snapActive.value = true;
-        banner.value = `Snap territory (beta): click land to add to ${country.official_name}. May not work.`;
+        banner.value = `Snap territory (beta): click inside a yellow outline to add to ${country.official_name}.`;
+      },
+      onMiss: () => {
+        banner.value =
+          "No land there — click inside a yellow country outline.";
       },
       onSelect: (hit) => {
         snapLoading.value = false;

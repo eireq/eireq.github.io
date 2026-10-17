@@ -218,9 +218,12 @@ export function createJworldMap(container, options = {}) {
   let snapLayer = null;
   let snapCollection = null;
   let onSnapSelect = null;
+  let onSnapMiss = null;
 
   map.createPane("jworldSnap");
-  map.getPane("jworldSnap").style.zIndex = 455;
+  const snapPaneEl = map.getPane("jworldSnap");
+  snapPaneEl.style.zIndex = 650;
+  snapPaneEl.style.pointerEvents = "none";
 
   const handlers = {
     onCountryClick: options.onCountryClick || (() => {}),
@@ -513,16 +516,40 @@ export function createJworldMap(container, options = {}) {
     return beginNewCountry();
   }
 
+  /** Country paths keep pointer-events:auto even if the pane is none — disable them. */
+  function setCountryHitTesting(enabled) {
+    countriesLayer.eachLayer((group) => {
+      const parts = group.__jworldParts || [];
+      for (const part of parts) {
+        part.options.interactive = enabled;
+        const path = part.getElement?.() || part._path;
+        if (path) path.style.pointerEvents = enabled ? "auto" : "none";
+      }
+    });
+  }
+
+  function handleSnapMapClick(event) {
+    if (!snapMode || !snapCollection) return;
+    const hit = findShapeAtLatLng(snapCollection, event.latlng);
+    if (!hit) {
+      onSnapMiss?.();
+      return;
+    }
+    const cb = onSnapSelect;
+    endSnapToShape();
+    cb?.(hit);
+  }
+
   function endSnapToShape() {
     snapMode = false;
     onSnapSelect = null;
+    onSnapMiss = null;
+    map.off("click", handleSnapMapClick);
     if (snapLayer) {
       map.removeLayer(snapLayer);
       snapLayer = null;
     }
-    // Restore clicks on player countries.
-    const overlay = map.getPane("overlayPane");
-    if (overlay) overlay.style.pointerEvents = "";
+    setCountryHitTesting(true);
     if (map.getContainer()) {
       map.getContainer().classList.remove("jworld-snap-cursor");
     }
@@ -530,9 +557,9 @@ export function createJworldMap(container, options = {}) {
 
   /**
    * Click a real-world country/island to use its outline.
-   * Loads Natural Earth shapes on first use.
+   * Uses map-level hit testing (country layers otherwise steal clicks).
    */
-  async function beginSnapToShape({ onSelect, onReady } = {}) {
+  async function beginSnapToShape({ onSelect, onMiss, onReady } = {}) {
     enableDrawing();
     stopActiveTool();
     drawLayer.clearLayers();
@@ -540,13 +567,11 @@ export function createJworldMap(container, options = {}) {
 
     snapMode = true;
     onSnapSelect = onSelect || null;
+    onSnapMiss = onMiss || null;
     if (map.getContainer()) {
       map.getContainer().classList.add("jworld-snap-cursor");
     }
-
-    // Let the snap overlay receive clicks instead of jWorld countries.
-    const overlay = map.getPane("overlayPane");
-    if (overlay) overlay.style.pointerEvents = "none";
+    setCountryHitTesting(false);
 
     try {
       snapCollection = await loadWorldShapes();
@@ -556,53 +581,22 @@ export function createJworldMap(container, options = {}) {
     }
 
     if (!snapMode) return false;
-    onReady?.();
 
-    const snapPane = map.getPane("jworldSnap");
-    if (snapPane) snapPane.style.pointerEvents = "auto";
-
+    // Visual guide only — clicks go to the map, then point-in-polygon.
     snapLayer = L.geoJSON(snapCollection, {
       pane: "jworldSnap",
+      interactive: false,
       style: {
         color: "#f0d78c",
-        weight: 1,
-        opacity: 0.55,
+        weight: 1.5,
+        opacity: 0.85,
         fillColor: "#f0d78c",
-        fillOpacity: 0.06,
-      },
-      onEachFeature: (feature, layer) => {
-        const label =
-          feature.properties?.NAME ||
-          feature.properties?.ADMIN ||
-          "Land";
-        layer.bindTooltip(label, { sticky: true, opacity: 0.9 });
-        layer.on("mouseover", () => {
-          if (layer.setStyle) {
-            layer.setStyle({ fillOpacity: 0.28, weight: 2, opacity: 0.95 });
-          }
-        });
-        layer.on("mouseout", () => {
-          if (layer.setStyle) {
-            layer.setStyle({ fillOpacity: 0.06, weight: 1, opacity: 0.55 });
-          }
-        });
-        layer.on("click", (event) => {
-          L.DomEvent.stopPropagation(event);
-          L.DomEvent.preventDefault(event);
-          if (!snapMode) return;
-          // Prefer the clicked island/part over the whole MultiPolygon country.
-          const hit =
-            findShapeAtLatLng(snapCollection, event.latlng) || {
-              name: label,
-              geometry: feature.geometry,
-            };
-          const cb = onSnapSelect;
-          endSnapToShape();
-          cb?.(hit);
-        });
+        fillOpacity: 0.12,
       },
     }).addTo(map);
 
+    map.on("click", handleSnapMapClick);
+    onReady?.();
     return true;
   }
 
