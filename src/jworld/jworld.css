@@ -406,6 +406,41 @@
   line-height: 1.6;
 }
 
+.jw-transfer {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.jw-transfer-panel {
+  display: grid;
+  gap: 8px;
+  min-width: min(280px, 80vw);
+  padding: 12px;
+  border: 1px solid var(--jw-border);
+  border-radius: 12px;
+  background: rgba(18, 24, 33, 0.96);
+  pointer-events: auto;
+}
+
+.jw-transfer-panel label {
+  display: grid;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--jw-muted);
+}
+
+.jw-transfer-panel select {
+  width: 100%;
+  border: 1px solid var(--jw-border);
+  background: #0a1018;
+  color: var(--jw-text);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font: inherit;
+}
+
 .jw-flag-preview {
   width: 120px;
   border: 1px solid var(--jw-border);

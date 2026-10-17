@@ -203,6 +203,13 @@
           >
             Open wiki
           </button>
+          <TransferOwnership
+            v-if="selected && session?.isAdmin"
+            :token="session.token"
+            :country="selected"
+            :disabled="saving"
+            @transferred="onOwnershipTransferred"
+          />
           <button
             v-if="(draftGeometry || editingCountryId) && !addingTerritory"
             class="jw-btn"
@@ -240,6 +247,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router";
 import "../jworld/jworld.css";
 import CountryForm from "../jworld/CountryForm.vue";
+import TransferOwnership from "../jworld/TransferOwnership.vue";
 import { createJworldMap, mergeGeometries } from "../jworld/map.js";
 import {
   countryToPayload,
@@ -664,6 +672,13 @@ async function openWiki(country) {
     // Stale deploy / missing lazy chunk — full navigation picks up new assets.
     window.location.assign(`/jworld/c/${country.id}`);
   }
+}
+
+async function onOwnershipTransferred(result) {
+  const name = result?.official_name || selected.value?.official_name || "Country";
+  const owner = result?.owner_display_name || "new owner";
+  banner.value = `Transferred ${name} to ${owner}.`;
+  await refreshCountries();
 }
 
 function selectCountry(country) {

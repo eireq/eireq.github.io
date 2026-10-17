@@ -130,6 +130,33 @@ export async function deleteCountry(token, countryId) {
   return { error: error ? rpcError(error) : null };
 }
 
+/** Admin-only: members for ownership transfer picker. */
+export async function listMembers(token) {
+  if (!jworldDb) return { data: [], error: "Supabase is not configured." };
+  if (!token) return { data: [], error: "Not signed in." };
+
+  const { data, error } = await jworldDb.rpc("jworld_list_members", {
+    p_token: token,
+  });
+  return { data: data || [], error: error ? rpcError(error) : null };
+}
+
+/** Admin-only: transfer a country to another member. */
+export async function transferCountry(token, countryId, newOwnerId) {
+  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!token) return { data: null, error: "Not signed in." };
+  if (!newOwnerId) return { data: null, error: "Pick a new owner." };
+
+  const { data, error } = await jworldDb.rpc("jworld_transfer_country", {
+    p_token: token,
+    p_country_id: countryId,
+    p_new_owner_id: newOwnerId,
+  });
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return { data: row || null, error: error ? rpcError(error) : null };
+}
+
 export function flagPublicUrl(flagPath) {
   if (!flagPath || !jworldDb) return null;
   if (/^https?:\/\//i.test(flagPath) || flagPath.startsWith("data:")) {

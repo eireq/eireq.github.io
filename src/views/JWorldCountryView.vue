@@ -12,6 +12,13 @@
       >
         Edit country
       </button>
+      <TransferOwnership
+        v-if="country && session?.isAdmin && !editing"
+        :token="session.token"
+        :country="country"
+        :disabled="saving"
+        @transferred="onOwnershipTransferred"
+      />
       <button
         v-if="!session"
         class="jw-btn jw-btn--ghost"
@@ -169,6 +176,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import "../jworld/jworld.css";
 import CountryForm from "../jworld/CountryForm.vue";
+import TransferOwnership from "../jworld/TransferOwnership.vue";
 import {
   INFOBOX_FIELDS,
   SECTION_FIELDS,
@@ -308,6 +316,16 @@ async function removeCountry() {
     return;
   }
   router.push({ name: "jworld" });
+}
+
+async function onOwnershipTransferred(result) {
+  if (!country.value) return;
+  country.value = {
+    ...country.value,
+    owner_member_id: result?.owner_member_id || country.value.owner_member_id,
+    owner_display_name:
+      result?.owner_display_name || country.value.owner_display_name,
+  };
 }
 
 watch(
