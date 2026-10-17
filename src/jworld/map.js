@@ -532,7 +532,9 @@ export function createJworldMap(container, options = {}) {
 
   function handleSnapMapClick(event) {
     if (!snapMode || !snapCollection) return;
-    const hit = findShapeAtLatLng(snapCollection, event.latlng);
+    // worldCopyJump / Pacific views can yield lng outside [-180, 180].
+    const latlng = event.latlng?.wrap?.() || event.latlng;
+    const hit = findShapeAtLatLng(snapCollection, latlng);
     if (!hit) {
       onSnapMiss?.();
       return;
