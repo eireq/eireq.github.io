@@ -230,11 +230,13 @@
   z-index: 500;
   left: 12px;
   right: 12px;
-  top: 12px;
+  top: auto;
+  bottom: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 
