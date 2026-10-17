@@ -262,6 +262,11 @@ import {
   updateCountry,
   uploadFlag,
 } from "../jworld/supabase.js";
+import {
+  listTerritoryNames,
+  syncTerritoryNames,
+  withTerritoryNames,
+} from "../jworld/territories.js";
 
 const router = useRouter();
 const configured = isJworldConfigured();
@@ -497,10 +502,14 @@ async function startSnapCreate() {
         snapActive.value = false;
         editingCountryId.value = null;
         draftGeometry.value = hit.geometry;
-        formSeed.value = {
-          ...emptyCountryPayload(),
-          official_name: hit.name || "",
-        };
+        const placeName = hit.name || "";
+        formSeed.value = withTerritoryNames(
+          {
+            ...emptyCountryPayload(),
+            official_name: placeName,
+          },
+          [placeName],
+        );
         showSavePanel.value = true;
         banner.value = `Snapped to ${hit.name}. Tweak handles if you want, then save.`;
         mapApi?.loadCountryIntoDraw?.({
@@ -572,7 +581,7 @@ async function snapTerritory(country) {
         snapLoading.value = false;
         snapActive.value = false;
         banner.value = `Snapping ${hit.name} onto ${country.official_name}…`;
-        commitAddedTerritory(hit.geometry);
+        commitAddedTerritory(hit.geometry, hit.name || "");
       },
     });
   } catch (err) {
@@ -583,11 +592,20 @@ async function snapTerritory(country) {
   }
 }
 
-async function commitAddedTerritory(newPolygon) {
+async function commitAddedTerritory(newPolygon, territoryName = "") {
   const country = countries.value.find((c) => c.id === editingCountryId.value);
   if (!session.value || !country) {
     addingTerritory.value = false;
     return;
+  }
+
+  let placeName = String(territoryName || "").trim();
+  if (!placeName) {
+    placeName =
+      window.prompt(
+        `Name this territory (shown as “Name (${country.official_name})”):`,
+        "",
+      )?.trim() || "";
   }
 
   saving.value = true;
@@ -598,7 +616,17 @@ async function commitAddedTerritory(newPolygon) {
     const merged = mergeGeometries(country.geometry, newPolygon);
     if (!merged) throw new Error("Could not merge territory geometry.");
 
-    const payload = withCalculatedArea(countryToPayload(country), merged);
+    const existingNames = syncTerritoryNames(
+      country.geometry,
+      listTerritoryNames(country),
+      country.official_name,
+    );
+    const nextNames = [...existingNames, placeName];
+
+    const payload = withTerritoryNames(
+      withCalculatedArea(countryToPayload(country), merged),
+      nextNames,
+    );
     const { error } = await updateCountry(
       session.value.token,
       country.id,
@@ -612,7 +640,9 @@ async function commitAddedTerritory(newPolygon) {
     draftGeometry.value = null;
     showSavePanel.value = false;
     mapApi?.clearDraw();
-    banner.value = `Added territory to ${country.official_name}.`;
+    banner.value = placeName
+      ? `Added ${placeName} to ${country.official_name}.`
+      : `Added territory to ${country.official_name}.`;
     await refreshCountries();
     mapApi?.focusCountry({ ...country, geometry: merged });
   } catch (err) {
@@ -623,8 +653,17 @@ async function commitAddedTerritory(newPolygon) {
   }
 }
 
-function openWiki(country) {
-  router.push({ name: "jworld-country", params: { id: country.id } });
+async function openWiki(country) {
+  if (!country?.id) {
+    banner.value = "Select a country first.";
+    return;
+  }
+  try {
+    await router.push({ name: "jworld-country", params: { id: country.id } });
+  } catch (err) {
+    // Stale deploy / missing lazy chunk — full navigation picks up new assets.
+    window.location.assign(`/jworld/c/${country.id}`);
+  }
 }
 
 function selectCountry(country) {
@@ -646,14 +685,17 @@ function closeSavePanel() {
   }
 }
 
-async function saveCountry(payload) {
+async function saveCountry(payload, formGeometry = null) {
   if (!session.value) return;
   saving.value = true;
   saveError.value = "";
 
   try {
     const geometry =
-      mapApi?.getDrawGeometry() || draftGeometry.value || formCountry.value?.geometry;
+      formGeometry ||
+      mapApi?.getDrawGeometry() ||
+      draftGeometry.value ||
+      formCountry.value?.geometry;
 
     if (!editingCountryId.value && !geometry) {
       saveError.value = "Draw a polygon on the map before saving.";
@@ -661,7 +703,13 @@ async function saveCountry(payload) {
       return;
     }
 
-    const areaPayload = withCalculatedArea(payload, geometry);
+    const names = syncTerritoryNames(
+      geometry,
+      listTerritoryNames(payload, geometry),
+      payload.official_name,
+    );
+    const namedPayload = withTerritoryNames(payload, names);
+    const areaPayload = withCalculatedArea(namedPayload, geometry);
     let flagPath = areaPayload.flag_path || null;
     const targetId = editingCountryId.value;
 

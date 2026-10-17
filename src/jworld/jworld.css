@@ -365,6 +365,47 @@
   gap: 8px;
 }
 
+.jw-form-actions--top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 0 14px;
+  margin-bottom: 4px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--jw-panel) 96%, transparent) 70%,
+    transparent
+  );
+}
+
+.jw-btn--small {
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.jw-territory-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--jw-border);
+  border-radius: 10px;
+  background: #0a1018;
+}
+
+.jw-territory-name {
+  min-width: 0;
+}
+
+.jw-territory-list {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--jw-text);
+  line-height: 1.6;
+}
+
 .jw-flag-preview {
   width: 120px;
   border: 1px solid var(--jw-border);

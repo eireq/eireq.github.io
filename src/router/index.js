@@ -157,4 +157,27 @@ router.afterEach((to) => {
   document.title = to.meta.title || "eire";
 });
 
+/** After a redeploy, old tabs keep hashed chunk URLs that 404 — hard-reload once. */
+router.onError((error, to) => {
+  const msg = error?.message || String(error);
+  const staleChunk =
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Loading chunk [\d]+ failed/i.test(msg) ||
+    /error loading dynamically imported module/i.test(msg);
+
+  if (!staleChunk || !to?.fullPath) {
+    console.error(error);
+    return;
+  }
+
+  const key = "eire-chunk-reload";
+  const last = Number(sessionStorage.getItem(key) || 0);
+  if (Date.now() - last < 15000) {
+    console.error(error);
+    return;
+  }
+  sessionStorage.setItem(key, String(Date.now()));
+  window.location.assign(to.fullPath);
+});
+
 export default router;

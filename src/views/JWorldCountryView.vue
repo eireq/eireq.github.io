@@ -54,6 +54,15 @@
           </p>
           <p v-if="country.lore" class="lore">{{ country.lore }}</p>
 
+          <section v-if="wikiTerritories.length">
+            <h2>Territories</h2>
+            <ul class="jw-territory-list">
+              <li v-for="(label, index) in wikiTerritories" :key="index">
+                {{ label }}
+              </li>
+            </ul>
+          </section>
+
           <section v-if="hasSection(country.politics, SECTION_FIELDS.politics)">
             <h2>Politics</h2>
             <dl>
@@ -173,6 +182,12 @@ import {
   updateCountry,
   uploadFlag,
 } from "../jworld/supabase.js";
+import {
+  formatTerritoryLabel,
+  listTerritoryNames,
+  listTerritoryPolygons,
+  syncTerritoryNames,
+} from "../jworld/territories.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -193,6 +208,31 @@ const canEdit = computed(
 );
 
 const flagUrl = computed(() => flagPublicUrl(country.value?.flag_path));
+
+const wikiTerritories = computed(() => {
+  const c = country.value;
+  if (!c) return [];
+  const parts = listTerritoryPolygons(c.geometry);
+  if (parts.length <= 1) {
+    // Single territory — only list if explicitly named differently.
+    const names = syncTerritoryNames(
+      c.geometry,
+      listTerritoryNames(c),
+      c.official_name,
+    );
+    const label = formatTerritoryLabel(names[0], c.official_name);
+    if (!names[0] || names[0].toLowerCase() === String(c.official_name || "").toLowerCase()) {
+      return [];
+    }
+    return [label];
+  }
+  const names = syncTerritoryNames(
+    c.geometry,
+    listTerritoryNames(c),
+    c.official_name,
+  );
+  return names.map((name) => formatTerritoryLabel(name, c.official_name));
+});
 
 function hasSection(obj, fields) {
   if (!obj) return false;
@@ -216,7 +256,7 @@ async function load() {
   country.value = data;
 }
 
-async function saveWiki(payload) {
+async function saveWiki(payload, geometry = null) {
   if (!session.value || !country.value) return;
   saving.value = true;
   saveError.value = "";
@@ -231,14 +271,16 @@ async function saveWiki(payload) {
       if (up.error) throw new Error(up.error);
       flagPath = up.path;
     }
+    const nextGeometry = geometry || country.value.geometry;
     const areaPayload = withCalculatedArea(
       { ...payload, flag_path: flagPath },
-      country.value.geometry,
+      nextGeometry,
     );
     const { data, error } = await updateCountry(
       session.value.token,
       country.value.id,
       areaPayload,
+      geometry,
     );
     if (error) throw new Error(error);
     country.value = {
