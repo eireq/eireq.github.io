@@ -3,6 +3,11 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { flagPublicUrl } from "./supabase.js";
+import {
+  formatTerritoryLabel,
+  listTerritoryNames,
+  syncTerritoryNames,
+} from "./territories.js";
 import { findShapeAtLatLng, loadWorldShapes } from "./worldShapes.js";
 
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -401,11 +406,20 @@ export function createJworldMap(container, options = {}) {
         const flagUrl = flagPublicUrl(country.flag_path);
         const parts = [];
         const group = L.featureGroup();
+        const names = syncTerritoryNames(
+          geometry,
+          listTerritoryNames(country, geometry),
+          country.official_name,
+        );
 
         // One polygon layer per territory → each gets a full flag fill.
-        for (const latlngs of territories) {
+        territories.forEach((latlngs, index) => {
           const part = L.polygon(latlngs, style);
-          part.bindTooltip(country.official_name || "Country", {
+          const label = formatTerritoryLabel(
+            names[index],
+            country.official_name || "Country",
+          );
+          part.bindTooltip(label, {
             sticky: true,
             direction: "top",
             opacity: 0.9,
@@ -413,7 +427,7 @@ export function createJworldMap(container, options = {}) {
           part.on("click", () => handlers.onCountryClick(country));
           group.addLayer(part);
           parts.push(part);
-        }
+        });
 
         group.__jworldCountryId = country.id;
         group.__jworldFlagUrl = flagUrl;
