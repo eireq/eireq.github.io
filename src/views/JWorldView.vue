@@ -158,6 +158,20 @@
 
       <div class="jworld-map-wrap">
         <div ref="mapEl" class="jworld-map" />
+        <div
+          v-if="showControlsTip"
+          class="jworld-controls-tip"
+          role="dialog"
+          aria-label="Controls moved"
+        >
+          <p>
+            Map controls (edit, wiki, save, and status messages) are now at the
+            <strong>bottom</strong> of the page.
+          </p>
+          <button class="jw-btn" type="button" @click="dismissControlsTip">
+            Got it
+          </button>
+        </div>
         <div class="jworld-map-banner">
           <span v-if="banner" class="jworld-toast">{{ banner }}</span>
           <button
@@ -304,6 +318,22 @@ const saving = ref(false);
 const saveError = ref("");
 const pendingFlag = ref(null);
 const formSeed = ref(emptyCountryPayload());
+
+const CONTROLS_TIP_KEY = "jworld-controls-bottom-tip-v1";
+const showControlsTip = ref(
+  typeof localStorage === "undefined"
+    ? false
+    : localStorage.getItem(CONTROLS_TIP_KEY) !== "1",
+);
+
+function dismissControlsTip() {
+  showControlsTip.value = false;
+  try {
+    localStorage.setItem(CONTROLS_TIP_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
 
 let mapApi = null;
 let activeDrawer = null;

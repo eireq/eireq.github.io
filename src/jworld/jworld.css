@@ -225,6 +225,41 @@
   z-index: 1000 !important;
 }
 
+.jworld-controls-tip {
+  position: absolute;
+  z-index: 600;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  width: min(360px, calc(100% - 24px));
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--jw-border);
+  border-radius: 14px;
+  background: rgba(18, 24, 33, 0.96);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  color: var(--jw-text);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.jworld-controls-tip p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--jw-muted);
+}
+
+.jworld-controls-tip strong {
+  color: var(--jw-accent);
+  font-weight: 700;
+}
+
+.jworld-controls-tip .jw-btn {
+  justify-self: center;
+}
+
 .jworld-map-banner {
   position: absolute;
   z-index: 500;
