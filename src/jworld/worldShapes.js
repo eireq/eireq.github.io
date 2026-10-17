@@ -1,8 +1,9 @@
 /**
  * Real-world country / island outlines for "Snap to shape".
  * Prefer the local Natural Earth 110m copy (works offline / no CORS).
+ * Kept under /data/ so it is not confused with the /jworld SPA route.
  */
-const LOCAL_SHAPES_URL = `${import.meta.env.BASE_URL}jworld/ne_110m_admin_0_countries.geojson`;
+const LOCAL_SHAPES_URL = `${import.meta.env.BASE_URL}data/ne_110m_admin_0_countries.geojson`;
 const FALLBACK_SHAPES_URL =
   "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
 
@@ -15,7 +16,13 @@ async function fetchJson(url, timeoutMs = 20000) {
   try {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error(`Failed to load world shapes (${res.status})`);
-    return await res.json();
+    const text = await res.text();
+    // GitHub Pages SPA 404.html is HTML — never treat it as GeoJSON.
+    const trimmed = text.trimStart();
+    if (trimmed.startsWith("<!") || trimmed.startsWith("<html")) {
+      throw new Error("Got HTML instead of GeoJSON (SPA 404 page).");
+    }
+    return JSON.parse(text);
   } finally {
     clearTimeout(timer);
   }

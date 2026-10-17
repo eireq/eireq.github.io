@@ -19,10 +19,12 @@ L.Icon.Default.mergeOptions({
 const FLAG_FILL_OPACITY = 0.85;
 const EMPTY_FILL_OPACITY = 0.5;
 
-/** SPA-safe SVG paint server URL (bare url(#id) breaks on /jworld). */
+/**
+ * Local SVG paint URL. Do NOT use the page path (e.g. /jworld#id) — on GitHub
+ * Pages that 404s and returns the SPA redirect HTML, so the flag never paints.
+ */
 function svgPaintUrl(patternId) {
-  const base = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-  return `url("${base}#${patternId}")`;
+  return `url(#${patternId})`;
 }
 
 export function normalizeGeometry(geometry) {
