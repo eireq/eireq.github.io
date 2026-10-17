@@ -169,7 +169,7 @@
             <strong>bottom</strong> of the page.
           </p>
           <button class="jw-btn" type="button" @click="dismissControlsTip">
-            Got it
+            whatever you say my man
           </button>
         </div>
         <div class="jworld-map-banner">
