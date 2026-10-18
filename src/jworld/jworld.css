@@ -512,14 +512,41 @@
 }
 
 .jw-territory-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   gap: 10px;
-  align-items: start;
+  align-items: flex-start;
   padding: 10px 12px;
   border: 1px solid var(--jw-border);
   border-radius: 10px;
   background: #0a1018;
+}
+
+.jw-territory-check {
+  display: flex;
+  align-items: center;
+  padding-top: 28px;
+}
+
+.jw-territory-check input {
+  width: auto;
+  margin: 0;
+}
+
+.jw-territory-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jw-territory-merge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.jw-territory-merge input {
+  flex: 1 1 160px;
 }
 
 .jw-territory-name {

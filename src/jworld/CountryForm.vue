@@ -61,41 +61,82 @@
       </div>
     </section>
 
-    <section v-if="variant !== 'create' && territoryNames.length" class="jw-form-section">
+    <section v-if="variant !== 'create' && territoryGroups.length" class="jw-form-section">
       <h3>Territories</h3>
       <p class="jw-field-hint">
-        Shown as “Name ({{ model.official_name || "country" }})” on the wiki.
+        Shown as “Name ({{ model.official_name || "country" }})”. Select two or
+        more islands to merge them under one name.
       </p>
+      <div v-if="checkedIndexes.length >= 2" class="jw-territory-merge">
+        <input
+          v-model="mergeName"
+          type="text"
+          :placeholder="mergePlaceholder"
+          aria-label="Name for the merged territory"
+        />
+        <button
+          type="button"
+          class="jw-btn jw-btn--small"
+          :disabled="saving"
+          @click="mergeSelected"
+        >
+          Merge
+        </button>
+      </div>
       <div
-        v-for="(name, index) in territoryNames"
+        v-for="(group, index) in territoryGroups"
         :key="`territory-${index}`"
         class="jw-territory-row"
       >
-        <label class="jw-territory-name">
-          Territory {{ index + 1 }}
+        <label
+          v-if="territoryGroups.length > 1"
+          class="jw-territory-check"
+        >
           <input
-            v-model="territoryNames[index]"
+            type="checkbox"
+            :checked="checkedIndexes.includes(index)"
+            :disabled="saving"
+            :aria-label="`Select ${group.name || 'territory ' + (index + 1)}`"
+            @change="toggleCheck(index)"
+          />
+        </label>
+        <label class="jw-territory-name">
+          {{ group.count > 1 ? group.name || "Territory" : `Territory ${index + 1}` }}
+          <input
+            v-model="territoryGroups[index].name"
             type="text"
             :placeholder="model.official_name || 'Territory name'"
           />
           <span class="jw-field-hint">
+            <template v-if="group.count > 1">{{ group.count }} islands · </template>
             Preview:
-            {{ formatTerritoryLabel(territoryNames[index], model.official_name) }}
+            {{ formatTerritoryLabel(territoryGroups[index].name, model.official_name) }}
           </span>
         </label>
-        <button
-          type="button"
-          class="jw-btn jw-btn--danger jw-btn--small"
-          :disabled="saving || territoryNames.length <= 1"
-          :title="
-            territoryNames.length <= 1
-              ? 'Cannot delete the last territory — delete the country instead'
-              : 'Remove this territory from the map'
-          "
-          @click="deleteTerritory(index)"
-        >
-          Delete
-        </button>
+        <div class="jw-territory-actions">
+          <button
+            v-if="group.count > 1"
+            type="button"
+            class="jw-btn jw-btn--ghost jw-btn--small"
+            :disabled="saving"
+            @click="splitGroup(index)"
+          >
+            Split
+          </button>
+          <button
+            type="button"
+            class="jw-btn jw-btn--danger jw-btn--small"
+            :disabled="saving || territoryGroups.length <= 1"
+            :title="
+              territoryGroups.length <= 1
+                ? 'Cannot delete the last territory — delete the country instead'
+                : 'Remove this territory from the map'
+            "
+            @click="deleteTerritory(index)"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </section>
 
@@ -187,10 +228,12 @@ import { formatLandArea } from "./geometryArea.js";
 import { flagPublicUrl } from "./supabase.js";
 import {
   formatTerritoryLabel,
-  listTerritoryNames,
-  removeTerritoryAt,
-  syncTerritoryNames,
-  withTerritoryNames,
+  mergeTerritoryGroups,
+  removeTerritoryGroup,
+  splitTerritoryGroup,
+  syncTerritoryGroups,
+  territoryGroups as loadTerritoryGroups,
+  withTerritoryGroups,
 } from "./territories.js";
 
 const props = defineProps({
@@ -209,19 +252,23 @@ const model = reactive(countryToPayload(props.country));
 const localGeometry = ref(
   props.geometry || props.country?.geometry || null,
 );
-const territoryNames = ref([]);
+const territoryGroups = ref([]);
+const checkedIndexes = ref([]);
+const mergeName = ref("");
+
+const mergePlaceholder = computed(() => {
+  const first = territoryGroups.value[checkedIndexes.value[0]];
+  return first?.name || model.official_name || "Name for the merged territory";
+});
 
 function refreshTerritories() {
   const geo = localGeometry.value || props.geometry || props.country?.geometry;
-  const fromCountry = listTerritoryNames(
-    { ...model, geometry: geo },
+  territoryGroups.value = syncTerritoryGroups(
     geo,
-  );
-  territoryNames.value = syncTerritoryNames(
-    geo,
-    fromCountry,
+    loadTerritoryGroups(geo, model.geography?.territories, model.official_name),
     model.official_name,
   );
+  checkedIndexes.value = [];
 }
 
 watch(
@@ -296,31 +343,62 @@ function sectionTitle(key) {
   );
 }
 
-function deleteTerritory(index) {
-  if (territoryNames.value.length <= 1) return;
-  const label = formatTerritoryLabel(
-    territoryNames.value[index],
-    model.official_name,
-  );
-  if (!confirm(`Delete territory “${label}” from the map?`)) return;
+function toggleCheck(index) {
+  const next = new Set(checkedIndexes.value);
+  if (next.has(index)) next.delete(index);
+  else next.add(index);
+  checkedIndexes.value = [...next].sort((a, b) => a - b);
+}
 
-  const result = removeTerritoryAt(
+function mergeSelected() {
+  const indexes = checkedIndexes.value;
+  if (indexes.length < 2) return;
+  const fallback =
+    territoryGroups.value[indexes[0]]?.name || model.official_name || "";
+  const name = mergeName.value.trim() || fallback;
+  const result = mergeTerritoryGroups(
     localGeometry.value,
-    territoryNames.value,
+    territoryGroups.value,
+    indexes,
+    name,
+  );
+  if (!result.geometry) return;
+  localGeometry.value = result.geometry;
+  territoryGroups.value = result.groups;
+  checkedIndexes.value = [];
+  mergeName.value = "";
+}
+
+function splitGroup(index) {
+  territoryGroups.value = splitTerritoryGroup(territoryGroups.value, index);
+  checkedIndexes.value = [];
+}
+
+function deleteTerritory(index) {
+  if (territoryGroups.value.length <= 1) return;
+  const group = territoryGroups.value[index];
+  const label = formatTerritoryLabel(group?.name, model.official_name);
+  const islands = group?.count > 1 ? ` (${group.count} islands)` : "";
+  if (!confirm(`Delete territory “${label}”${islands} from the map?`)) return;
+
+  const result = removeTerritoryGroup(
+    localGeometry.value,
+    territoryGroups.value,
     index,
   );
   if (!result.geometry) return;
 
   localGeometry.value = result.geometry;
-  territoryNames.value = syncTerritoryNames(
+  territoryGroups.value = syncTerritoryGroups(
     result.geometry,
-    result.names,
+    result.groups,
     model.official_name,
   );
+  checkedIndexes.value = [];
 }
 
 function onSubmit() {
-  const payload = withTerritoryNames(model, territoryNames.value);
+  const payload = withTerritoryGroups(model, territoryGroups.value);
   emit("submit", payload, localGeometry.value);
 }
 

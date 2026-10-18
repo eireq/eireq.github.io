@@ -389,8 +389,9 @@ import {
   uploadFlag,
 } from "../jworld/supabase.js";
 import {
-  listTerritoryNames,
-  syncTerritoryNames,
+  syncTerritoryGroups,
+  territoryGroups,
+  withTerritoryGroups,
   withTerritoryNames,
 } from "../jworld/territories.js";
 
@@ -930,16 +931,21 @@ async function commitAddedTerritory(newPolygon, territoryName = "") {
     const borderError = savableGeometryError(merged);
     if (borderError) throw new Error(borderError);
 
-    const existingNames = syncTerritoryNames(
-      full.geometry,
-      listTerritoryNames(full),
+    const groups = syncTerritoryGroups(
+      merged,
+      territoryGroups(
+        full.geometry,
+        full.geography?.territories,
+        full.official_name,
+      ),
       full.official_name,
     );
-    const nextNames = [...existingNames, placeName];
+    const last = groups[groups.length - 1];
+    if (last && !String(last.name || "").trim()) last.name = placeName;
 
-    const payload = withTerritoryNames(
+    const payload = withTerritoryGroups(
       withCalculatedArea(countryToPayload(full), merged),
-      nextNames,
+      groups,
     );
     const { error } = await updateCountry(
       session.value.token,
@@ -1045,12 +1051,20 @@ async function saveCountry(payload, formGeometry = null) {
     if (editingCountryId.value) {
       await ensureFullCountry(editingCountryId.value);
     }
-    const names = syncTerritoryNames(
-      geometry,
-      listTerritoryNames(payload, geometry),
-      payload.official_name,
-    );
-    const namedPayload = withTerritoryNames(payload, names);
+    const namedPayload = geometry
+      ? withTerritoryGroups(
+          payload,
+          syncTerritoryGroups(
+            geometry,
+            territoryGroups(
+              geometry,
+              payload.geography?.territories,
+              payload.official_name,
+            ),
+            payload.official_name,
+          ),
+        )
+      : payload;
     const areaPayload = withCalculatedArea(namedPayload, geometry);
     let flagPath = areaPayload.flag_path || null;
     const targetId = editingCountryId.value;

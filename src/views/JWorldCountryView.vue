@@ -199,9 +199,7 @@ import {
 } from "../jworld/supabase.js";
 import {
   formatTerritoryLabel,
-  listTerritoryNames,
-  listTerritoryPolygons,
-  syncTerritoryNames,
+  territoryGroups,
 } from "../jworld/territories.js";
 
 const route = useRoute();
@@ -242,26 +240,20 @@ const flagUrl = computed(() => flagPublicUrl(country.value?.flag_path));
 const wikiTerritories = computed(() => {
   const c = country.value;
   if (!c) return [];
-  const parts = listTerritoryPolygons(c.geometry);
-  if (parts.length <= 1) {
-    // Single territory — only list if explicitly named differently.
-    const names = syncTerritoryNames(
-      c.geometry,
-      listTerritoryNames(c),
-      c.official_name,
-    );
-    const label = formatTerritoryLabel(names[0], c.official_name);
-    if (!names[0] || names[0].toLowerCase() === String(c.official_name || "").toLowerCase()) {
-      return [];
-    }
-    return [label];
-  }
-  const names = syncTerritoryNames(
+  const groups = territoryGroups(
     c.geometry,
-    listTerritoryNames(c),
+    c.geography?.territories,
     c.official_name,
   );
-  return names.map((name) => formatTerritoryLabel(name, c.official_name));
+  const countryName = String(c.official_name || "");
+  if (groups.length <= 1) {
+    const name = String(groups[0]?.name || "").trim();
+    if (!name || name.toLowerCase() === countryName.toLowerCase()) return [];
+    return [formatTerritoryLabel(name, countryName)];
+  }
+  return groups.map((group) =>
+    formatTerritoryLabel(group.name, countryName),
+  );
 });
 
 function hasSection(obj, fields) {
