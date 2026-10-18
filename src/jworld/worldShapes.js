@@ -1,9 +1,12 @@
 /**
  * Real-world country outlines for "Snap to shape".
- * 50m is what gets saved. 110m is only a visual guide — too coarse to store.
- * Files live under /data/ so they are not confused with the /jworld SPA route.
+ * The map guide is 50m. A 10m outline is fetched for the clicked country only.
+ * 110m is only a visual guide — too coarse to store.
  */
+import { feature as topoFeature } from "topojson-client";
+
 const BASE = import.meta.env.BASE_URL;
+const FINE_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-10m.json";
 const SHAPE_SOURCES = [
   {
     url: `${BASE}data/ne_50m_admin_0_countries.geojson`,
@@ -27,6 +30,8 @@ const NEAR_COAST_KM = 40;
 
 let cachedCollection = null;
 let loadPromise = null;
+let fineCollection = null;
+let finePromise = null;
 
 async function fetchJson(url, timeoutMs = 20000) {
   const controller = new AbortController();
@@ -46,6 +51,13 @@ async function fetchJson(url, timeoutMs = 20000) {
   }
 }
 
+function asFeatureCollection(data) {
+  if (data?.type === "Topology" && data.objects?.countries) {
+    return topoFeature(data, data.objects.countries);
+  }
+  return data;
+}
+
 export async function loadWorldShapes() {
   if (cachedCollection) return cachedCollection;
   if (loadPromise) return loadPromise;
@@ -54,7 +66,8 @@ export async function loadWorldShapes() {
     let lastErr = null;
     for (const source of SHAPE_SOURCES) {
       try {
-        const data = await fetchJson(source.url);
+        const raw = await fetchJson(source.url);
+        const data = asFeatureCollection(raw);
         data.__jworldLowResolution = source.lowResolution;
         cachedCollection = data;
         return data;
@@ -72,6 +85,67 @@ export async function loadWorldShapes() {
   })();
 
   return loadPromise;
+}
+
+/** Finer outlines, used only to replace the country that was clicked. */
+export async function loadFineOutlines() {
+  if (fineCollection) return fineCollection;
+  if (finePromise) return finePromise;
+  finePromise = (async () => {
+    try {
+      const raw = await fetchJson(FINE_URL, 30000);
+      fineCollection = asFeatureCollection(raw);
+      fineCollection.__jworldLowResolution = false;
+      return fineCollection;
+    } catch (err) {
+      finePromise = null;
+      throw err;
+    }
+  })();
+  return finePromise;
+}
+
+const NAME_ALIASES = {
+  "united states": "united states of america",
+  "russian federation": "russia",
+  "czech republic": "czechia",
+  "republic of korea": "south korea",
+  "korea, republic of": "south korea",
+  "dem. rep. korea": "north korea",
+  "democratic people's republic of korea": "north korea",
+};
+
+function canonicalName(value) {
+  const clean = String(value || "")
+    .toLowerCase()
+    .replace(/^the /, "")
+    .trim();
+  return NAME_ALIASES[clean] || clean;
+}
+
+function namesMatch(a, b) {
+  const left = canonicalName(a);
+  const right = canonicalName(b);
+  return Boolean(left) && left === right;
+}
+
+/**
+ * If a finer outline contains the same click, use that coast.
+ * Otherwise keep the guide hit.
+ */
+export function refineHit(fine, hit, latlng) {
+  if (!fine?.features || !hit || hit.approximate || hit.lowResolution || !latlng) {
+    return hit;
+  }
+  for (const feature of fine.features) {
+    if (!namesMatch(featureName(feature.properties), hit.name)) continue;
+    const exact = findShapeAtLatLng(
+      { type: "FeatureCollection", features: [feature] },
+      latlng,
+    );
+    if (exact && !exact.approximate && !exact.lowResolution) return exact;
+  }
+  return hit;
 }
 
 /** Wrap longitude into [-180, 180]. */

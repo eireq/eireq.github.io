@@ -568,6 +568,44 @@ begin
 end;
 $$;
 
+-- Delete the previous flag object after a new one is saved on the country.
+create or replace function public.jworld_delete_replaced_flag(
+  p_token uuid,
+  p_country_id uuid,
+  p_old_path text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, storage
+as $$
+declare
+  m public.jworld_members;
+  c public.jworld_countries;
+begin
+  if p_old_path is null or length(trim(p_old_path)) = 0 then
+    return;
+  end if;
+  if p_old_path ~* '^https?://' or p_old_path like 'data:%' then
+    return;
+  end if;
+
+  m := public.jworld_member_from_token(p_token);
+  select * into c from public.jworld_countries where id = p_country_id;
+  if c.id is null or not public.jworld_can_edit_country(m, c) then
+    raise exception 'You can only edit your own countries';
+  end if;
+  -- Never delete the flag the country currently points at.
+  if c.flag_path = p_old_path then
+    return;
+  end if;
+
+  delete from storage.objects
+  where bucket_id = 'jworld-flags'
+    and name = p_old_path;
+end;
+$$;
+
 revoke all on function public.jworld_rate_limit(text, text, integer, interval) from public, anon, authenticated;
 revoke all on function public.jworld_open_session(uuid) from public, anon, authenticated;
 revoke all on function public.jworld_member_from_token(uuid) from public, anon, authenticated;
@@ -578,6 +616,7 @@ grant execute on function public.jworld_get_country(uuid, uuid) to anon, authent
 grant execute on function public.jworld_list_map_countries(uuid) to anon, authenticated;
 grant execute on function public.jworld_countries_stamp(uuid) to anon, authenticated;
 grant execute on function public.jworld_begin_flag_upload(uuid, uuid) to anon, authenticated;
+grant execute on function public.jworld_delete_replaced_flag(uuid, uuid, text) to anon, authenticated;
 grant execute on function public.jworld_flag_grant_ok(text) to anon, authenticated;
 grant execute on function public.jworld_update_country(uuid, uuid, jsonb, jsonb, timestamptz) to anon, authenticated;
 

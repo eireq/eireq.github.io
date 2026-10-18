@@ -380,13 +380,42 @@
   color: var(--jw-muted);
 }
 
+.jworld-remote-notice {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: min(520px, 100%);
+  padding: 8px 10px 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--jw-border);
+  background: rgba(18, 24, 33, 0.96);
+  color: var(--jw-text);
+  font-size: 0.85rem;
+}
+
+.jworld-remote-notice button {
+  border: 0;
+  background: transparent;
+  color: var(--jw-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.jw-overlap {
+  border-radius: 12px;
+  color: var(--jw-text);
+}
+
 .jworld-create-panel {
   position: absolute;
   z-index: 500;
   right: 12px;
-  bottom: 12px;
+  top: 12px;
+  bottom: auto;
   width: min(380px, calc(100% - 24px));
-  max-height: min(70vh, 560px);
+  max-height: calc(100% - 96px);
   overflow: auto;
   background: rgba(18, 24, 33, 0.96);
   border: 1px solid var(--jw-border);

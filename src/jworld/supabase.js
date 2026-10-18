@@ -271,6 +271,27 @@ export async function uploadFlag(token, countryId, file, memberId = null) {
   return { path: error ? null : path, error: error ? rpcError(error) : null };
 }
 
+/** Remove the previous flag file after the country points at a new one. */
+export async function deleteReplacedFlag(token, countryId, oldPath) {
+  if (!jworldDb || !oldPath || !countryId) return;
+  if (/^https?:\/\//i.test(oldPath) || oldPath.startsWith("data:")) return;
+
+  const { error } = await jworldDb.rpc("jworld_delete_replaced_flag", {
+    p_token: token,
+    p_country_id: countryId,
+    p_old_path: oldPath,
+  });
+  if (!error) return;
+  if (missingRpc(error)) {
+    const removed = await jworldDb.storage.from("jworld-flags").remove([oldPath]);
+    if (removed.error) {
+      console.warn("jWorld: old flag was kept", removed.error);
+    }
+    return;
+  }
+  console.warn("jWorld: old flag was kept", error);
+}
+
 export async function loadWorldMeta() {
   if (!jworldDb) return { data: null, error: "Supabase is not configured." };
 

@@ -9,7 +9,12 @@ import {
   syncTerritoryNames,
 } from "./territories.js";
 import { normalizeGeometry, unwrapRing } from "./geometry.js";
-import { findShapeAtLatLng, loadWorldShapes } from "./worldShapes.js";
+import {
+  findShapeAtLatLng,
+  loadFineOutlines,
+  loadWorldShapes,
+  refineHit,
+} from "./worldShapes.js";
 
 export { normalizeGeometry };
 
@@ -97,18 +102,27 @@ function ensureDefs(svg) {
   return defs;
 }
 
-function applySolidFill(path, opacity) {
-  path.setAttribute("fill", "#5a8cc8");
-  path.setAttribute("fill-opacity", String(opacity));
+function paintFlag(layer, path, patternId) {
+  const paint = svgPaintUrl(patternId);
+  // Leaflet's own style updates copy options.fillColor onto the path.
+  // Keep the pattern URL there so pan, zoom, and selection do not paint blue over the flag.
+  layer.options.fillColor = paint;
+  layer.options.fillOpacity = FLAG_FILL_OPACITY;
+  path.setAttribute("fill", paint);
+  path.setAttribute("fill-opacity", String(FLAG_FILL_OPACITY));
 }
 
 function updateFlagPattern(map, layer, patternKey, flagUrl) {
   const path = layer.getElement?.() || layer._path;
   if (!path) return;
 
-  // Always keep a visible solid fill so countries never "vanish".
-  applySolidFill(path, flagUrl ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY);
-  if (!flagUrl) return;
+  if (!flagUrl) {
+    layer.options.fillColor = "#5a8cc8";
+    layer.options.fillOpacity = EMPTY_FILL_OPACITY;
+    path.setAttribute("fill", "#5a8cc8");
+    path.setAttribute("fill-opacity", String(EMPTY_FILL_OPACITY));
+    return;
+  }
 
   const svg = path.ownerSVGElement;
   if (!svg) return;
@@ -127,13 +141,19 @@ function updateFlagPattern(map, layer, patternKey, flagUrl) {
       "image",
     );
     image.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    image.setAttribute("crossorigin", "anonymous");
     image.setAttributeNS("http://www.w3.org/1999/xlink", "href", flagUrl);
     image.setAttribute("href", flagUrl);
+    image.addEventListener("error", () => {
+      layer.options.fillColor = "#5a8cc8";
+      layer.options.fillOpacity = FLAG_FILL_OPACITY;
+      path.setAttribute("fill", "#5a8cc8");
+    });
     pattern.appendChild(image);
     defs.appendChild(pattern);
   } else {
     const image = pattern.querySelector("image");
-    if (image) {
+    if (image && image.getAttribute("href") !== flagUrl) {
       image.setAttributeNS("http://www.w3.org/1999/xlink", "href", flagUrl);
       image.setAttribute("href", flagUrl);
     }
@@ -163,8 +183,7 @@ function updateFlagPattern(map, layer, patternKey, flagUrl) {
     image.setAttribute("height", String(height));
   }
 
-  path.setAttribute("fill", svgPaintUrl(patternId));
-  path.setAttribute("fill-opacity", String(FLAG_FILL_OPACITY));
+  paintFlag(layer, path, patternId);
 }
 
 function eachTerritoryPart(entry, fn) {
@@ -202,6 +221,7 @@ export function createJworldMap(container, options = {}) {
   let snapMode = false;
   let snapLayer = null;
   let snapCollection = null;
+  let snapFine = null;
   let onSnapSelect = null;
   let onSnapMiss = null;
   let onSnapApproximate = null;
@@ -370,11 +390,15 @@ export function createJworldMap(container, options = {}) {
 
   let selectedCountryId = null;
 
+  function strokeStyle(isMine, isSelected = false) {
+    if (isSelected) return { color: "#efe6c8", weight: 2, opacity: 1 };
+    if (isMine) return { color: "#cbb98a", weight: 1.5, opacity: 0.95 };
+    return { color: "#b7c3d1", weight: 1.25, opacity: 0.9 };
+  }
+
   function styleFor(country, isMine, isSelected = false) {
     return {
-      color: isSelected ? "#fff7d6" : isMine ? "#f0d78c" : "#c9d7e6",
-      weight: isSelected ? 5 : isMine ? 3 : 2,
-      opacity: 1,
+      ...strokeStyle(isMine, isSelected),
       fillColor: "#5a8cc8",
       fillOpacity: country.flag_path ? FLAG_FILL_OPACITY : EMPTY_FILL_OPACITY,
     };
@@ -382,11 +406,11 @@ export function createJworldMap(container, options = {}) {
 
   function applySelectionStyles() {
     for (const [id, entry] of countryLayers.entries()) {
-      const style = styleFor(
-        entry.__jworldCountry || {},
+      const style = strokeStyle(
         Boolean(entry.__jworldEditable),
         id === selectedCountryId,
       );
+      // Stroke only. Passing fillColor would replace the flag URL Leaflet stores.
       eachTerritoryPart(entry, (layer) => layer.setStyle(style));
     }
   }
@@ -394,7 +418,6 @@ export function createJworldMap(container, options = {}) {
   function setSelected(id) {
     selectedCountryId = id || null;
     applySelectionStyles();
-    // setStyle writes fillColor and wipes the flag pattern.
     refreshFlagFills();
   }
 
@@ -457,12 +480,8 @@ export function createJworldMap(container, options = {}) {
         countryLayers.set(country.id, group);
         rendered += 1;
 
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            parts.forEach((part, index) => {
-              updateFlagPattern(map, part, `${country.id}p${index}`, flagUrl);
-            });
-          });
+        parts.forEach((part, index) => {
+          updateFlagPattern(map, part, `${country.id}p${index}`, flagUrl);
         });
       } catch (err) {
         console.warn("jWorld: failed to render country", country?.official_name, err);
@@ -470,8 +489,7 @@ export function createJworldMap(container, options = {}) {
       }
     }
 
-    setTimeout(refreshFlagFills, 100);
-    setTimeout(refreshFlagFills, 500);
+    requestAnimationFrame(refreshFlagFills);
     pruneFlagPatterns();
 
     return { rendered, skipped, total: (countries || []).length };
@@ -493,9 +511,9 @@ export function createJworldMap(container, options = {}) {
             message: "Edges can't cross",
           },
           shapeOptions: {
-            color: "#f0d78c",
-            weight: 2,
-            fillOpacity: 0.25,
+            color: "#cbb98a",
+            weight: 1.5,
+            fillOpacity: 0.18,
           },
         },
         polyline: false,
@@ -578,7 +596,8 @@ export function createJworldMap(container, options = {}) {
     if (!snapMode || !snapCollection) return;
     // worldCopyJump / Pacific views can yield lng outside [-180, 180].
     const latlng = event.latlng?.wrap?.() || event.latlng;
-    const hit = findShapeAtLatLng(snapCollection, latlng);
+    let hit = findShapeAtLatLng(snapCollection, latlng);
+    if (hit && snapFine) hit = refineHit(snapFine, hit, latlng);
     if (!hit) {
       onSnapMiss?.();
       return;
@@ -640,7 +659,15 @@ export function createJworldMap(container, options = {}) {
     setCountryHitTesting(false);
 
     try {
-      snapCollection = await loadWorldShapes();
+      const [guide, fine] = await Promise.all([
+        loadWorldShapes(),
+        loadFineOutlines().catch((err) => {
+          console.warn("jWorld: fine coastlines unavailable", err);
+          return null;
+        }),
+      ]);
+      snapCollection = guide;
+      snapFine = fine;
     } catch (err) {
       endSnapToShape();
       throw err;
@@ -653,10 +680,10 @@ export function createJworldMap(container, options = {}) {
       pane: "jworldSnap",
       interactive: false,
       style: {
-        color: "#f0d78c",
-        weight: 1.5,
+        color: "#cbb98a",
+        weight: 1,
         opacity: 0.85,
-        fillColor: "#f0d78c",
+        fillColor: "#cbb98a",
         fillOpacity: 0.12,
       },
     }).addTo(map);
@@ -723,7 +750,7 @@ export function createJworldMap(container, options = {}) {
       }
     }
     if (best) {
-      map.fitBounds(best, { padding: [40, 40], maxZoom: 6 });
+      map.fitBounds(best, { padding: [40, 40], maxZoom: 12 });
       return;
     }
     const latlngs = geometryToLatLngs(country?.geometry);
@@ -731,7 +758,7 @@ export function createJworldMap(container, options = {}) {
     try {
       const temp = L.polygon(latlngs);
       if (boundsAreUsable(temp.getBounds())) {
-        map.fitBounds(temp.getBounds(), { padding: [40, 40], maxZoom: 6 });
+        map.fitBounds(temp.getBounds(), { padding: [40, 40], maxZoom: 12 });
       }
     } catch {
       /* ignore */
@@ -794,11 +821,11 @@ const BASEMAP_ATTR =
 /** Small read-only map of one country's borders, for the wiki page. */
 export function createCountryPreview(container, geometry) {
   const map = L.map(container, {
-    zoomControl: false,
+    zoomControl: true,
     attributionControl: true,
-    scrollWheelZoom: false,
+    scrollWheelZoom: true,
     minZoom: 1,
-    maxZoom: 8,
+    maxZoom: 14,
   });
 
   L.tileLayer(BASEMAP_URL, {
@@ -811,8 +838,8 @@ export function createCountryPreview(container, geometry) {
   let bestArea = 0;
   for (const latlngs of territories) {
     const layer = L.polygon(latlngs, {
-      color: "#f0d78c",
-      weight: 2,
+      color: "#cbb98a",
+      weight: 1.5,
       fillColor: "#5a8cc8",
       fillOpacity: 0.45,
     }).addTo(map);
@@ -827,7 +854,7 @@ export function createCountryPreview(container, geometry) {
     }
   }
 
-  if (best) map.fitBounds(best, { padding: [18, 18], maxZoom: 5 });
+  if (best) map.fitBounds(best, { padding: [18, 18], maxZoom: 12 });
   else map.setView([20, 10], 1);
 
   setTimeout(() => map.invalidateSize(), 50);

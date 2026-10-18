@@ -194,6 +194,7 @@ import {
   deleteCountry,
   flagPublicUrl,
   getCountry,
+  deleteReplacedFlag,
   updateCountry,
   uploadFlag,
 } from "../jworld/supabase.js";
@@ -283,7 +284,8 @@ async function saveWiki(payload, geometry = null) {
   saving.value = true;
   saveError.value = "";
   try {
-    let flagPath = payload.flag_path || null;
+    const previousFlag = payload.flag_path || country.value.flag_path || null;
+    let flagPath = previousFlag;
     if (pendingFlag.value) {
       const up = await uploadFlag(
         session.value.token,
@@ -309,6 +311,9 @@ async function saveWiki(payload, geometry = null) {
       country.value.updated_at || null,
     );
     if (error) throw new Error(error);
+    if (previousFlag && flagPath && previousFlag !== flagPath) {
+      await deleteReplacedFlag(session.value.token, country.value.id, previousFlag);
+    }
     country.value = {
       ...country.value,
       ...data,

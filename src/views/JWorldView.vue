@@ -219,6 +219,10 @@
       <div class="jworld-map-wrap">
         <div ref="mapEl" class="jworld-map" />
         <div class="jworld-map-banner">
+          <div v-if="remoteNotice" class="jworld-remote-notice">
+            <span>{{ remoteNotice }}</span>
+            <button type="button" @click="remoteNotice = ''">Dismiss</button>
+          </div>
           <span v-if="banner" class="jworld-toast">{{ banner }}</span>
           <div class="jworld-map-actions">
             <button
@@ -253,12 +257,28 @@
             >
               {{ editingCountryId ? "Save borders" : "Name & save" }}
             </button>
+            <button
+              v-if="drawing"
+              class="jw-btn jw-btn--ghost"
+              type="button"
+              @click="cancelDrawing"
+            >
+              Cancel
+            </button>
             <details
               v-if="selected && (canEdit(selected) || session?.isAdmin)"
               class="jworld-more"
             >
               <summary class="jw-btn jw-btn--ghost">More</summary>
               <div class="jworld-more-menu">
+                <button
+                  v-if="canEdit(selected) && canMerge(selected)"
+                  class="jw-btn jw-btn--ghost"
+                  type="button"
+                  @click="openMerge(selected)"
+                >
+                  Merge territories
+                </button>
                 <button
                   v-if="canEdit(selected)"
                   class="jw-btn jw-btn--ghost"
@@ -313,9 +333,48 @@
             @submit="saveCountry"
             @cancel="closeSavePanel"
           />
+          <p v-if="overlapWarning" class="jworld-toast jw-overlap">
+            {{ overlapWarning }}
+          </p>
           <p v-if="saveError" class="jw-error">{{ saveError }}</p>
         </div>
       </div>
+    </div>
+
+    <div
+      v-if="mergePrompt"
+      class="jworld-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Merge territories"
+    >
+      <form class="jworld-modal-card" @submit.prevent="confirmMerge">
+        <h2>Merge territories</h2>
+        <p>What name for the merged territory?</p>
+        <label>
+          Territory name
+          <input
+            v-model="mergeNameDraft"
+            type="text"
+            maxlength="80"
+            required
+            autofocus
+          />
+        </label>
+        <p v-if="mergeError" class="jw-error">{{ mergeError }}</p>
+        <div class="jw-form-actions">
+          <button class="jw-btn" type="submit" :disabled="mergeSaving">
+            {{ mergeSaving ? "Merging…" : "Merge" }}
+          </button>
+          <button
+            class="jw-btn jw-btn--ghost"
+            type="button"
+            @click="closeMerge"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
 
     <div
@@ -367,6 +426,7 @@ import {
 } from "../jworld/countryFields.js";
 import { withCalculatedArea } from "../jworld/geometryArea.js";
 import { savableGeometryError } from "../jworld/geometry.js";
+import { coveredCountryNames } from "../jworld/overlap.js";
 import {
   clearSession,
   loadSession,
@@ -385,10 +445,12 @@ import {
   logoutWorld,
   resetWorldPassword,
   setWorldPassword,
+  deleteReplacedFlag,
   updateCountry,
   uploadFlag,
 } from "../jworld/supabase.js";
 import {
+  mergeTerritoryGroups,
   syncTerritoryGroups,
   territoryGroups,
   withTerritoryGroups,
@@ -415,11 +477,17 @@ const loadError = ref("");
 const mapEl = ref(null);
 const selectedId = ref(null);
 const banner = ref("Click a country or create one with the polygon tool.");
+const remoteNotice = ref("");
 const draftGeometry = ref(null);
 const editingCountryId = ref(null);
 const addingTerritory = ref(false);
+const toolActive = ref(false);
 const snapLoading = ref(false);
 const snapActive = ref(false);
+const mergePrompt = ref(false);
+const mergeNameDraft = ref("");
+const mergeError = ref("");
+const mergeSaving = ref(false);
 const showSavePanel = ref(false);
 const saving = ref(false);
 const saveError = ref("");
@@ -474,6 +542,42 @@ function isMine(country) {
 function canEdit(country) {
   return Boolean(session.value?.isAdmin || isMine(country));
 }
+
+function canMerge(country) {
+  if (!canEdit(country)) return false;
+  return (
+    territoryGroups(
+      country.geometry,
+      country.geography?.territories,
+      country.official_name,
+    ).length > 1
+  );
+}
+
+const drawing = computed(
+  () =>
+    toolActive.value ||
+    snapLoading.value ||
+    snapActive.value ||
+    addingTerritory.value ||
+    Boolean(editingCountryId.value) ||
+    Boolean(draftGeometry.value),
+);
+
+const overlapWarning = computed(() => {
+  if (!showSavePanel.value) return "";
+  const geometry = draftGeometry.value || formCountry.value?.geometry;
+  if (!geometry) return "";
+  const names = coveredCountryNames(
+    geometry,
+    countries.value,
+    editingCountryId.value,
+  );
+  if (!names.length) return "";
+  const shown = names.slice(0, 4).join(", ");
+  const extra = names.length > 4 ? `, and ${names.length - 4} more` : "";
+  return `This covers part of ${shown}${extra}. You can still save.`;
+});
 
 function applySession(data) {
   saveSession(data);
@@ -582,10 +686,10 @@ async function pollForChanges() {
   const editingId = editingCountryId.value;
   const result = await refreshCountries();
   if (result?.conflict && editingId && showSavePanel.value) {
-    banner.value =
+    remoteNotice.value =
       "Someone else saved this country. Close the panel and edit again before saving over them.";
   } else if (!editingId && !addingTerritory.value && !snapActive.value) {
-    banner.value = "Map updated with other players' changes.";
+    remoteNotice.value = "Someone else saved a country. The map has their latest borders.";
   }
 }
 
@@ -711,7 +815,24 @@ function cancelSnap() {
   banner.value = "Snap cancelled.";
 }
 
+function cancelDrawing() {
+  toolActive.value = false;
+  snapLoading.value = false;
+  snapActive.value = false;
+  addingTerritory.value = false;
+  showSavePanel.value = false;
+  saveError.value = "";
+  draftGeometry.value = null;
+  editingCountryId.value = null;
+  borderBaseline.value = null;
+  editBaselineUpdatedAt.value = null;
+  pendingFlag.value = null;
+  mapApi?.clearDraw();
+  banner.value = "Cancelled. The saved country is unchanged.";
+}
+
 function startCreate() {
+  toolActive.value = true;
   editingCountryId.value = null;
   addingTerritory.value = false;
   snapLoading.value = false;
@@ -742,6 +863,7 @@ function snapGuard() {
 }
 
 async function startSnapCreate() {
+  toolActive.value = true;
   editingCountryId.value = null;
   addingTerritory.value = false;
   draftGeometry.value = null;
@@ -787,6 +909,7 @@ async function startSnapCreate() {
       },
     });
   } catch (err) {
+    toolActive.value = false;
     snapLoading.value = false;
     snapActive.value = false;
     banner.value = err.message || "Could not load world shapes.";
@@ -802,6 +925,7 @@ async function editBorders(country) {
     banner.value = err.message || "Could not load this country.";
     return;
   }
+  toolActive.value = true;
   editingCountryId.value = full.id;
   addingTerritory.value = false;
   borderBaseline.value = full.geometry;
@@ -830,6 +954,7 @@ function revertBorders() {
 
 function addTerritory(country) {
   if (!canEdit(country)) return;
+  toolActive.value = true;
   editingCountryId.value = country.id;
   addingTerritory.value = true;
   editBaselineUpdatedAt.value = country.updated_at || null;
@@ -846,6 +971,7 @@ function addTerritory(country) {
 
 async function snapTerritory(country) {
   if (!canEdit(country)) return;
+  toolActive.value = true;
   editingCountryId.value = country.id;
   addingTerritory.value = true;
   editBaselineUpdatedAt.value = country.updated_at || null;
@@ -872,9 +998,11 @@ async function snapTerritory(country) {
       },
     });
   } catch (err) {
+    toolActive.value = false;
     snapLoading.value = false;
     snapActive.value = false;
     addingTerritory.value = false;
+    editingCountryId.value = null;
     banner.value = err.message || "Could not load world shapes.";
   }
 }
@@ -1014,7 +1142,74 @@ async function openSavePanel() {
   showSavePanel.value = true;
 }
 
+function openMerge(country) {
+  if (!canMerge(country)) {
+    banner.value = "This country is already one territory.";
+    return;
+  }
+  selectedId.value = country.id;
+  mergeNameDraft.value = country.official_name || "";
+  mergeError.value = "";
+  mergePrompt.value = true;
+}
+
+function closeMerge() {
+  mergePrompt.value = false;
+  mergeError.value = "";
+  mergeSaving.value = false;
+}
+
+async function confirmMerge() {
+  const country = selected.value;
+  if (!session.value || !country) return;
+  const name = mergeNameDraft.value.trim();
+  if (!name) {
+    mergeError.value = "Enter a name.";
+    return;
+  }
+  mergeSaving.value = true;
+  mergeError.value = "";
+  try {
+    const full = await ensureFullCountry(country.id);
+    const groups = territoryGroups(
+      full.geometry,
+      full.geography?.territories,
+      full.official_name,
+    );
+    if (groups.length < 2) {
+      mergeError.value = "This country is already one territory.";
+      return;
+    }
+    const merged = mergeTerritoryGroups(
+      full.geometry,
+      groups,
+      groups.map((_, index) => index),
+      name,
+    );
+    const payload = withTerritoryGroups(
+      withCalculatedArea(countryToPayload(full), merged.geometry),
+      merged.groups,
+    );
+    const { error } = await updateCountry(
+      session.value.token,
+      full.id,
+      payload,
+      merged.geometry,
+      full.updated_at || null,
+    );
+    if (error) throw new Error(error);
+    mergePrompt.value = false;
+    banner.value = `Territories merged as ${name}.`;
+    await refreshCountries();
+  } catch (err) {
+    mergeError.value = err.message || "Could not merge territories.";
+  } finally {
+    mergeSaving.value = false;
+  }
+}
+
 function closeSavePanel() {
+  toolActive.value = false;
   showSavePanel.value = false;
   saveError.value = "";
   draftGeometry.value = null;
@@ -1066,7 +1261,8 @@ async function saveCountry(payload, formGeometry = null) {
         )
       : payload;
     const areaPayload = withCalculatedArea(namedPayload, geometry);
-    let flagPath = areaPayload.flag_path || null;
+    const previousFlag = areaPayload.flag_path || null;
+    let flagPath = previousFlag;
     const targetId = editingCountryId.value;
 
     if (editingCountryId.value) {
@@ -1089,6 +1285,9 @@ async function saveCountry(payload, formGeometry = null) {
         editBaselineUpdatedAt.value,
       );
       if (error) throw new Error(error);
+      if (previousFlag && flagPath && previousFlag !== flagPath) {
+        await deleteReplacedFlag(session.value.token, targetId, previousFlag);
+      }
     } else {
       const { data, error } = await createCountry(
         session.value.token,
@@ -1129,6 +1328,7 @@ async function saveCountry(payload, formGeometry = null) {
     }
 
     pendingFlag.value = null;
+    toolActive.value = false;
     draftGeometry.value = null;
     editingCountryId.value = null;
     borderBaseline.value = null;
