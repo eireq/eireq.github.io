@@ -32,14 +32,14 @@
     <p v-if="loadError" class="jw-error">{{ loadError }}</p>
     <p v-else-if="!country" class="jw-error">Loading…</p>
 
-    <div
-      v-if="country && !editing"
-      ref="previewEl"
-      class="jworld-country-preview"
-      aria-label="Country borders"
-    />
-
     <template v-else>
+      <div
+        v-if="!editing"
+        ref="previewEl"
+        class="jworld-country-preview"
+        aria-label="Country borders"
+      />
+
       <div v-if="editing && canEdit" class="jworld-country-inner jworld-country-inner--stack">
         <CountryForm
           :country="country"
