@@ -394,6 +394,8 @@ export function createJworldMap(container, options = {}) {
   function setSelected(id) {
     selectedCountryId = id || null;
     applySelectionStyles();
+    // setStyle writes fillColor and wipes the flag pattern.
+    refreshFlagFills();
   }
 
   function setCountries(countries, memberId, isAdmin = false) {
