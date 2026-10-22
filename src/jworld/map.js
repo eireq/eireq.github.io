@@ -10,6 +10,12 @@ import {
 } from "./territories.js";
 import { normalizeGeometry, unwrapRing } from "./geometry.js";
 import {
+  CAPITAL_NAME_ZOOM,
+  CAPITAL_STAR_ZOOM,
+  capitalLabelOf,
+  capitalPointOf,
+} from "./capital.js";
+import {
   findShapeAtLatLng,
   loadFineOutlines,
   loadWorldShapes,
@@ -192,6 +198,133 @@ function eachTerritoryPart(entry, fn) {
     return;
   }
   fn(entry, 0);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function capitalZoomMode(zoom) {
+  const z = Number(zoom);
+  if (!Number.isFinite(z)) return "hidden";
+  if (z >= CAPITAL_NAME_ZOOM) return "named";
+  if (z >= CAPITAL_STAR_ZOOM) return "star";
+  return "hidden";
+}
+
+function capitalDivIcon({ name, showName, selected, countryName }) {
+  const aria = name
+    ? `${name}, capital of ${countryName || "country"}`
+    : `Capital of ${countryName || "country"}`;
+  const label =
+    showName && name
+      ? `<span class="jw-capital-name">${escapeHtml(name)}</span>`
+      : "";
+  const selectedClass = selected ? " is-selected" : "";
+  return L.divIcon({
+    className: "jw-capital-divicon",
+    html: `<span class="jw-capital-marker${selectedClass}" role="img" aria-label="${escapeHtml(aria)}"><svg class="jw-capital-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2 14.8 8.6 21.8 9.3 16.6 14l1.6 6.8L12 17.6 5.8 20.8 7.4 14 2.2 9.3l7-.7z"/></svg>${label}</span>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
+
+function mountCapitalMarkers(map, getCountries, hooks = {}) {
+  const layer = L.layerGroup().addTo(map);
+  const markers = new Map();
+  let mode = "";
+
+  function sync(force = false) {
+    const nextMode = capitalZoomMode(map.getZoom());
+    if (!force && nextMode === mode) return;
+    mode = nextMode;
+
+    if (nextMode === "hidden") {
+      if (markers.size) {
+        layer.clearLayers();
+        markers.clear();
+      }
+      return;
+    }
+
+    const showName = nextMode === "named";
+    const selectedId = hooks.getSelectedId?.() || null;
+    const seen = new Set();
+    for (const country of getCountries() || []) {
+      const point = capitalPointOf(country);
+      if (!point || !country?.id) continue;
+      seen.add(country.id);
+      const name = capitalLabelOf(country);
+      const selected = country.id === selectedId;
+      const sig = `${point.lat},${point.lng}|${showName ? 1 : 0}|${selected ? 1 : 0}|${name}|${country.official_name || ""}`;
+      let marker = markers.get(country.id);
+      if (!marker) {
+        marker = L.marker([point.lat, point.lng], {
+          icon: capitalDivIcon({
+            name,
+            showName,
+            selected,
+            countryName: country.official_name,
+          }),
+          keyboard: false,
+          bubblingMouseEvents: true,
+          zIndexOffset: selected ? 200 : 40,
+        });
+        marker.on("click", (event) => {
+          if (hooks.isPlacing?.()) {
+            hooks.onMarkerPlace?.(event.latlng);
+            return;
+          }
+          L.DomEvent.stopPropagation(event);
+          const current =
+            (getCountries() || []).find((item) => item.id === country.id) ||
+            country;
+          hooks.onClick?.(current);
+        });
+        layer.addLayer(marker);
+        markers.set(country.id, marker);
+        marker.__sig = sig;
+      } else if (marker.__sig !== sig) {
+        marker.setLatLng([point.lat, point.lng]);
+        marker.setIcon(
+          capitalDivIcon({
+            name,
+            showName,
+            selected,
+            countryName: country.official_name,
+          }),
+        );
+        marker.setZIndexOffset(selected ? 200 : 40);
+        marker.__sig = sig;
+      }
+    }
+
+    for (const [id, marker] of markers) {
+      if (seen.has(id)) continue;
+      layer.removeLayer(marker);
+      markers.delete(id);
+    }
+  }
+
+  function onZoom() {
+    sync(false);
+  }
+
+  map.on("zoom zoomend", onZoom);
+  sync(true);
+
+  return {
+    sync: () => sync(true),
+    destroy() {
+      map.off("zoom zoomend", onZoom);
+      layer.remove();
+      markers.clear();
+    },
+  };
 }
 
 export function createJworldMap(container, options = {}) {
@@ -389,6 +522,51 @@ export function createJworldMap(container, options = {}) {
   map.on("zoomend moveend viewreset", refreshFlagFills);
 
   let selectedCountryId = null;
+  let capitalSource = [];
+  let placingCapital = false;
+  let onCapitalPlace = null;
+
+  const capitals = mountCapitalMarkers(map, () => capitalSource, {
+    onClick: (country) => handlers.onCountryClick(country),
+    isPlacing: () => placingCapital,
+    onMarkerPlace: (latlng) => finishPlace(latlng),
+    getSelectedId: () => selectedCountryId,
+  });
+
+  function finishPlace(latlng) {
+    if (!placingCapital || !onCapitalPlace || !latlng) return;
+    const wrapped = latlng.wrap?.() || latlng;
+    const place = onCapitalPlace;
+    cancelPlaceCapital();
+    place({ lat: wrapped.lat, lng: wrapped.lng });
+  }
+
+  function handleCapitalClick(event) {
+    finishPlace(event.latlng);
+  }
+
+  function beginPlaceCapital(onPlace) {
+    cancelPlaceCapital();
+    placingCapital = true;
+    onCapitalPlace = onPlace;
+    setCountryHitTesting(false);
+    map.getContainer()?.classList.add("jworld-capital-cursor");
+    map.on("click", handleCapitalClick);
+  }
+
+  function cancelPlaceCapital() {
+    placingCapital = false;
+    onCapitalPlace = null;
+    map.off("click", handleCapitalClick);
+    map.getContainer()?.classList.remove("jworld-capital-cursor");
+    setCountryHitTesting(true);
+  }
+
+  function showCapital(point) {
+    if (!Number.isFinite(point?.lat) || !Number.isFinite(point?.lng)) return;
+    const zoom = Math.max(map.getZoom() || 0, CAPITAL_NAME_ZOOM);
+    map.setView([point.lat, point.lng], zoom);
+  }
 
   function strokeStyle(isMine, isSelected = false) {
     if (isSelected) return { color: "#efe6c8", weight: 2, opacity: 1 };
@@ -419,9 +597,11 @@ export function createJworldMap(container, options = {}) {
     selectedCountryId = id || null;
     applySelectionStyles();
     refreshFlagFills();
+    capitals.sync();
   }
 
   function setCountries(countries, memberId, isAdmin = false) {
+    capitalSource = countries || [];
     countriesLayer.clearLayers();
     countryLayers.clear();
 
@@ -491,6 +671,8 @@ export function createJworldMap(container, options = {}) {
 
     requestAnimationFrame(refreshFlagFills);
     pruneFlagPatterns();
+    capitals.sync();
+    if (placingCapital) setCountryHitTesting(false);
 
     return { rendered, skipped, total: (countries || []).length };
   }
@@ -774,6 +956,8 @@ export function createJworldMap(container, options = {}) {
   function destroy() {
     stopActiveTool();
     endSnapToShape();
+    cancelPlaceCapital();
+    capitals.destroy();
     map.off();
     map.remove();
   }
@@ -792,6 +976,9 @@ export function createJworldMap(container, options = {}) {
     endSnapToShape,
     loadCountryIntoDraw,
     focusCountry,
+    beginPlaceCapital,
+    cancelPlaceCapital,
+    showCapital,
     clearDraw,
     refreshFlagFills,
     invalidateSize: () => map.invalidateSize(),
@@ -819,7 +1006,7 @@ const BASEMAP_ATTR =
   '&copy; <a href="https://basemap.queeniemella.cc/">queeniemella.cc</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 /** Small read-only map of one country's borders, for the wiki page. */
-export function createCountryPreview(container, geometry) {
+export function createCountryPreview(container, geometry, country = null) {
   const map = L.map(container, {
     zoomControl: true,
     attributionControl: true,
@@ -854,12 +1041,19 @@ export function createCountryPreview(container, geometry) {
     }
   }
 
+  const capitals = mountCapitalMarkers(map, () => (country ? [country] : []));
+
   if (best) map.fitBounds(best, { padding: [18, 18], maxZoom: 12 });
   else map.setView([20, 10], 1);
+  capitals.sync();
 
-  setTimeout(() => map.invalidateSize(), 50);
+  setTimeout(() => {
+    map.invalidateSize();
+    capitals.sync();
+  }, 50);
   return {
     destroy() {
+      capitals.destroy();
       map.off();
       map.remove();
     },

@@ -167,6 +167,9 @@
           </option>
         </select>
         <input v-else v-model="model[field.key]" type="text" />
+        <span v-if="!field.computed && field.hint" class="jw-field-hint">{{
+          field.hint
+        }}</span>
       </label>
       <label>
         Religion

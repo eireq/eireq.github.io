@@ -225,7 +225,11 @@ async function mountPreview() {
   if (editing.value || !country.value?.geometry) return;
   await nextTick();
   if (!previewEl.value) return;
-  previewMap = createCountryPreview(previewEl.value, country.value.geometry);
+  previewMap = createCountryPreview(
+    previewEl.value,
+    country.value.geometry,
+    country.value,
+  );
 }
 
 const canEdit = computed(

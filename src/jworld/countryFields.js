@@ -1,3 +1,5 @@
+import { mirrorCapitalName } from "./capital.js";
+
 export function emptyCountryPayload() {
   return {
     official_name: "",
@@ -52,8 +54,8 @@ export function emptyCountryPayload() {
 
 export function countryToPayload(country) {
   const base = emptyCountryPayload();
-  if (!country) return base;
-  return {
+  if (!country) return mirrorCapitalName(base);
+  return mirrorCapitalName({
     ...base,
     official_name: country.official_name || "",
     common_names: country.common_names || "",
@@ -92,13 +94,17 @@ export function countryToPayload(country) {
         ? { ...base.symbols, ...country.symbols }
         : base.symbols,
     flag_path: country.flag_path || null,
-  };
+  });
 }
 
 export const INFOBOX_FIELDS = [
   { key: "leader", label: "Leader" },
   { key: "memberships", label: "Membership in International Org's" },
-  { key: "capital", label: "Capital" },
+  {
+    key: "capital",
+    label: "Capital",
+    hint: "This name appears beside the star when the map is zoomed in. Place the star with Set capital.",
+  },
   { key: "population", label: "Population" },
   { key: "languages", label: "Language(s)" },
   { key: "currency", label: "Currency" },

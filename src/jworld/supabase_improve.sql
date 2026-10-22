@@ -462,6 +462,8 @@ begin
 end;
 $$;
 
+drop function if exists public.jworld_list_map_countries(uuid);
+
 create or replace function public.jworld_list_map_countries(p_token uuid)
 returns table (
   id uuid,
@@ -469,6 +471,7 @@ returns table (
   owner_display_name text,
   official_name text,
   common_names text,
+  capital text,
   geometry jsonb,
   geography jsonb,
   flag_path text,
@@ -488,6 +491,7 @@ begin
     m.display_name as owner_display_name,
     c.official_name,
     c.common_names,
+    c.capital,
     c.geometry,
     c.geography,
     c.flag_path,

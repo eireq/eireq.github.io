@@ -242,6 +242,21 @@
               Add territory
             </button>
             <button
+              v-if="selected && canEdit(selected) && !drawing"
+              class="jw-btn jw-btn--ghost"
+              type="button"
+              :disabled="saving"
+              @click="togglePlaceCapital"
+            >
+              {{
+                placingCapital
+                  ? "Cancel capital"
+                  : capitalPointOf(selected)
+                    ? "Move capital"
+                    : "Set capital"
+              }}
+            </button>
+            <button
               v-if="selected"
               class="jw-btn jw-btn--ghost"
               type="button"
@@ -271,6 +286,15 @@
             >
               <summary class="jw-btn jw-btn--ghost">More</summary>
               <div class="jworld-more-menu">
+                <button
+                  v-if="canEdit(selected) && capitalPointOf(selected) && !placingCapital"
+                  class="jw-btn jw-btn--ghost"
+                  type="button"
+                  :disabled="saving"
+                  @click="clearCapital(selected)"
+                >
+                  Clear capital
+                </button>
                 <button
                   v-if="canEdit(selected) && canMerge(selected)"
                   class="jw-btn jw-btn--ghost"
@@ -421,6 +445,11 @@ import CountryForm from "../jworld/CountryForm.vue";
 import TransferOwnership from "../jworld/TransferOwnership.vue";
 import { createJworldMap, mergeGeometries } from "../jworld/map.js";
 import {
+  capitalLabelOf,
+  capitalPointOf,
+  withCapitalPoint,
+} from "../jworld/capital.js";
+import {
   countryToPayload,
   emptyCountryPayload,
 } from "../jworld/countryFields.js";
@@ -497,6 +526,8 @@ const borderBaseline = ref(null);
 const editBaselineUpdatedAt = ref(null);
 const territoryPrompt = ref(null);
 const territoryNameDraft = ref("");
+const placingCapital = ref(false);
+let placingCountryId = null;
 let territoryNameWait = null;
 let pollTimer = null;
 let lastStamp = "";
@@ -634,6 +665,8 @@ async function leave() {
   addingTerritory.value = false;
   snapLoading.value = false;
   snapActive.value = false;
+  placingCapital.value = false;
+  placingCountryId = null;
   editingCountryId.value = null;
   borderBaseline.value = null;
   editBaselineUpdatedAt.value = null;
@@ -759,6 +792,7 @@ async function bootMap() {
 
   mapApi = createJworldMap(mapEl.value, {
     onCountryClick: (country) => {
+      if (placingCapital.value) return;
       selectedId.value = country.id;
       banner.value = `${country.official_name} · ${country.owner_display_name}`;
     },
@@ -794,8 +828,15 @@ async function bootMap() {
   if (myBoot === bootToken) startPolling();
 }
 
+function stopPlacingCapital() {
+  placingCapital.value = false;
+  placingCountryId = null;
+  mapApi?.cancelPlaceCapital?.();
+}
+
 function teardownMap() {
   stopPolling();
+  stopPlacingCapital();
   if (activeDrawer) {
     try {
       activeDrawer.disable();
@@ -816,6 +857,7 @@ function cancelSnap() {
 }
 
 function cancelDrawing() {
+  stopPlacingCapital();
   toolActive.value = false;
   snapLoading.value = false;
   snapActive.value = false;
@@ -832,6 +874,7 @@ function cancelDrawing() {
 }
 
 function startCreate() {
+  stopPlacingCapital();
   toolActive.value = true;
   editingCountryId.value = null;
   addingTerritory.value = false;
@@ -863,6 +906,7 @@ function snapGuard() {
 }
 
 async function startSnapCreate() {
+  stopPlacingCapital();
   toolActive.value = true;
   editingCountryId.value = null;
   addingTerritory.value = false;
@@ -918,6 +962,7 @@ async function startSnapCreate() {
 
 async function editBorders(country) {
   if (!canEdit(country)) return;
+  stopPlacingCapital();
   let full = country;
   try {
     full = await ensureFullCountry(country.id);
@@ -954,6 +999,7 @@ function revertBorders() {
 
 function addTerritory(country) {
   if (!canEdit(country)) return;
+  stopPlacingCapital();
   toolActive.value = true;
   editingCountryId.value = country.id;
   addingTerritory.value = true;
@@ -971,6 +1017,7 @@ function addTerritory(country) {
 
 async function snapTerritory(country) {
   if (!canEdit(country)) return;
+  stopPlacingCapital();
   toolActive.value = true;
   editingCountryId.value = country.id;
   addingTerritory.value = true;
@@ -1122,7 +1169,77 @@ async function onOwnershipTransferred(result) {
   await refreshCountries();
 }
 
+function togglePlaceCapital() {
+  if (placingCapital.value) {
+    stopPlacingCapital();
+    banner.value = "Capital placement cancelled.";
+    return;
+  }
+  const country = selected.value;
+  if (!country || !canEdit(country) || drawing.value || saving.value) return;
+  placingCountryId = country.id;
+  placingCapital.value = true;
+  const label = capitalLabelOf(country);
+  banner.value = label
+    ? `Click the map to place ${label}.`
+    : `Click the map to place the capital of ${country.official_name}. Add its name in the wiki and it shows when you zoom in.`;
+  mapApi?.beginPlaceCapital((latlng) => {
+    const id = placingCountryId;
+    placingCapital.value = false;
+    placingCountryId = null;
+    saveCapitalPoint(id, latlng);
+  });
+}
+
+async function saveCapitalPoint(countryId, point) {
+  if (!session.value || !countryId) return;
+  saving.value = true;
+  banner.value = point ? "Saving capital…" : "Removing capital…";
+  try {
+    const full = await ensureFullCountry(countryId);
+    if (!canEdit(full)) throw new Error("You can only place a capital on your own country.");
+    const next = withCapitalPoint(full, point);
+    const payload = countryToPayload(next);
+    const { error } = await updateCountry(
+      session.value.token,
+      full.id,
+      payload,
+      null,
+      full.updated_at || null,
+    );
+    if (error) throw new Error(error);
+    const label = capitalLabelOf(next);
+    if (!point) {
+      banner.value = `Removed the capital of ${full.official_name}.`;
+    } else if (label) {
+      banner.value = `${label} is marked. The star shows as you zoom in, and the name one step closer.`;
+    } else {
+      banner.value = `Capital placed for ${full.official_name}. Add its name in the wiki to label the star.`;
+    }
+    await refreshCountries();
+    if (point) mapApi?.showCapital(point);
+  } catch (err) {
+    banner.value = err.message || "Could not save the capital.";
+  } finally {
+    saving.value = false;
+  }
+}
+
+function clearCapital(country) {
+  if (!country || !canEdit(country) || saving.value) return;
+  const label = capitalLabelOf(country);
+  const what = label ? `the ${label} marker` : "the capital marker";
+  if (!confirm(`Remove ${what} from ${country.official_name}? The wiki name stays.`)) {
+    return;
+  }
+  stopPlacingCapital();
+  saveCapitalPoint(country.id, null);
+}
+
 function selectCountry(country) {
+  if (placingCapital.value && placingCountryId !== country.id) {
+    stopPlacingCapital();
+  }
   selectedId.value = country.id;
   banner.value = `${country.official_name} · ${country.owner_display_name}`;
   mapApi?.focusCountry(country);
