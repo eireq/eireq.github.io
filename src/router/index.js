@@ -112,6 +112,15 @@ const router = createRouter({
       },
     },
     {
+      path: "/games/hexo",
+      name: "game-hexo",
+      component: () => import("../views/HexoView.vue"),
+      meta: {
+        title: "HeXO - eire",
+        hideChrome: true,
+      },
+    },
+    {
       path: "/games/racing",
       name: "game-racing",
       component: () => import("../views/GameRacingView.vue"),

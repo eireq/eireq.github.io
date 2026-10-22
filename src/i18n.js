@@ -111,6 +111,8 @@ const messages = {
       dailyFlagText: "one shared flag every day. keep the streak alive.",
       kht: "KHT tournament",
       khtText: "a giant bracket tournament. watch it update live.",
+      hexo: "HeXO",
+      hexoText: "hexagonal tic-tac-toe. six in a row on 169 tiles.",
     },
     tools: {
       title: "tools.",
@@ -705,6 +707,8 @@ const messages = {
       dailyFlagText: "eine gemeinsame Flagge jeden Tag. halte die Serie.",
       kht: "KHT-Turnier",
       khtText: "ein riesiges Bracket-Turnier. live aktualisiert.",
+      hexo: "HeXO",
+      hexoText: "hexagonales tic-tac-toe. sechs in einer reihe. 169 felder.",
     },
     tools: {
       title: "werkzeuge.",
@@ -1405,6 +1409,8 @@ messages.rus = mergeMessages(messages.eng, {
     dailyFlagText: "один общий флаг каждый день. стрик на этом устройстве.",
     kht: "турнир KHT",
     khtText: "огромная турнирная сетка. обновляется вживую.",
+    hexo: "HeXO",
+    hexoText: "шестиугольные крестики-нолики. шесть в ряд. 169 клеток.",
   },
   tools: {
     title: "инструменты.",
