@@ -4,7 +4,7 @@
       <header class="top">
         <div>
           <h1>HeXO</h1>
-          <p class="sub">six in a line · three axes · center h8</p>
+          <p class="sub">open on h8 · then two a turn · six in a line</p>
         </div>
         <router-link class="back" to="/games">games</router-link>
       </header>
@@ -43,8 +43,11 @@
       </div>
 
       <div class="actions">
-        <button type="button" @click="showSetup = !showSetup">
+        <button type="button" @click="toggleSetup">
           {{ showSetup ? "close" : "new" }}
+        </button>
+        <button type="button" @click="toggleSettings">
+          {{ showSettings ? "close" : "settings" }}
         </button>
         <button
           v-if="mode === 'practice'"
@@ -105,6 +108,25 @@
         </div>
         <button type="submit" class="start">start</button>
       </form>
+
+      <div v-if="showSettings" class="setup">
+        <div class="choice">
+          <button
+            type="button"
+            :aria-pressed="guidesOn"
+            @click="guidesOn = true"
+          >
+            lines on
+          </button>
+          <button
+            type="button"
+            :aria-pressed="!guidesOn"
+            @click="guidesOn = false"
+          >
+            lines off
+          </button>
+        </div>
+      </div>
 
       <div class="moves-head">
         <span>moves</span>
@@ -174,6 +196,8 @@
             :class="{
               'is-empty': !stones[cell.key],
               'is-center': cell.key === 'h8' && !stones[cell.key],
+              'is-opening': cell.key === 'h8' && view === 0,
+              'is-legal': legal(cell.key),
               'is-guide': guided(cell.key),
               'is-last': lastKey === cell.key && !winKeys.has(cell.key),
               'is-win': winKeys.has(cell.key),
@@ -284,6 +308,8 @@ import {
   decodeReplay,
   encodeReplay,
   playerOf,
+  stonesLeft,
+  turnStart,
 } from "@/games/hexo/logic.ts";
 
 const route = useRoute();
@@ -307,6 +333,8 @@ const clockMarks = ref([]);
 const clockRunning = ref(false);
 const timeoutWinner = ref(null);
 const showSetup = ref(false);
+const showSettings = ref(false);
+const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
 const dragging = ref(false);
 const copied = ref(false);
@@ -411,6 +439,8 @@ const statusText = computed(() => {
     const move = history.value[view.value - 1];
     return `after ${view.value}. ${playerOf(view.value - 1)}${move.letter}${move.number}`;
   }
+  if (history.value.length === 0) return "X plays h8";
+  if (stonesLeft(history.value.length) === 1) return `${turn.value} · one more`;
   return `${turn.value} to move`;
 });
 
@@ -435,8 +465,12 @@ const guideSet = computed(() => {
 });
 
 const ghost = computed(() => {
-  if (!canPlay.value || !hoverKey.value || stones.value[hoverKey.value]) return null;
+  if (!hoverKey.value || !legal(hoverKey.value)) return null;
   return BOARD.byKey[hoverKey.value] ?? null;
+});
+
+watch(guidesOn, (on) => {
+  window.localStorage.setItem("hexo-guides", on ? "on" : "off");
 });
 
 const stageStyle = computed(() => ({
@@ -447,8 +481,26 @@ function emptyPosition() {
   return { stones: {}, turn: "X", winner: null, lines: [] };
 }
 
+function legal(key) {
+  if (!canPlay.value || stones.value[key]) return false;
+  if (history.value.length === 0) return key === "h8";
+  return true;
+}
+
 function guided(key) {
-  return Boolean(hoverKey.value) && hoverKey.value !== key && guideSet.value.has(key);
+  if (!guidesOn.value || !hoverKey.value || hoverKey.value === key) return false;
+  if (history.value.length === 0 && hoverKey.value !== "h8") return false;
+  return guideSet.value.has(key);
+}
+
+function toggleSetup() {
+  showSetup.value = !showSetup.value;
+  if (showSetup.value) showSettings.value = false;
+}
+
+function toggleSettings() {
+  showSettings.value = !showSettings.value;
+  if (showSettings.value) showSetup.value = false;
 }
 
 function xMark(cell) {
@@ -535,19 +587,23 @@ function queueBot() {
 }
 
 function play(key) {
-  if (!canPlay.value) return;
+  if (!legal(key)) return;
   const cell = BOARD.byKey[key];
-  if (!cell || stones.value[key]) return;
+  if (!cell) return;
   pushMove({ letter: cell.letter, number: cell.number });
 }
 
 function undo() {
+  if (mode.value !== "practice") return;
   if (view.value !== history.value.length || !history.value.length) return;
   window.clearTimeout(botTimer);
-  let pops = 1;
-  if (mode.value === "practice") {
-    const last = playerOf(history.value.length - 1);
-    if (last === botSide() && history.value.length >= 2) pops = 2;
+  const lastIndex = history.value.length - 1;
+  const last = playerOf(lastIndex);
+  let pops = history.value.length - turnStart(lastIndex);
+  const partial = playerOf(history.value.length) === last;
+  if (!partial && last === botSide()) {
+    const before = lastIndex - pops;
+    if (before >= 0) pops += before - turnStart(before) + 1;
   }
   const mark = clockMarks.value[clockMarks.value.length - pops];
   history.value = history.value.slice(0, -pops);
@@ -780,6 +836,7 @@ function onKey(event) {
     step(1);
   } else if (event.key === "Escape") {
     showSetup.value = false;
+    showSettings.value = false;
   }
 }
 
@@ -1123,15 +1180,20 @@ button:focus-visible {
   stroke: #6a6a6a;
 }
 
+.cell.is-opening {
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
 .cell.is-guide {
   fill: #2a2a2a;
 }
 
-.viewport.can-play .cell.is-empty {
+.viewport.can-play .cell.is-legal {
   cursor: pointer;
 }
 
-.viewport.can-play .cell.is-empty:hover {
+.viewport.can-play .cell.is-legal:hover {
   fill: #3a3a3a;
   stroke: #d8d8d8;
 }

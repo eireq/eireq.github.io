@@ -65,8 +65,23 @@ export function keyOf(letter: string, number: number): string {
   return `${letter.toLowerCase()}${number}`;
 }
 
+/** X opens with one stone. Every later turn is two stones, and O goes first. */
 export function playerOf(index: number): Player {
-  return index % 2 === 0 ? "X" : "O";
+  if (index <= 0) return "X";
+  const pair = Math.floor((index - 1) / 2);
+  return pair % 2 === 0 ? "O" : "X";
+}
+
+/** Stones the side to move still has to place. The opening turn is one stone. */
+export function stonesLeft(moveCount: number): number {
+  if (moveCount <= 0) return 1;
+  return 2 - ((moveCount - 1) % 2);
+}
+
+/** Index of the first stone in the turn that contains `index`. */
+export function turnStart(index: number): number {
+  if (index <= 0) return 0;
+  return 1 + Math.floor((index - 1) / 2) * 2;
 }
 
 function letterIndex(letter: string): number {
@@ -264,6 +279,7 @@ export function applyMoves(moves: Coord[]): Position | null {
     const number = moves[i].number;
     if (!isValidHex(letter, number)) return null;
     const key = keyOf(letter, number);
+    if (i === 0 && key !== "h8") return null;
     if (stones[key]) return null;
     const player = playerOf(i);
     stones[key] = player;
