@@ -154,13 +154,20 @@
       <p v-if="replayError" class="warn">that link isn't a valid game.</p>
       <p v-else-if="!history.length" class="empty">no moves yet.</p>
       <ol v-else ref="listEl" class="moves">
-        <li v-for="(move, index) in history" :key="index">
+        <li
+          v-for="line in score"
+          :key="line.number"
+          :class="{ live: line.stones.some((stone) => view === stone.index + 1) }"
+        >
+          <span class="num">{{ line.number }}.</span>
           <button
+            v-for="(stone, index) in line.stones"
+            :key="stone.index"
             type="button"
-            :class="{ on: view === index + 1 }"
-            @click="view = index + 1"
+            :class="{ on: view === stone.index + 1 }"
+            @click="view = stone.index + 1"
           >
-            {{ index + 1 }}. {{ playerOf(index) }}{{ move.letter }}{{ move.number }}
+            {{ index === 0 ? line.player : "" }}{{ stone.square }}
           </button>
         </li>
       </ol>
@@ -199,7 +206,7 @@
               'is-opening': cell.key === 'h8' && view === 0,
               'is-legal': legal(cell.key),
               'is-guide': guided(cell.key),
-              'is-last': lastKey === cell.key && !winKeys.has(cell.key),
+              'is-last': lastKeys.has(cell.key) && !winKeys.has(cell.key),
               'is-win': winKeys.has(cell.key),
             }"
             :style="
@@ -232,20 +239,23 @@
             <circle v-else :cx="ghost.x" :cy="ghost.y" r="7.3" />
           </g>
 
-          <circle
-            v-if="lastCell && !winKeys.has(lastCell.key)"
-            class="last-ring soft"
-            :cx="lastCell.x"
-            :cy="lastCell.y"
-            r="15"
-          />
-          <circle
-            v-if="lastCell && !winKeys.has(lastCell.key)"
-            class="last-ring"
-            :cx="lastCell.x"
-            :cy="lastCell.y"
-            r="12.2"
-          />
+          <template v-for="cell in shownTurn" :key="'mark-' + cell.key">
+            <circle
+              v-if="!winKeys.has(cell.key)"
+              class="last-ring soft"
+              :class="{ still: cell.key !== lastKey }"
+              :cx="cell.x"
+              :cy="cell.y"
+              r="15"
+            />
+            <circle
+              v-if="cell.key === lastKey && !winKeys.has(cell.key)"
+              class="last-ring"
+              :cx="cell.x"
+              :cy="cell.y"
+              r="12.2"
+            />
+          </template>
 
           <g v-if="winSegments.length" class="victory" aria-hidden="true">
             <line
@@ -372,7 +382,54 @@ const lastMove = computed(() =>
 const lastKey = computed(() =>
   lastMove.value ? `${lastMove.value.letter}${lastMove.value.number}` : null,
 );
-const lastCell = computed(() => (lastKey.value ? BOARD.byKey[lastKey.value] : null));
+
+function turnSlice(ply) {
+  if (ply <= 0) return null;
+  const end = ply - 1;
+  const start = turnStart(end);
+  return {
+    number: start === 0 ? 1 : Math.floor((start + 1) / 2) + 1,
+    player: playerOf(start),
+    squares: history.value
+      .slice(start, ply)
+      .map((move) => `${move.letter}${move.number}`),
+  };
+}
+
+function moveLabel(ply) {
+  const turn = turnSlice(ply);
+  if (!turn) return "";
+  return `${turn.number}. ${turn.player}${turn.squares.join(" ")}`;
+}
+
+const score = computed(() => {
+  const lines = [];
+  for (let index = 0; index < history.value.length; ) {
+    const start = turnStart(index);
+    const stones = [];
+    let cursor = start;
+    while (cursor < history.value.length && turnStart(cursor) === start) {
+      const move = history.value[cursor];
+      stones.push({ index: cursor, square: `${move.letter}${move.number}` });
+      cursor += 1;
+    }
+    lines.push({
+      number: lines.length + 1,
+      player: playerOf(start),
+      stones,
+    });
+    index = cursor;
+  }
+  return lines;
+});
+
+const shownTurn = computed(() => {
+  const turn = turnSlice(view.value);
+  if (!turn) return [];
+  return turn.squares.map((key) => BOARD.byKey[key]).filter(Boolean);
+});
+
+const lastKeys = computed(() => new Set(shownTurn.value.map((cell) => cell.key)));
 
 const winKeys = computed(() => {
   const keys = new Set();
@@ -436,8 +493,7 @@ const statusText = computed(() => {
   if (outcome.value) return outcome.value;
   if (view.value < history.value.length) {
     if (view.value === 0) return "start";
-    const move = history.value[view.value - 1];
-    return `after ${view.value}. ${playerOf(view.value - 1)}${move.letter}${move.number}`;
+    return `after ${moveLabel(view.value)}`;
   }
   if (history.value.length === 0) return "X plays h8";
   if (stonesLeft(history.value.length) === 1) return `${turn.value} · one more`;
@@ -446,9 +502,8 @@ const statusText = computed(() => {
 
 const readout = computed(() => {
   if (hoverKey.value) return hoverKey.value;
-  if (lastMove.value) {
-    return `${playerOf(view.value - 1)}${lastMove.value.letter}${lastMove.value.number}`;
-  }
+  const turn = turnSlice(view.value);
+  if (turn) return `${turn.player}${turn.squares.join(" ")}`;
   return "–";
 });
 
@@ -1105,14 +1160,35 @@ button:focus-visible {
   flex: 1;
 }
 
+.moves li {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  border-bottom: 1px solid #161616;
+  padding: 7px 2px;
+  color: #777;
+}
+
+.moves li.live {
+  color: #ccc;
+}
+
+.moves .num {
+  flex: none;
+  width: 1.7em;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
 .moves button {
-  width: 100%;
+  width: auto;
   text-align: left;
   border: 0;
-  border-bottom: 1px solid #161616;
   background: transparent;
-  color: #999;
-  padding: 7px 2px;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 0.4em 0 0;
 }
 
 .moves button.on,
@@ -1246,6 +1322,12 @@ button:focus-visible {
 .last-ring.soft {
   stroke-width: 5;
   stroke-opacity: 0.22;
+}
+
+.last-ring.soft.still {
+  animation: none;
+  stroke-opacity: 0.14;
+  stroke-width: 4;
 }
 
 .ghost {
