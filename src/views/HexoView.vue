@@ -50,6 +50,9 @@
         <button type="button" @click="toggleSettings">
           {{ showSettings ? "close" : "settings" }}
         </button>
+        <button type="button" @click="toggleRules">
+          {{ showRules ? "close" : "rules" }}
+        </button>
         <button
           v-if="mode === 'practice'"
           type="button"
@@ -122,6 +125,17 @@
         </div>
         <button type="submit" class="start">start</button>
       </form>
+
+      <div v-if="showRules" class="rules">
+        <p>X places one stone on h8. Every later turn is two stones, and O takes the first of them.</p>
+        <p>Six in a line, on any of the three axes, wins. That move ends with #.</p>
+        <p>
+          Check means the side to move can finish a line with the stones still left this turn.
+          The stones already in the run are marked.
+        </p>
+        <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
+        <p>Together: you are X. Send the invite. The other player is O.</p>
+      </div>
 
       <div v-if="showSettings" class="setup">
         <div class="choice">
@@ -399,6 +413,7 @@ const resigned = ref(
 );
 const showSetup = ref(false);
 const showSettings = ref(false);
+const showRules = ref(false);
 const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
 const dragging = ref(false);
@@ -655,12 +670,26 @@ function guided(key) {
 
 function toggleSetup() {
   showSetup.value = !showSetup.value;
-  if (showSetup.value) showSettings.value = false;
+  if (showSetup.value) {
+    showSettings.value = false;
+    showRules.value = false;
+  }
 }
 
 function toggleSettings() {
   showSettings.value = !showSettings.value;
-  if (showSettings.value) showSetup.value = false;
+  if (showSettings.value) {
+    showSetup.value = false;
+    showRules.value = false;
+  }
+}
+
+function toggleRules() {
+  showRules.value = !showRules.value;
+  if (showRules.value) {
+    showSetup.value = false;
+    showSettings.value = false;
+  }
 }
 
 function xMark(cell) {
@@ -1083,6 +1112,7 @@ function onKey(event) {
   } else if (event.key === "Escape") {
     showSetup.value = false;
     showSettings.value = false;
+    showRules.value = false;
   }
 }
 
@@ -1443,6 +1473,19 @@ button:focus-visible {
   display: grid;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.rules {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #bbb;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.rules p {
+  margin: 0;
 }
 
 .choice button {
