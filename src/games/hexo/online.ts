@@ -11,12 +11,20 @@ export type MatchNote = {
   seat: Seat;
   at: number;
   moves: string[];
+  times: Array<number | null>;
+  epoch: number;
+  white: string;
   resign: Seat | null;
   flag: Seat | null;
   minutes: number;
   clock: { X: number; O: number } | null;
   running: boolean;
 };
+
+/** Room names are short words. Older hex codes still count. */
+export function isRoomName(room: string): boolean {
+  return /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(room) && room.length >= 2 && room.length <= 32;
+}
 
 export type MatchLink = {
   publish: (note: MatchNote) => void;
@@ -33,7 +41,7 @@ export function connectMatch(
   onNote: (note: MatchNote) => void,
   onLink: (up: boolean) => void,
 ): MatchLink {
-  if (!/^[a-f0-9]{12,32}$/.test(room)) {
+  if (!isRoomName(room)) {
     onLink(false);
     return { publish() {}, close() {} };
   }
@@ -144,7 +152,7 @@ export function connectMatch(
   return {
     publish(note) {
       if (!up) return;
-      sendPacket(publishPacket(topic, JSON.stringify(note)));
+      sendPacket(publishPacket(topic, JSON.stringify(note), note.kind === "go"));
     },
     close() {
       closed = true;
@@ -201,6 +209,11 @@ function parseNote(value: unknown): MatchNote | null {
     seat: note.seat,
     at: typeof note.at === "number" ? note.at : Date.now(),
     moves: note.moves,
+    times: Array.isArray(note.times)
+      ? note.times.map((time) => (typeof time === "number" ? time : null))
+      : [],
+    epoch: typeof note.epoch === "number" && note.epoch > 0 ? Math.floor(note.epoch) : 0,
+    white: typeof note.white === "string" ? note.white : "",
     resign: note.resign === "X" || note.resign === "O" ? note.resign : null,
     flag: note.flag === "X" || note.flag === "O" ? note.flag : null,
     minutes: note.minutes === 5 || note.minutes === 10 ? note.minutes : 0,
@@ -220,9 +233,9 @@ function subscribePacket(topic: string): Uint8Array {
   return packet(0x82, [0x00, 0x01, ...filter, 0x00]);
 }
 
-function publishPacket(topic: string, payload: string): Uint8Array {
+function publishPacket(topic: string, payload: string, retain = false): Uint8Array {
   const body = [...utf8(topic), ...new TextEncoder().encode(payload)];
-  return packet(0x30, body);
+  return packet(retain ? 0x31 : 0x30, body);
 }
 
 function pingPacket(): Uint8Array {

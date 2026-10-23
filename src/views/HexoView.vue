@@ -13,6 +13,7 @@
       <p class="status" :class="{ over: outcome }" aria-live="polite">
         {{ statusText }}
       </p>
+      <p v-if="mode === 'together' && room" class="room-tag">{{ room }}</p>
 
       <div class="plates">
         <div
@@ -54,7 +55,7 @@
           {{ showRules ? "close" : "rules" }}
         </button>
         <button
-          v-if="mode === 'practice'"
+          v-if="mode !== 'together'"
           type="button"
           :disabled="!history.length || view !== history.length"
           @click="undo"
@@ -63,6 +64,9 @@
         </button>
         <button v-if="!resultLine" type="button" :disabled="!canResign" @click="resign">
           resign
+        </button>
+        <button v-if="mode === 'together' && resultLine" type="button" @click="rematch">
+          rematch
         </button>
         <button type="button" @click="copyLink">
           {{ copied ? "copied" : mode === "together" ? "invite" : "copy link" }}
@@ -107,6 +111,16 @@
             {{ minutes === 0 ? "no clock" : minutes + " min" }}
           </button>
         </div>
+        <label v-if="draft.mode === 'together'" class="room">
+          <input
+            v-model="draft.room"
+            maxlength="24"
+            placeholder="room name"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <span>the room keeps the game. blank makes a short code.</span>
+        </label>
         <div v-if="draft.mode === 'practice'" class="choice">
           <button
             type="button"
@@ -134,7 +148,11 @@
           The stones already in the run are marked.
         </p>
         <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
-        <p>Together: you are X. Send the invite. The other player is O.</p>
+        <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
+        <p>
+          Together: pick a room name. It keeps the game. You start as X. Send the invite.
+          They are O. Rematch swaps sides.
+        </p>
       </div>
 
       <div v-if="showSettings" class="setup">
@@ -199,6 +217,7 @@
               stone.index === mateIndex ? "#" : ""
             }}
           </button>
+          <span v-if="line.time" class="time">{{ line.time }}</span>
         </li>
         <li v-if="resultLine" class="result">{{ resultLine }}</li>
       </ol>
@@ -218,6 +237,7 @@
       <div class="stage" :class="{ ready }" :style="stageStyle">
         <svg
           class="board"
+          :class="{ flipped }"
           :viewBox="BOARD.viewBox"
           :width="BOARD.width"
           :height="BOARD.height"
@@ -236,6 +256,7 @@
               'is-center': cell.key === 'h8' && !stones[cell.key],
               'is-opening': cell.key === 'h8' && view === 0,
               'is-legal': legal(cell.key),
+              'is-flash': flashKey === cell.key,
               'is-guide': guided(cell.key),
               'is-check': checkKeys.has(cell.key),
               'is-last': lastKeys.has(cell.key) && !winKeys.has(cell.key),
@@ -328,6 +349,7 @@
       </div>
 
       <div class="zoom">
+        <button type="button" @click="toggleFlip">flip</button>
         <button type="button" aria-label="zoom out" @click="zoomBy(1 / 1.18)">
           −
         </button>
@@ -349,12 +371,13 @@ import {
   chooseBotMove,
   decodeReplay,
   encodeReplay,
+  isValidHex,
   playerOf,
   stonesLeft,
   threatKeys,
   turnStart,
 } from "@/games/hexo/logic.ts";
-import { connectMatch } from "@/games/hexo/online.ts";
+import { connectMatch, isRoomName } from "@/games/hexo/online.ts";
 
 const route = useRoute();
 const sides = ["X", "O"];
@@ -368,14 +391,53 @@ function readReplay() {
 }
 
 function readRoom() {
-  const room = route.query.p;
-  if (typeof room !== "string" || !/^[a-f0-9]{12,32}$/.test(room)) return null;
+  const room = typeof route.query.p === "string" ? route.query.p.toLowerCase() : "";
+  if (!isRoomName(room)) return null;
   const minutes = route.query.min === "5" || route.query.min === "10" ? Number(route.query.min) : 0;
   return {
     room,
     seat: route.query.s === "O" ? "O" : "X",
     minutes,
   };
+}
+
+function parseMoveList(list) {
+  if (!Array.isArray(list)) return null;
+  const moves = [];
+  for (const part of list) {
+    const found = /^([a-o])(\d{1,2})$/.exec(String(part));
+    if (!found) return null;
+    moves.push({ letter: found[1], number: Number(found[2]) });
+  }
+  return applyMoves(moves) ? moves : null;
+}
+
+function loadRoom(name) {
+  try {
+    const raw = window.localStorage.getItem(`hexo-room:${name}`);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    const moves = parseMoveList(saved.moves);
+    if (!moves || !(saved.epoch > 0)) return null;
+    return { ...saved, moves };
+  } catch {
+    return null;
+  }
+}
+
+function cleanRoom(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
+}
+
+function makeCode() {
+  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
 }
 
 function playerId() {
@@ -389,27 +451,57 @@ function playerId() {
   return id;
 }
 
+const selfId = playerId();
 const joined = readRoom();
 const loaded = readReplay();
-const history = ref(loaded.moves ?? []);
-const view = ref(loaded.moves?.length ?? 0);
+const remembered = joined ? loadRoom(joined.room) : null;
+const openedMoves =
+  remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length)
+    ? remembered.moves
+    : (loaded.moves ?? []);
+const openedSeat =
+  remembered?.white === selfId ? "X" : remembered?.white ? "O" : (joined?.seat ?? null);
+const history = ref(openedMoves);
+const moveTimes = ref(
+  openedMoves.map((_, index) =>
+    typeof remembered?.times?.[index] === "number" ? remembered.times[index] : null,
+  ),
+);
+const view = ref(openedMoves.length);
 const mode = ref(joined ? "together" : "hotseat");
-const human = ref(joined?.seat ?? "X");
+const human = ref(openedSeat ?? "X");
 const room = ref(joined?.room ?? null);
-const seat = ref(joined?.seat ?? null);
-const clockBudget = ref(joined?.minutes ?? 0);
+const seat = ref(openedSeat);
+const epoch = ref(remembered?.epoch || (openedMoves.length ? 1 : 0));
+const whiteId = ref(remembered?.white || "");
+const peerId = ref("");
+const flipped = ref(openedSeat === "O");
+const flipTouched = ref(false);
+const flashKey = ref(null);
+const typed = ref("");
+const clockBudget = ref(remembered?.minutes || joined?.minutes || 0);
 const clock = ref(
-  clockBudget.value && !loaded.moves?.length
-    ? { X: clockBudget.value * 60000, O: clockBudget.value * 60000 }
-    : null,
+  remembered?.clock?.X != null && remembered?.clock?.O != null
+    ? { X: remembered.clock.X, O: remembered.clock.O }
+    : clockBudget.value && !openedMoves.length
+      ? { X: clockBudget.value * 60000, O: clockBudget.value * 60000 }
+      : null,
 );
 const clockMarks = ref([]);
 const clockRunning = ref(false);
 const timeoutWinner = ref(
-  !loaded.error && (route.query.flag === "X" || route.query.flag === "O") ? route.query.flag : null,
+  remembered?.flag === "X" || remembered?.flag === "O"
+    ? remembered.flag
+    : !loaded.error && (route.query.flag === "X" || route.query.flag === "O")
+      ? route.query.flag
+      : null,
 );
 const resigned = ref(
-  !loaded.error && (route.query.end === "X" || route.query.end === "O") ? route.query.end : null,
+  remembered?.resign === "X" || remembered?.resign === "O"
+    ? remembered.resign
+    : !loaded.error && (route.query.end === "X" || route.query.end === "O")
+      ? route.query.end
+      : null,
 );
 const showSetup = ref(false);
 const showSettings = ref(false);
@@ -423,7 +515,6 @@ const linkUp = ref(false);
 const peerKnown = ref(false);
 const peerAt = ref(0);
 const nowMs = ref(Date.now());
-const selfId = playerId();
 const replayError = ref(loaded.error);
 const particles = ref([]);
 const ready = ref(false);
@@ -438,6 +529,7 @@ const draft = reactive({
   mode: "hotseat",
   human: "X",
   minutes: 0,
+  room: "",
 });
 
 const position = computed(
@@ -489,10 +581,13 @@ const score = computed(() => {
       stones.push({ index: cursor, square: `${move.letter}${move.number}` });
       cursor += 1;
     }
+    const last = stones[stones.length - 1];
+    const mark = moveTimes.value[last.index];
     lines.push({
       number: lines.length + 1,
       player: playerOf(start),
       stones,
+      time: typeof mark === "number" ? formatClock(mark) : "",
     });
     index = cursor;
   }
@@ -618,6 +713,7 @@ const statusText = computed(() => {
 });
 
 const readout = computed(() => {
+  if (typed.value) return typed.value;
   if (hoverKey.value) return hoverKey.value;
   const turn = turnSlice(view.value);
   if (turn) return `${turn.player}${turn.squares.join(" ")}`;
@@ -740,14 +836,17 @@ function spawnConfetti() {
 }
 
 function pushMove(move) {
+  const mover = playerOf(history.value.length);
   if (clock.value) {
     clockMarks.value = [
       ...clockMarks.value,
       { X: clock.value.X, O: clock.value.O },
     ];
+    moveTimes.value = [...moveTimes.value, clock.value[mover]];
     clockRunning.value = true;
   } else {
     clockMarks.value = [...clockMarks.value, null];
+    moveTimes.value = [...moveTimes.value, null];
   }
   history.value = [...history.value, move];
   view.value = history.value.length;
@@ -776,16 +875,40 @@ function queueBot() {
   }, 380);
 }
 
+function flash(key) {
+  flashKey.value = key;
+  window.setTimeout(() => {
+    if (flashKey.value === key) flashKey.value = null;
+  }, 450);
+}
+
 function play(key) {
-  if (!legal(key)) return;
+  if (!legal(key)) {
+    if (history.value.length === 0 && key !== "h8" && BOARD.byKey[key] && canPlay.value) flash(key);
+    return;
+  }
   const cell = BOARD.byKey[key];
   if (!cell) return;
+  typed.value = "";
   pushMove({ letter: cell.letter, number: cell.number });
 }
 
 function undo() {
-  if (mode.value !== "practice") return;
+  if (mode.value === "together") return;
   if (view.value !== history.value.length || !history.value.length) return;
+  if (mode.value === "hotseat") {
+    const mark = clockMarks.value[clockMarks.value.length - 1];
+    history.value = history.value.slice(0, -1);
+    moveTimes.value = moveTimes.value.slice(0, -1);
+    clockMarks.value = clockMarks.value.slice(0, -1);
+    view.value = history.value.length;
+    resigned.value = null;
+    timeoutWinner.value = null;
+    particles.value = [];
+    if (mark && clock.value) clock.value = { X: mark.X, O: mark.O };
+    clockRunning.value = history.value.length > 0 && Boolean(clock.value);
+    return;
+  }
   window.clearTimeout(botTimer);
   const lastIndex = history.value.length - 1;
   const last = playerOf(lastIndex);
@@ -797,6 +920,7 @@ function undo() {
   }
   const mark = clockMarks.value[clockMarks.value.length - pops];
   history.value = history.value.slice(0, -pops);
+  moveTimes.value = moveTimes.value.slice(0, -pops);
   clockMarks.value = clockMarks.value.slice(0, -pops);
   view.value = history.value.length;
   timeoutWinner.value = null;
@@ -822,8 +946,13 @@ function startGame() {
   history.value = [];
   view.value = 0;
   clockMarks.value = [];
+  moveTimes.value = [];
   timeoutWinner.value = null;
   resigned.value = null;
+  epoch.value = 0;
+  whiteId.value = "";
+  peerId.value = "";
+  claiming = false;
   replayError.value = false;
   particles.value = [];
   hoverKey.value = null;
@@ -837,11 +966,22 @@ function startGame() {
   clockRunning.value = false;
   showSetup.value = false;
   if (draft.mode === "together") {
-    const bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    room.value = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-    seat.value = "X";
-    human.value = "X";
+    const cleaned = cleanRoom(draft.room);
+    const name = isRoomName(cleaned) ? cleaned : makeCode();
+    draft.room = name;
+    room.value = name;
+    const saved = loadRoom(name);
+    if (saved) {
+      restoreSaved(saved);
+      claiming = false;
+    } else {
+      seat.value = "X";
+      human.value = "X";
+      whiteId.value = "";
+      epoch.value = 0;
+      claiming = true;
+      if (!flipTouched.value) flipped.value = false;
+    }
     openMatch();
   }
   syncUrl();
@@ -916,7 +1056,7 @@ function scorePlain() {
         return stone.index === mateIndex.value ? `${text}#` : text;
       })
       .join(" ");
-    return `${line.number}. ${body}`;
+    return `${line.number}. ${body}${line.time ? `  ${line.time}` : ""}`;
   });
   if (resultLine.value) lines.push(resultLine.value);
   return lines.join("\n");
@@ -1103,6 +1243,29 @@ function onOver(event) {
 function onKey(event) {
   const tag = event.target?.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA") return;
+  if (event.key === "Backspace") {
+    typed.value = typed.value.slice(0, -1);
+    window.clearTimeout(typeTimer);
+    return;
+  }
+  if (/^[a-o]$/i.test(event.key)) {
+    event.preventDefault();
+    typed.value = event.key.toLowerCase();
+    window.clearTimeout(typeTimer);
+    return;
+  }
+  if (/^\d$/.test(event.key) && /^[a-o]/.test(typed.value)) {
+    event.preventDefault();
+    const letter = typed.value[0];
+    const digits = `${typed.value.slice(1)}${event.key}`.slice(0, 2);
+    typed.value = `${letter}${digits}`;
+    const number = Number(digits);
+    window.clearTimeout(typeTimer);
+    if (!isValidHex(letter, number)) return;
+    if (typedReady(letter, number)) commitTyped();
+    else typeTimer = window.setTimeout(() => commitTyped(), 450);
+    return;
+  }
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     step(-1);
@@ -1110,6 +1273,7 @@ function onKey(event) {
     event.preventDefault();
     step(1);
   } else if (event.key === "Escape") {
+    typed.value = "";
     showSetup.value = false;
     showSettings.value = false;
     showRules.value = false;
@@ -1122,6 +1286,9 @@ let observer;
 let match = null;
 let muteNet = false;
 let hiTimer = 0;
+let claimTimer = 0;
+let typeTimer = 0;
+let claiming = false;
 
 function publishHi() {
   if (!match || !seat.value) return;
@@ -1131,6 +1298,9 @@ function publishHi() {
     seat: seat.value,
     at: Date.now(),
     moves: [],
+    times: [],
+    epoch: epoch.value,
+    white: whiteId.value,
     resign: null,
     flag: null,
     minutes: 0,
@@ -1139,42 +1309,177 @@ function publishHi() {
   });
 }
 
+function saveRoomState() {
+  if (mode.value !== "together" || !room.value || epoch.value < 1) return;
+  window.localStorage.setItem(
+    `hexo-room:${room.value}`,
+    JSON.stringify({
+      epoch: epoch.value,
+      white: whiteId.value,
+      moves: history.value.map((move) => `${move.letter}${move.number}`),
+      times: moveTimes.value,
+      resign: resigned.value,
+      flag: timeoutWinner.value,
+      minutes: clockBudget.value,
+      clock: clock.value,
+      running: clockRunning.value,
+    }),
+  );
+}
+
+function restoreSaved(saved) {
+  history.value = saved.moves;
+  moveTimes.value = saved.moves.map((_, index) =>
+    typeof saved.times?.[index] === "number" ? saved.times[index] : null,
+  );
+  view.value = saved.moves.length;
+  epoch.value = saved.epoch;
+  whiteId.value = saved.white || "";
+  seat.value = whiteId.value === selfId ? "X" : whiteId.value ? "O" : "X";
+  human.value = seat.value;
+  if (!flipTouched.value) flipped.value = seat.value === "O";
+  resigned.value = saved.resign === "X" || saved.resign === "O" ? saved.resign : null;
+  timeoutWinner.value = saved.flag === "X" || saved.flag === "O" ? saved.flag : null;
+  clockBudget.value = saved.minutes === 5 || saved.minutes === 10 ? saved.minutes : 0;
+  if (saved.clock?.X != null && saved.clock?.O != null) {
+    clock.value = { X: saved.clock.X, O: saved.clock.O };
+  } else if (clockBudget.value) {
+    const ms = clockBudget.value * 60000;
+    clock.value = { X: ms, O: ms };
+  } else {
+    clock.value = null;
+  }
+  clockRunning.value = false;
+}
+
+function rematch() {
+  if (mode.value !== "together" || !resultLine.value) return;
+  epoch.value += 1;
+  if (peerId.value) whiteId.value = seat.value === "X" ? peerId.value : selfId;
+  else whiteId.value = selfId;
+  seat.value = whiteId.value === selfId ? "X" : "O";
+  human.value = seat.value;
+  if (!flipTouched.value) flipped.value = seat.value === "O";
+  history.value = [];
+  moveTimes.value = [];
+  clockMarks.value = [];
+  view.value = 0;
+  resigned.value = null;
+  timeoutWinner.value = null;
+  particles.value = [];
+  hoverKey.value = null;
+  if (clockBudget.value) {
+    const ms = clockBudget.value * 60000;
+    clock.value = { X: ms, O: ms };
+  }
+  clockRunning.value = false;
+  publishMatch();
+}
+
+function toggleFlip() {
+  flipTouched.value = true;
+  flipped.value = !flipped.value;
+}
+
+function typedReady(letter, number) {
+  if (number > 1) return true;
+  for (let extra = 0; extra <= 5; extra += 1) {
+    if (isValidHex(letter, 10 + extra)) return false;
+  }
+  return true;
+}
+
+function commitTyped() {
+  const raw = typed.value;
+  typed.value = "";
+  const found = /^([a-o])(\d{1,2})$/.exec(raw);
+  if (!found) return;
+  const key = `${found[1]}${Number(found[2])}`;
+  if (legal(key)) play(key);
+  else if (history.value.length === 0 && BOARD.byKey[key] && canPlay.value) flash(key);
+}
+
 function publishMatch() {
   if (muteNet || mode.value !== "together" || !match || !seat.value) return;
+  if (!whiteId.value && seat.value === "X" && epoch.value >= 1) whiteId.value = selfId;
   match.publish({
     kind: "go",
     id: selfId,
     seat: seat.value,
     at: Date.now(),
     moves: history.value.map((move) => `${move.letter}${move.number}`),
+    times: moveTimes.value,
+    epoch: epoch.value,
+    white: whiteId.value || (seat.value === "X" ? selfId : ""),
     resign: resigned.value,
     flag: timeoutWinner.value,
     minutes: clockBudget.value,
     clock: clock.value ? { X: clock.value.X, O: clock.value.O } : null,
     running: clockRunning.value && !outcome.value,
   });
+  saveRoomState();
 }
 
 function isPrefix(short, long) {
   return short.length <= long.length && short.every((key, index) => key === long[index]);
 }
 
+function takeMoves(moves, times, follow) {
+  muteNet = true;
+  history.value = moves;
+  moveTimes.value = moves.map((_, index) => (typeof times?.[index] === "number" ? times[index] : null));
+  clockMarks.value = moves.map(() => null);
+  if (follow) view.value = moves.length;
+  muteNet = false;
+}
+
+function applyWhite(white) {
+  if (!white) return;
+  whiteId.value = white;
+  seat.value = white === selfId ? "X" : "O";
+  human.value = seat.value;
+  if (!flipTouched.value) flipped.value = seat.value === "O";
+}
+
 function onNote(note) {
-  if (note.id === selfId || note.seat === seat.value) return;
+  if (note.id === selfId) return;
+  peerId.value = note.id;
   peerKnown.value = true;
   peerAt.value = Date.now();
   if (note.kind === "hi") {
+    if (claiming) {
+      window.clearTimeout(claimTimer);
+      if (note.id < selfId) {
+        claiming = false;
+        seat.value = "O";
+        human.value = "O";
+        if (!flipTouched.value) flipped.value = true;
+      } else {
+        claimRoom();
+      }
+      return;
+    }
     publishMatch();
     return;
   }
 
-  const moves = [];
-  for (const part of note.moves) {
-    const found = /^([a-o])(\d{1,2})$/.exec(part);
-    if (!found) return;
-    moves.push({ letter: found[1], number: Number(found[2]) });
+  const moves = parseMoveList(note.moves);
+  if (!moves) return;
+  if (claiming && note.epoch >= 1) {
+    claiming = false;
+    window.clearTimeout(claimTimer);
+    adoptFresh(note, moves);
+    return;
   }
-  if (!applyMoves(moves)) return;
+  if (note.epoch > epoch.value) {
+    adoptFresh(note, moves);
+    return;
+  }
+  if (note.epoch < epoch.value) {
+    publishMatch();
+    return;
+  }
+  if (note.seat === seat.value) return;
 
   const local = history.value.map((move) => `${move.letter}${move.number}`);
   const remote = note.moves;
@@ -1186,21 +1491,46 @@ function onNote(note) {
   const extended = remote.length > local.length;
   if (extended) {
     const follow = view.value === history.value.length;
-    muteNet = true;
-    history.value = moves;
-    clockMarks.value = moves.map(() => null);
-    if (follow) view.value = moves.length;
-    muteNet = false;
+    takeMoves(moves, note.times, follow);
     const latest = applyMoves(moves);
     if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   }
-
+  if (note.white) whiteId.value = note.white;
   if (note.resign === note.seat) resigned.value = note.resign;
   if (note.flag && note.flag !== note.seat) timeoutWinner.value = note.flag;
   if ((note.minutes === 5 || note.minutes === 10) && clockBudget.value === 0) {
     clockBudget.value = note.minutes;
   }
   adoptClock(note, extended);
+}
+
+function adoptFresh(note, moves) {
+  epoch.value = note.epoch;
+  applyWhite(note.white);
+  takeMoves(moves, note.times, true);
+  resigned.value = note.resign === "X" || note.resign === "O" ? note.resign : null;
+  timeoutWinner.value = note.flag === "X" || note.flag === "O" ? note.flag : null;
+  if (note.minutes === 5 || note.minutes === 10) clockBudget.value = note.minutes;
+  if (note.minutes === 0) {
+    clockBudget.value = 0;
+    clock.value = null;
+    clockRunning.value = false;
+  }
+  adoptClock(note, true);
+  const latest = applyMoves(moves);
+  if (latest?.winner && latest.winner !== "draw") spawnConfetti();
+  saveRoomState();
+}
+
+function claimRoom() {
+  if (!claiming) return;
+  claiming = false;
+  epoch.value = 1;
+  whiteId.value = selfId;
+  seat.value = "X";
+  human.value = "X";
+  if (!flipTouched.value) flipped.value = false;
+  publishMatch();
 }
 
 function adoptClock(note, extended) {
@@ -1221,8 +1551,12 @@ function openMatch() {
   if (!room.value || !seat.value) return;
   match = connectMatch(room.value, onNote, (up) => {
     linkUp.value = up;
-    if (up) {
-      publishHi();
+    if (!up) return;
+    publishHi();
+    if (claiming) {
+      window.clearTimeout(claimTimer);
+      claimTimer = window.setTimeout(claimRoom, 1200);
+    } else {
       publishMatch();
     }
   });
@@ -1231,6 +1565,7 @@ function openMatch() {
 
 function closeMatch() {
   window.clearInterval(hiTimer);
+  window.clearTimeout(claimTimer);
   match?.close();
   match = null;
   linkUp.value = false;
@@ -1256,7 +1591,10 @@ function tickClock() {
   }
 }
 
-watch(history, () => syncUrl(), { deep: true });
+watch(history, () => {
+  syncUrl();
+  saveRoomState();
+}, { deep: true });
 watch([resigned, timeoutWinner, clockBudget], () => syncUrl());
 
 watch(view, async () => {
@@ -1280,6 +1618,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.clearTimeout(botTimer);
+  window.clearTimeout(typeTimer);
   window.clearInterval(clockTimer);
   closeMatch();
   observer?.disconnect();
@@ -1365,6 +1704,35 @@ h1 {
   color: #fff;
   font-size: 20px;
   letter-spacing: -0.5px;
+}
+
+.room-tag {
+  margin: -6px 0 12px;
+  color: #666;
+  font-size: 13px;
+}
+
+.room {
+  display: grid;
+  gap: 6px;
+  color: #888;
+  font-size: 13px;
+}
+
+.room input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+}
+
+.room input:focus {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
 }
 
 .plates {
@@ -1557,6 +1925,12 @@ button:focus-visible {
   border-bottom: 0;
 }
 
+.moves .time {
+  margin-left: auto;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
 .empty,
 .warn {
   margin: 8px 0 0;
@@ -1605,6 +1979,17 @@ button:focus-visible {
   height: auto;
 }
 
+.board.flipped {
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.board.flipped .coords text {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(180deg);
+}
+
 .cell {
   fill: #101010;
   stroke: #3a3a3a;
@@ -1620,6 +2005,10 @@ button:focus-visible {
 .cell.is-opening {
   stroke: #fff;
   stroke-width: 1.6;
+}
+
+.cell.is-flash {
+  animation: open-flash 0.45s ease;
 }
 
 .cell.is-guide {
@@ -1763,6 +2152,13 @@ button:focus-visible {
   background: #000;
 }
 
+@keyframes open-flash {
+  0%,
+  35% {
+    fill: #fff;
+  }
+}
+
 @keyframes ring-pulse {
   0%,
   100% {
@@ -1803,7 +2199,8 @@ button:focus-visible {
   .win-line,
   .plate.low.live,
   .burst i,
-  .cell {
+  .cell,
+  .cell.is-flash {
     animation: none;
     transition: none;
   }
