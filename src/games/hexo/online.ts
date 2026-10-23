@@ -6,7 +6,7 @@
 export type Seat = "X" | "O";
 
 export type MatchNote = {
-  kind: "hi" | "go";
+  kind: "hi" | "go" | "say";
   id: string;
   seat: Seat;
   at: number;
@@ -19,6 +19,8 @@ export type MatchNote = {
   minutes: number;
   clock: { X: number; O: number } | null;
   running: boolean;
+  size: 8 | 13;
+  text: string;
 };
 
 /** Room names are short words. Older hex codes still count. */
@@ -152,7 +154,7 @@ export function connectMatch(
   return {
     publish(note) {
       if (!up) return;
-      sendPacket(publishPacket(topic, JSON.stringify(note), note.kind === "go"));
+      sendPacket(publishPacket(topic, JSON.stringify(note), note.kind === "go" && note.epoch >= 1));
     },
     close() {
       closed = true;
@@ -192,9 +194,12 @@ function readPublish(packet: Uint8Array): MatchNote | null {
 function parseNote(value: unknown): MatchNote | null {
   if (!value || typeof value !== "object") return null;
   const note = value as Partial<MatchNote>;
-  if ((note.kind !== "hi" && note.kind !== "go") || typeof note.id !== "string") return null;
+  if ((note.kind !== "hi" && note.kind !== "go" && note.kind !== "say") || typeof note.id !== "string") return null;
   if (note.seat !== "X" && note.seat !== "O") return null;
-  if (!Array.isArray(note.moves) || note.moves.some((move) => typeof move !== "string")) return null;
+  const text = typeof note.text === "string" ? note.text.replace(/\s+/g, " ").trim().slice(0, 160) : "";
+  if (note.kind === "say" && !text) return null;
+  const moves = Array.isArray(note.moves) ? note.moves.filter((move) => typeof move === "string") : [];
+  if (note.kind !== "say" && (!Array.isArray(note.moves) || moves.length !== note.moves.length)) return null;
   const clock = note.clock;
   const safeClock =
     clock &&
@@ -208,7 +213,7 @@ function parseNote(value: unknown): MatchNote | null {
     id: note.id,
     seat: note.seat,
     at: typeof note.at === "number" ? note.at : Date.now(),
-    moves: note.moves,
+    moves,
     times: Array.isArray(note.times)
       ? note.times.map((time) => (typeof time === "number" ? time : null))
       : [],
@@ -219,6 +224,8 @@ function parseNote(value: unknown): MatchNote | null {
     minutes: note.minutes === 5 || note.minutes === 10 ? note.minutes : 0,
     clock: safeClock,
     running: Boolean(note.running),
+    size: note.size === 13 ? 13 : 8,
+    text,
   };
 }
 

@@ -1,8 +1,9 @@
 /**
  * HeXO board math.
  *
- * Letters a–o run one diagonal (screen: up-right). Numbers 1–15 run the
- * other (screen: down-right). h8 is the center of the radius-7 hex.
+ * Letters run one diagonal (screen: up-right). Numbers run the other
+ * (screen: down-right). Base 8 is the 169-cell hex, center h8.
+ * Base 13 is the 469-cell hex, center m13.
  * Cube coords satisfy q + r + s = 0, and a straight line holds one of them fixed.
  */
 
@@ -36,7 +37,44 @@ export type Position = {
   lines: Coord[][];
 };
 
-export const LETTERS = "abcdefghijklmno";
+export const BOARD_SIZES = [8, 13] as const;
+export type BoardSize = (typeof BOARD_SIZES)[number];
+
+const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+
+type Metrics = {
+  size: BoardSize;
+  letters: string;
+  span: number;
+  centerIndex: number;
+  centerNumber: number;
+  radius: number;
+  center: string;
+};
+
+export function asSize(value: unknown): BoardSize {
+  return value === 13 || value === "13" ? 13 : 8;
+}
+
+function metrics(size: BoardSize = 8): Metrics {
+  const span = size * 2 - 1;
+  const letters = ALPHABET.slice(0, span);
+  const centerIndex = size - 1;
+  const centerNumber = size;
+  return {
+    size,
+    letters,
+    span,
+    centerIndex,
+    centerNumber,
+    radius: size - 1,
+    center: `${letters[centerIndex]}${centerNumber}`,
+  };
+}
+
+/** Letters of the base-8 board. */
+export const LETTERS = metrics(8).letters;
+
 const HEX = 20;
 const DRAW = HEX * 0.93;
 const SQRT3 = Math.sqrt(3);
@@ -51,13 +89,14 @@ const AXES: Array<[number, number]> = [
   [1, 1],
 ];
 
-export function isValidHex(letter: string, number: number): boolean {
+export function isValidHex(letter: string, number: number, size: BoardSize = 8): boolean {
   if (typeof letter !== "string" || typeof number !== "number") return false;
   if (!Number.isInteger(number) || letter.length !== 1) return false;
-  const index = LETTERS.indexOf(letter.toLowerCase());
+  const spec = metrics(asSize(size));
+  const index = spec.letters.indexOf(letter.toLowerCase());
   if (index < 0) return false;
-  const min = Math.max(1, index - 6);
-  const max = Math.min(15, index + 8);
+  const min = Math.max(1, index - (spec.radius - 1));
+  const max = Math.min(spec.span, index + spec.size);
   return number >= min && number <= max;
 }
 
@@ -84,12 +123,13 @@ export function turnStart(index: number): number {
   return 1 + Math.floor((index - 1) / 2) * 2;
 }
 
-function letterIndex(letter: string): number {
-  return LETTERS.indexOf(letter.toLowerCase());
+function letterIndex(letter: string, size: BoardSize): number {
+  return metrics(size).letters.indexOf(letter.toLowerCase());
 }
 
-function cube(index: number, number: number) {
-  const q = index - 7;
+function cube(index: number, number: number, size: BoardSize) {
+  const spec = metrics(size);
+  const q = index - spec.centerIndex;
   const r = number - 1 - index;
   const s = -q - r;
   return { q, r, s };
@@ -113,22 +153,26 @@ function polygon(x: number, y: number): string {
   return pts.join(" ");
 }
 
-function at(index: number, number: number): Coord | null {
-  if (index < 0 || index >= LETTERS.length) return null;
-  const letter = LETTERS[index];
-  if (!isValidHex(letter, number)) return null;
+function at(index: number, number: number, size: BoardSize): Coord | null {
+  const spec = metrics(size);
+  if (index < 0 || index >= spec.letters.length) return null;
+  const letter = spec.letters[index];
+  if (!isValidHex(letter, number, size)) return null;
   return { letter, number };
 }
 
-function buildBoard() {
+export type Board = ReturnType<typeof buildBoard>;
+
+function buildBoard(size: BoardSize = 8) {
+  const spec = metrics(size);
   const cells: Cell[] = [];
   const byKey: Record<string, Cell> = {};
 
-  for (let index = 0; index < LETTERS.length; index += 1) {
-    const letter = LETTERS[index];
-    for (let number = 1; number <= 15; number += 1) {
-      if (!isValidHex(letter, number)) continue;
-      const { q, r, s } = cube(index, number);
+  for (let index = 0; index < spec.letters.length; index += 1) {
+    const letter = spec.letters[index];
+    for (let number = 1; number <= spec.span; number += 1) {
+      if (!isValidHex(letter, number, size)) continue;
+      const { q, r, s } = cube(index, number, size);
       const { x, y } = pixel(q, r);
       const cell: Cell = {
         letter,
@@ -168,7 +212,7 @@ function buildBoard() {
 
   const labels: Label[] = [];
   const out = 0.92;
-  for (const letter of LETTERS) {
+  for (const letter of spec.letters) {
     let edge: Cell | null = null;
     for (const cell of cells) {
       if (cell.letter !== letter) continue;
@@ -182,7 +226,7 @@ function buildBoard() {
     });
   }
 
-  for (let number = 1; number <= 15; number += 1) {
+  for (let number = 1; number <= spec.span; number += 1) {
     let edge: Cell | null = null;
     for (const cell of cells) {
       if (cell.number !== number) continue;
@@ -212,12 +256,17 @@ function buildBoard() {
       include(cell.x + HEX * Math.cos(angle), cell.y + HEX * Math.sin(angle), 0);
     }
   }
-  for (const label of labels) include(label.x, label.y, 18);
+  for (const label of labels) include(label.x, label.y, 22);
 
   const width = maxX - minX;
   const height = maxY - minY;
 
   return {
+    size,
+    center: spec.center,
+    letters: spec.letters,
+    span: spec.span,
+    radius: spec.radius,
     hex: HEX,
     width,
     height,
@@ -235,29 +284,36 @@ function pushGroup(map: Map<number, string[]>, id: number, key: string) {
   else map.set(id, [key]);
 }
 
-export const BOARD = buildBoard();
+export const BOARD = buildBoard(8);
+const BOARD13 = buildBoard(13);
+
+export function boardFor(size: BoardSize = 8): Board {
+  return asSize(size) === 13 ? BOARD13 : BOARD;
+}
 
 export function winningLines(
   stones: Record<string, Player>,
   letter: string,
   number: number,
+  size: BoardSize = 8,
 ): Coord[][] {
+  const spec = metrics(asSize(size));
   const key = keyOf(letter, number);
   const player = stones[key];
   if (!player) return [];
-  const origin = letterIndex(letter);
+  const origin = letterIndex(letter, spec.size);
   const lines: Coord[][] = [];
 
   for (const [dL, dN] of AXES) {
     const back: Coord[] = [];
     for (let step = 1; ; step += 1) {
-      const next = at(origin - dL * step, number - dN * step);
+      const next = at(origin - dL * step, number - dN * step, spec.size);
       if (!next || stones[keyOf(next.letter, next.number)] !== player) break;
       back.push(next);
     }
     const forward: Coord[] = [];
     for (let step = 1; ; step += 1) {
-      const next = at(origin + dL * step, number + dN * step);
+      const next = at(origin + dL * step, number + dN * step, spec.size);
       if (!next || stones[keyOf(next.letter, next.number)] !== player) break;
       forward.push(next);
     }
@@ -276,18 +332,20 @@ export function threatKeys(
   stones: Record<string, Player>,
   player: Player,
   left: number,
+  size: BoardSize = 8,
 ): string[] {
   if (left <= 0) return [];
+  const spec = metrics(asSize(size));
   const marked = new Set<string>();
 
   for (const [dL, dN] of AXES) {
-    for (const cell of BOARD.cells) {
-      const index = letterIndex(cell.letter);
-      if (at(index - dL, cell.number - dN)) continue;
+    for (const cell of boardFor(spec.size).cells) {
+      const index = letterIndex(cell.letter, spec.size);
+      if (at(index - dL, cell.number - dN, spec.size)) continue;
 
       const line: string[] = [];
       for (let step = 0; ; step += 1) {
-        const next = at(index + dL * step, cell.number + dN * step);
+        const next = at(index + dL * step, cell.number + dN * step, spec.size);
         if (!next) break;
         line.push(keyOf(next.letter, next.number));
       }
@@ -314,7 +372,9 @@ export function threatKeys(
   return [...marked];
 }
 
-export function applyMoves(moves: Coord[]): Position | null {
+export function applyMoves(moves: Coord[], size: BoardSize = 8): Position | null {
+  const spec = metrics(asSize(size));
+  const board = boardFor(spec.size);
   const stones: Record<string, Player> = {};
   let lines: Coord[][] = [];
   let winner: Position["winner"] = null;
@@ -323,15 +383,15 @@ export function applyMoves(moves: Coord[]): Position | null {
     if (winner) return null;
     const letter = moves[i].letter.toLowerCase();
     const number = moves[i].number;
-    if (!isValidHex(letter, number)) return null;
+    if (!isValidHex(letter, number, spec.size)) return null;
     const key = keyOf(letter, number);
-    if (i === 0 && key !== "h8") return null;
+    if (i === 0 && key !== spec.center) return null;
     if (stones[key]) return null;
     const player = playerOf(i);
     stones[key] = player;
-    lines = winningLines(stones, letter, number);
+    lines = winningLines(stones, letter, number, spec.size);
     if (lines.length) winner = player;
-    else if (Object.keys(stones).length === BOARD.cells.length) winner = "draw";
+    else if (Object.keys(stones).length === board.cells.length) winner = "draw";
   }
 
   return {
@@ -348,19 +408,21 @@ export function encodeReplay(moves: Coord[]): string {
   return btoa(raw).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
 }
 
-export function decodeReplay(value: string): Coord[] | null {
+export function decodeReplay(value: string, size: BoardSize = 8): Coord[] | null {
   try {
+    const spec = metrics(asSize(size));
     const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
     const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
     const raw = atob(padded).toLowerCase();
     if (!raw) return [];
     const moves: Coord[] = [];
+    const pattern = new RegExp(`^([${spec.letters}])(\\d{1,2})$`);
     for (const part of raw.split(".")) {
-      const match = /^([a-o])(\d{1,2})$/.exec(part);
+      const match = pattern.exec(part);
       if (!match) return null;
       moves.push({ letter: match[1], number: Number(match[2]) });
     }
-    return applyMoves(moves) ? moves : null;
+    return applyMoves(moves, spec.size) ? moves : null;
   } catch {
     return null;
   }
@@ -377,10 +439,11 @@ function countDirection(
   dL: number,
   dN: number,
   player: Player,
+  size: BoardSize,
 ): number {
   let total = 0;
   for (let step = 1; ; step += 1) {
-    const next = at(index + dL * step, number + dN * step);
+    const next = at(index + dL * step, number + dN * step, size);
     if (!next || stones[keyOf(next.letter, next.number)] !== player) break;
     total += 1;
   }
@@ -391,9 +454,10 @@ function winsIf(
   stones: Record<string, Player>,
   cell: Cell,
   player: Player,
+  size: BoardSize,
 ): boolean {
   const draft = { ...stones, [cell.key]: player };
-  return winningLines(draft, cell.letter, cell.number).length > 0;
+  return winningLines(draft, cell.letter, cell.number, size).length > 0;
 }
 
 function scoreMove(
@@ -401,18 +465,20 @@ function scoreMove(
   cell: Cell,
   player: Player,
   opponent: Player,
+  size: BoardSize,
 ): number {
-  const index = letterIndex(cell.letter);
-  let score = (7 - radiusOf(cell)) * 6;
+  const spec = metrics(size);
+  const index = letterIndex(cell.letter, size);
+  let score = (spec.radius - radiusOf(cell)) * 6;
   let threats = 0;
 
   for (const [dL, dN] of AXES) {
     const own =
-      countDirection(stones, index, cell.number, dL, dN, player) +
-      countDirection(stones, index, cell.number, -dL, -dN, player);
+      countDirection(stones, index, cell.number, dL, dN, player, size) +
+      countDirection(stones, index, cell.number, -dL, -dN, player, size);
     const block =
-      countDirection(stones, index, cell.number, dL, dN, opponent) +
-      countDirection(stones, index, cell.number, -dL, -dN, opponent);
+      countDirection(stones, index, cell.number, dL, dN, opponent, size) +
+      countDirection(stones, index, cell.number, -dL, -dN, opponent, size);
     const ownLen = own + 1;
     const blockLen = block + 1;
     score += ownLen * ownLen * 10;
@@ -432,28 +498,32 @@ function scoreMove(
 export function chooseBotMove(
   stones: Record<string, Player>,
   player: Player,
+  size: BoardSize = 8,
 ): Coord | null {
-  const empties = BOARD.cells.filter((cell) => !stones[cell.key]);
+  const spec = metrics(asSize(size));
+  const board = boardFor(spec.size);
+  const empties = board.cells.filter((cell) => !stones[cell.key]);
   if (!empties.length) return null;
-  if (Object.keys(stones).length === 0 && BOARD.byKey.h8) {
-    return { letter: "h", number: 8 };
+  const opening = board.byKey[spec.center];
+  if (Object.keys(stones).length === 0 && opening) {
+    return { letter: opening.letter, number: opening.number };
   }
 
   const opponent: Player = player === "X" ? "O" : "X";
 
   for (const cell of empties) {
-    if (winsIf(stones, cell, player)) {
+    if (winsIf(stones, cell, player, spec.size)) {
       return { letter: cell.letter, number: cell.number };
     }
   }
 
-  const blocks = empties.filter((cell) => winsIf(stones, cell, opponent));
+  const blocks = empties.filter((cell) => winsIf(stones, cell, opponent, spec.size));
   const pool = blocks.length ? blocks : empties;
   let best = pool[0];
   let bestScore = -Infinity;
 
   for (const cell of pool) {
-    const score = scoreMove(stones, cell, player, opponent);
+    const score = scoreMove(stones, cell, player, opponent, spec.size);
     const closer = radiusOf(cell) < radiusOf(best);
     if (score > bestScore || (score === bestScore && closer)) {
       bestScore = score;

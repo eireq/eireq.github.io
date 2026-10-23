@@ -4,7 +4,7 @@
       <header class="top">
         <div>
           <h1>HeXO</h1>
-          <p class="sub">open on h8 · then two a turn · six in a line</p>
+          <p class="sub">open on {{ board.center }} · then two a turn · six in a line</p>
         </div>
         <router-link class="back" to="/games">games</router-link>
       </header>
@@ -111,6 +111,22 @@
             {{ minutes === 0 ? "no clock" : minutes + " min" }}
           </button>
         </div>
+        <div class="choice">
+          <button
+            type="button"
+            :aria-pressed="draft.size === 8"
+            @click="draft.size = 8"
+          >
+            base 8
+          </button>
+          <button
+            type="button"
+            :aria-pressed="draft.size === 13"
+            @click="draft.size = 13"
+          >
+            base 13
+          </button>
+        </div>
         <label v-if="draft.mode === 'together'" class="room">
           <input
             v-model="draft.room"
@@ -141,7 +157,10 @@
       </form>
 
       <div v-if="showRules" class="rules">
-        <p>X places one stone on h8. Every later turn is two stones, and O takes the first of them.</p>
+        <p>
+          X places one stone on the center, h8 on base 8 and m13 on base 13.
+          Every later turn is two stones, and O takes the first of them.
+        </p>
         <p>Six in a line, on any of the three axes, wins. That move ends with #.</p>
         <p>
           Check means the side to move can finish a line with the stones still left this turn.
@@ -150,8 +169,9 @@
         <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
         <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
         <p>
-          Together: pick a room name. It keeps the game. You start as X. Send the invite.
-          They are O. Rematch swaps sides.
+          Together: pick a room name. It keeps the game, and the board size.
+          You start as X. Send the invite. They are O. Rematch swaps sides.
+          The box under the moves is chat.
         </p>
       </div>
 
@@ -221,6 +241,23 @@
         </li>
         <li v-if="resultLine" class="result">{{ resultLine }}</li>
       </ol>
+
+      <div v-if="mode === 'together'" class="chat">
+        <ol v-if="chat.length" ref="chatEl" class="chat-log">
+          <li v-for="(line, index) in chat" :key="line.at + '-' + index">
+            <span>{{ line.seat }}</span>{{ line.text }}
+          </li>
+        </ol>
+        <form @submit.prevent="sendChat">
+          <input
+            v-model="chatDraft"
+            maxlength="160"
+            placeholder="chat"
+            aria-label="chat"
+            autocomplete="off"
+          />
+        </form>
+      </div>
     </aside>
 
     <div
@@ -238,23 +275,23 @@
         <svg
           class="board"
           :class="{ flipped }"
-          :viewBox="BOARD.viewBox"
-          :width="BOARD.width"
-          :height="BOARD.height"
+          :viewBox="board.viewBox"
+          :width="board.width"
+          :height="board.height"
           role="img"
           aria-label="HeXO board"
           @pointerover="onOver"
           @pointerleave="hoverKey = null"
         >
           <polygon
-            v-for="cell in BOARD.cells"
+            v-for="cell in board.cells"
             :key="cell.key"
             :points="cell.points"
             class="cell"
             :class="{
               'is-empty': !stones[cell.key],
-              'is-center': cell.key === 'h8' && !stones[cell.key],
-              'is-opening': cell.key === 'h8' && view === 0,
+              'is-center': cell.key === board.center && !stones[cell.key],
+              'is-opening': cell.key === board.center && view === 0,
               'is-legal': legal(cell.key),
               'is-flash': flashKey === cell.key,
               'is-guide': guided(cell.key),
@@ -333,7 +370,7 @@
 
           <g class="coords" aria-hidden="true">
             <text
-              v-for="(label, index) in BOARD.labels"
+              v-for="(label, index) in board.labels"
               :key="index"
               :x="label.x"
               :y="label.y"
@@ -366,8 +403,9 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import {
-  BOARD,
   applyMoves,
+  asSize,
+  boardFor,
   chooseBotMove,
   decodeReplay,
   encodeReplay,
@@ -382,10 +420,14 @@ import { connectMatch, isRoomName } from "@/games/hexo/online.ts";
 const route = useRoute();
 const sides = ["X", "O"];
 
-function readReplay() {
+function querySize() {
+  return asSize(route.query.b);
+}
+
+function readReplay(boardSize) {
   const raw = route.query.r;
   if (typeof raw !== "string" || !raw) return { moves: null, error: false };
-  const moves = decodeReplay(raw);
+  const moves = decodeReplay(raw, boardSize);
   if (!moves) return { moves: null, error: true };
   return { moves, error: false };
 }
@@ -398,18 +440,21 @@ function readRoom() {
     room,
     seat: route.query.s === "O" ? "O" : "X",
     minutes,
+    size: querySize(),
   };
 }
 
-function parseMoveList(list) {
+function parseMoveList(list, boardSize) {
   if (!Array.isArray(list)) return null;
+  const letters = boardFor(asSize(boardSize)).letters;
+  const pattern = new RegExp(`^([${letters}])(\\d{1,2})$`);
   const moves = [];
   for (const part of list) {
-    const found = /^([a-o])(\d{1,2})$/.exec(String(part));
+    const found = pattern.exec(String(part));
     if (!found) return null;
     moves.push({ letter: found[1], number: Number(found[2]) });
   }
-  return applyMoves(moves) ? moves : null;
+  return applyMoves(moves, asSize(boardSize)) ? moves : null;
 }
 
 function loadRoom(name) {
@@ -417,9 +462,10 @@ function loadRoom(name) {
     const raw = window.localStorage.getItem(`hexo-room:${name}`);
     if (!raw) return null;
     const saved = JSON.parse(raw);
-    const moves = parseMoveList(saved.moves);
+    const boardSize = asSize(saved.size);
+    const moves = parseMoveList(saved.moves, boardSize);
     if (!moves || !(saved.epoch > 0)) return null;
-    return { ...saved, moves };
+    return { ...saved, moves, size: boardSize };
   } catch {
     return null;
   }
@@ -453,14 +499,20 @@ function playerId() {
 
 const selfId = playerId();
 const joined = readRoom();
-const loaded = readReplay();
 const remembered = joined ? loadRoom(joined.room) : null;
+const openedSize = remembered ? asSize(remembered.size) : joined ? joined.size : querySize();
+const loaded = readReplay(openedSize);
 const openedMoves =
   remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length)
     ? remembered.moves
     : (loaded.moves ?? []);
 const openedSeat =
   remembered?.white === selfId ? "X" : remembered?.white ? "O" : (joined?.seat ?? null);
+const size = ref(openedSize);
+const board = computed(() => boardFor(size.value));
+const chat = ref([]);
+const chatDraft = ref("");
+const chatEl = ref(null);
 const history = ref(openedMoves);
 const moveTimes = ref(
   openedMoves.map((_, index) =>
@@ -515,7 +567,7 @@ const linkUp = ref(false);
 const peerKnown = ref(false);
 const peerAt = ref(0);
 const nowMs = ref(Date.now());
-const replayError = ref(loaded.error);
+const replayError = ref(loaded.error && !openedMoves.length);
 const particles = ref([]);
 const ready = ref(false);
 const listEl = ref(null);
@@ -530,18 +582,19 @@ const draft = reactive({
   human: "X",
   minutes: 0,
   room: "",
+  size: openedSize,
 });
 
 const position = computed(
-  () => applyMoves(history.value.slice(0, view.value)) ?? emptyPosition(),
+  () => applyMoves(history.value.slice(0, view.value), size.value) ?? emptyPosition(),
 );
 const stones = computed(() => position.value.stones);
 const turn = computed(() => position.value.turn);
 const xCells = computed(() =>
-  BOARD.cells.filter((cell) => stones.value[cell.key] === "X"),
+  board.value.cells.filter((cell) => stones.value[cell.key] === "X"),
 );
 const oCells = computed(() =>
-  BOARD.cells.filter((cell) => stones.value[cell.key] === "O"),
+  board.value.cells.filter((cell) => stones.value[cell.key] === "O"),
 );
 
 const lastMove = computed(() =>
@@ -597,16 +650,16 @@ const score = computed(() => {
 const shownTurn = computed(() => {
   const turn = turnSlice(view.value);
   if (!turn) return [];
-  return turn.squares.map((key) => BOARD.byKey[key]).filter(Boolean);
+  return turn.squares.map((key) => board.value.byKey[key]).filter(Boolean);
 });
 
 const lastKeys = computed(() => new Set(shownTurn.value.map((cell) => cell.key)));
 
-const fullGame = computed(() => applyMoves(history.value) ?? emptyPosition());
+const fullGame = computed(() => applyMoves(history.value, size.value) ?? emptyPosition());
 
 const checkKeys = computed(() => {
   if (position.value.winner || timeoutWinner.value || resigned.value) return new Set();
-  return new Set(threatKeys(stones.value, turn.value, stonesLeft(view.value)));
+  return new Set(threatKeys(stones.value, turn.value, stonesLeft(view.value), size.value));
 });
 
 const mateIndex = computed(() => {
@@ -652,12 +705,12 @@ const winDelay = computed(() => {
 const winSegments = computed(() => {
   if (view.value !== history.value.length || timeoutWinner.value) return [];
   return position.value.lines.map((line) => {
-    const a = BOARD.byKey[`${line[0].letter}${line[0].number}`];
-    const b = BOARD.byKey[`${line[line.length - 1].letter}${line[line.length - 1].number}`];
+    const a = board.value.byKey[`${line[0].letter}${line[0].number}`];
+    const b = board.value.byKey[`${line[line.length - 1].letter}${line[line.length - 1].number}`];
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const len = Math.hypot(dx, dy) || 1;
-    const ext = BOARD.hex * 0.45;
+    const ext = board.value.hex * 0.45;
     return {
       x1: a.x - (dx / len) * ext,
       y1: a.y - (dy / len) * ext,
@@ -707,7 +760,7 @@ const statusText = computed(() => {
     if (view.value === 0) return withCheck("start");
     return withCheck(`after ${moveLabel(view.value)}`);
   }
-  if (history.value.length === 0) return withCheck("X plays h8");
+  if (history.value.length === 0) return withCheck(`X plays ${board.value.center}`);
   if (stonesLeft(history.value.length) === 1) return withCheck(`${turn.value} · one more`);
   return withCheck(`${turn.value} to move`);
 });
@@ -732,12 +785,12 @@ const canResign = computed(() => canPlay.value);
 
 const guideSet = computed(() => {
   if (!hoverKey.value) return new Set();
-  return new Set(BOARD.guides[hoverKey.value] ?? []);
+  return new Set(board.value.guides[hoverKey.value] ?? []);
 });
 
 const ghost = computed(() => {
   if (!hoverKey.value || !legal(hoverKey.value)) return null;
-  return BOARD.byKey[hoverKey.value] ?? null;
+  return board.value.byKey[hoverKey.value] ?? null;
 });
 
 watch(guidesOn, (on) => {
@@ -754,19 +807,20 @@ function emptyPosition() {
 
 function legal(key) {
   if (!canPlay.value || stones.value[key]) return false;
-  if (history.value.length === 0) return key === "h8";
+  if (history.value.length === 0) return key === board.value.center;
   return true;
 }
 
 function guided(key) {
   if (!guidesOn.value || !hoverKey.value || hoverKey.value === key) return false;
-  if (history.value.length === 0 && hoverKey.value !== "h8") return false;
+  if (history.value.length === 0 && hoverKey.value !== board.value.center) return false;
   return guideSet.value.has(key);
 }
 
 function toggleSetup() {
   showSetup.value = !showSetup.value;
   if (showSetup.value) {
+    draft.size = size.value;
     showSettings.value = false;
     showRules.value = false;
   }
@@ -850,7 +904,7 @@ function pushMove(move) {
   }
   history.value = [...history.value, move];
   view.value = history.value.length;
-  const latest = applyMoves(history.value);
+  const latest = applyMoves(history.value, size.value);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   queueBot();
   publishMatch();
@@ -870,7 +924,7 @@ function queueBot() {
     if (history.value.length !== seen) return;
     if (timeoutWinner.value || position.value.winner) return;
     if (turn.value !== botSide()) return;
-    const move = chooseBotMove(stones.value, turn.value);
+    const move = chooseBotMove(stones.value, turn.value, size.value);
     if (move) pushMove(move);
   }, 380);
 }
@@ -884,10 +938,10 @@ function flash(key) {
 
 function play(key) {
   if (!legal(key)) {
-    if (history.value.length === 0 && key !== "h8" && BOARD.byKey[key] && canPlay.value) flash(key);
+    if (history.value.length === 0 && key !== board.value.center && board.value.byKey[key] && canPlay.value) flash(key);
     return;
   }
-  const cell = BOARD.byKey[key];
+  const cell = board.value.byKey[key];
   if (!cell) return;
   typed.value = "";
   pushMove({ letter: cell.letter, number: cell.number });
@@ -1088,13 +1142,13 @@ function fit() {
   const box = viewport.value;
   if (!box) return;
   const next = Math.min(
-    box.clientWidth / BOARD.width,
-    box.clientHeight / BOARD.height,
+    box.clientWidth / board.value.width,
+    box.clientHeight / board.value.height,
   );
   fitZoom = next > 0 ? next * 0.94 : 1;
   zoom.value = fitZoom;
-  panX.value = (box.clientWidth - BOARD.width * fitZoom) / 2;
-  panY.value = (box.clientHeight - BOARD.height * fitZoom) / 2;
+  panX.value = (box.clientWidth - board.value.width * fitZoom) / 2;
+  panY.value = (box.clientHeight - board.value.height * fitZoom) / 2;
   userAdjusted = false;
   ready.value = true;
 }
@@ -1396,7 +1450,7 @@ function commitTyped() {
   if (!found) return;
   const key = `${found[1]}${Number(found[2])}`;
   if (legal(key)) play(key);
-  else if (history.value.length === 0 && BOARD.byKey[key] && canPlay.value) flash(key);
+  else if (history.value.length === 0 && board.value.byKey[key] && canPlay.value) flash(key);
 }
 
 function publishMatch() {
@@ -1442,7 +1496,15 @@ function applyWhite(white) {
 }
 
 function onNote(note) {
-  if (note.id === selfId) return;
+  if (note.id === selfId) {
+    if (note.kind !== "go") return;
+    const own = parseMoveList(note.moves);
+    if (!own) return;
+    const ahead = note.epoch > epoch.value;
+    const longer = note.epoch === epoch.value && own.length > history.value.length;
+    if (ahead || longer) adoptFresh(note, own);
+    return;
+  }
   peerId.value = note.id;
   peerKnown.value = true;
   peerAt.value = Date.now();
@@ -1520,6 +1582,7 @@ function adoptFresh(note, moves) {
   const latest = applyMoves(moves);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   saveRoomState();
+  publishMatch();
 }
 
 function claimRoom() {
