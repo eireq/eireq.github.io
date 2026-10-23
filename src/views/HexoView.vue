@@ -245,7 +245,7 @@
       <div v-if="mode === 'together'" class="chat">
         <ol v-if="chat.length" ref="chatEl" class="chat-log">
           <li v-for="(line, index) in chat" :key="line.at + '-' + index">
-            <span>{{ line.seat }}</span>{{ line.text }}
+            <span>{{ line.seat }}</span> {{ line.text }}
           </li>
         </ol>
         <form @submit.prevent="sendChat">
@@ -998,6 +998,9 @@ function startGame() {
   peerKnown.value = false;
   linkUp.value = false;
   history.value = [];
+  size.value = asSize(draft.size);
+  chat.value = [];
+  chatDraft.value = "";
   view.value = 0;
   clockMarks.value = [];
   moveTimes.value = [];
@@ -1048,6 +1051,8 @@ function syncUrl() {
   const encoded = encodeReplay(history.value);
   if (encoded) url.searchParams.set("r", encoded);
   else url.searchParams.delete("r");
+  if (size.value === 13) url.searchParams.set("b", "13");
+  else url.searchParams.delete("b");
   if (mode.value === "together" && room.value && seat.value) {
     url.searchParams.set("p", room.value);
     url.searchParams.set("s", seat.value);
@@ -1073,6 +1078,8 @@ function inviteUrl() {
     const encoded = encodeReplay(history.value);
     if (encoded) url.searchParams.set("r", encoded);
     else url.searchParams.delete("r");
+    if (size.value === 13) url.searchParams.set("b", "13");
+    else url.searchParams.delete("b");
     if (clockBudget.value) url.searchParams.set("min", String(clockBudget.value));
     else url.searchParams.delete("min");
     if (resigned.value) url.searchParams.set("end", resigned.value);
@@ -1302,20 +1309,20 @@ function onKey(event) {
     window.clearTimeout(typeTimer);
     return;
   }
-  if (/^[a-o]$/i.test(event.key)) {
+  if (event.key.length === 1 && board.value.letters.includes(event.key.toLowerCase())) {
     event.preventDefault();
     typed.value = event.key.toLowerCase();
     window.clearTimeout(typeTimer);
     return;
   }
-  if (/^\d$/.test(event.key) && /^[a-o]/.test(typed.value)) {
+  if (/^\d$/.test(event.key) && board.value.letters.includes(typed.value[0])) {
     event.preventDefault();
     const letter = typed.value[0];
     const digits = `${typed.value.slice(1)}${event.key}`.slice(0, 2);
     typed.value = `${letter}${digits}`;
     const number = Number(digits);
     window.clearTimeout(typeTimer);
-    if (!isValidHex(letter, number)) return;
+    if (!isValidHex(letter, number, size.value)) return;
     if (typedReady(letter, number)) commitTyped();
     else typeTimer = window.setTimeout(() => commitTyped(), 450);
     return;
@@ -1360,6 +1367,8 @@ function publishHi() {
     minutes: 0,
     clock: null,
     running: false,
+    size: size.value,
+    text: "",
   });
 }
 
@@ -1377,11 +1386,13 @@ function saveRoomState() {
       minutes: clockBudget.value,
       clock: clock.value,
       running: clockRunning.value,
+      size: size.value,
     }),
   );
 }
 
 function restoreSaved(saved) {
+  size.value = asSize(saved.size);
   history.value = saved.moves;
   moveTimes.value = saved.moves.map((_, index) =>
     typeof saved.times?.[index] === "number" ? saved.times[index] : null,
@@ -1437,8 +1448,8 @@ function toggleFlip() {
 
 function typedReady(letter, number) {
   if (number > 1) return true;
-  for (let extra = 0; extra <= 5; extra += 1) {
-    if (isValidHex(letter, 10 + extra)) return false;
+  for (let extra = 10; extra <= board.value.span; extra += 1) {
+    if (isValidHex(letter, extra, size.value)) return false;
   }
   return true;
 }
@@ -1446,7 +1457,7 @@ function typedReady(letter, number) {
 function commitTyped() {
   const raw = typed.value;
   typed.value = "";
-  const found = /^([a-o])(\d{1,2})$/.exec(raw);
+  const found = /^([a-z])(\d{1,2})$/.exec(raw);
   if (!found) return;
   const key = `${found[1]}${Number(found[2])}`;
   if (legal(key)) play(key);
@@ -1470,8 +1481,35 @@ function publishMatch() {
     minutes: clockBudget.value,
     clock: clock.value ? { X: clock.value.X, O: clock.value.O } : null,
     running: clockRunning.value && !outcome.value,
+    size: size.value,
+    text: "",
   });
   saveRoomState();
+}
+
+function sendChat() {
+  const text = chatDraft.value.replace(/\s+/g, " ").trim().slice(0, 160);
+  chatDraft.value = "";
+  if (!text || mode.value !== "together" || !match || !seat.value) return;
+  const line = { id: selfId, seat: seat.value, text, at: Date.now() };
+  chat.value = [...chat.value, line].slice(-40);
+  match.publish({
+    kind: "say",
+    id: selfId,
+    seat: seat.value,
+    at: line.at,
+    moves: [],
+    times: [],
+    epoch: epoch.value,
+    white: whiteId.value,
+    resign: null,
+    flag: null,
+    minutes: 0,
+    clock: null,
+    running: false,
+    size: size.value,
+    text,
+  });
 }
 
 function isPrefix(short, long) {
@@ -1498,7 +1536,7 @@ function applyWhite(white) {
 function onNote(note) {
   if (note.id === selfId) {
     if (note.kind !== "go") return;
-    const own = parseMoveList(note.moves);
+    const own = parseMoveList(note.moves, note.size);
     if (!own) return;
     const ahead = note.epoch > epoch.value;
     const longer = note.epoch === epoch.value && own.length > history.value.length;
@@ -1508,6 +1546,11 @@ function onNote(note) {
   peerId.value = note.id;
   peerKnown.value = true;
   peerAt.value = Date.now();
+  if (note.kind === "say") {
+    if (!note.text) return;
+    chat.value = [...chat.value, { id: note.id, seat: note.seat, text: note.text, at: note.at }].slice(-40);
+    return;
+  }
   if (note.kind === "hi") {
     if (claiming) {
       window.clearTimeout(claimTimer);
@@ -1525,7 +1568,7 @@ function onNote(note) {
     return;
   }
 
-  const moves = parseMoveList(note.moves);
+  const moves = parseMoveList(note.moves, note.size);
   if (!moves) return;
   if (claiming && note.epoch >= 1) {
     claiming = false;
@@ -1541,6 +1584,10 @@ function onNote(note) {
     publishMatch();
     return;
   }
+  if (asSize(note.size) !== size.value) {
+    adoptFresh(note, moves);
+    return;
+  }
   if (note.seat === seat.value) return;
 
   const local = history.value.map((move) => `${move.letter}${move.number}`);
@@ -1554,7 +1601,7 @@ function onNote(note) {
   if (extended) {
     const follow = view.value === history.value.length;
     takeMoves(moves, note.times, follow);
-    const latest = applyMoves(moves);
+    const latest = applyMoves(moves, size.value);
     if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   }
   if (note.white) whiteId.value = note.white;
@@ -1568,6 +1615,7 @@ function onNote(note) {
 
 function adoptFresh(note, moves) {
   epoch.value = note.epoch;
+  size.value = asSize(note.size);
   applyWhite(note.white);
   takeMoves(moves, note.times, true);
   resigned.value = note.resign === "X" || note.resign === "O" ? note.resign : null;
@@ -1579,7 +1627,7 @@ function adoptFresh(note, moves) {
     clockRunning.value = false;
   }
   adoptClock(note, true);
-  const latest = applyMoves(moves);
+  const latest = applyMoves(moves, size.value);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   saveRoomState();
   publishMatch();
@@ -1602,7 +1650,7 @@ function adoptClock(note, extended) {
   const lag = extended ? Math.min(2500, Math.max(0, Date.now() - note.at)) : 0;
   const next = { X: note.clock.X, O: note.clock.O };
   const side = playerOf(history.value.length);
-  const latest = applyMoves(history.value);
+  const latest = applyMoves(history.value, size.value);
   const finished = Boolean(note.resign || note.flag || latest?.winner);
   if (!finished && note.running) next[side] = Math.max(0, next[side] - lag);
   clock.value = next;
@@ -1664,6 +1712,16 @@ watch(view, async () => {
   await nextTick();
   listEl.value?.querySelector(".on")?.scrollIntoView({ block: "nearest" });
 });
+
+watch(size, () => {
+  userAdjusted = false;
+  nextTick(() => fit());
+});
+
+watch(chat, async () => {
+  await nextTick();
+  if (chatEl.value) chatEl.value.scrollTop = chatEl.value.scrollHeight;
+}, { deep: true });
 
 onMounted(() => {
   if (position.value.winner && position.value.winner !== "draw") spawnConfetti();
@@ -2001,6 +2059,51 @@ button:focus-visible {
   font-size: 14px;
 }
 
+.chat {
+  margin-top: auto;
+  display: grid;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 10px;
+}
+
+.chat-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 132px;
+  overflow: auto;
+  color: #ccc;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.chat-log li {
+  padding: 3px 0;
+  overflow-wrap: anywhere;
+}
+
+.chat-log span {
+  color: #666;
+  margin-right: 6px;
+}
+
+.chat input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+}
+
+.chat input:focus {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
+}
+
 .warn {
   color: #aaa;
 }
@@ -2302,6 +2405,10 @@ button:focus-visible {
 
   .status {
     margin-bottom: 10px;
+  }
+
+  .chat-log {
+    max-height: 84px;
   }
 }
 </style>
