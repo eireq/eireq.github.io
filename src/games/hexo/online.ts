@@ -1,0 +1,250 @@
+/**
+ * Two browsers share one game through a public MQTT broker.
+ * The room id in the invite link is the only secret.
+ */
+
+export type Seat = "X" | "O";
+
+export type MatchNote = {
+  kind: "hi" | "go";
+  id: string;
+  seat: Seat;
+  at: number;
+  moves: string[];
+  resign: Seat | null;
+  flag: Seat | null;
+  minutes: number;
+  clock: { X: number; O: number } | null;
+  running: boolean;
+};
+
+export type MatchLink = {
+  publish: (note: MatchNote) => void;
+  close: () => void;
+};
+
+const BROKERS = [
+  "wss://broker.hivemq.com:8884/mqtt",
+  "wss://broker.emqx.io:8084/mqtt",
+];
+
+export function connectMatch(
+  room: string,
+  onNote: (note: MatchNote) => void,
+  onLink: (up: boolean) => void,
+): MatchLink {
+  if (!/^[a-f0-9]{12,32}$/.test(room)) {
+    onLink(false);
+    return { publish() {}, close() {} };
+  }
+
+  const topic = `eireq/hexo/${room}`;
+  let socket: WebSocket | null = null;
+  let closed = false;
+  let up = false;
+  let attempt = 0;
+  let retry = 0;
+  let generation = 0;
+  let ping: ReturnType<typeof setInterval> | 0 = 0;
+  let reconnect: ReturnType<typeof setTimeout> | 0 = 0;
+  let buffer = new Uint8Array(0);
+
+  const sendPacket = (packet: Uint8Array) => {
+    if (socket && socket.readyState === WebSocket.OPEN) socket.send(packet);
+  };
+
+  const fail = () => {
+    up = false;
+    onLink(false);
+    clearInterval(ping);
+    if (closed) return;
+    const wait = Math.min(8000, 700 * 2 ** Math.min(retry, 4));
+    retry += 1;
+    clearTimeout(reconnect);
+    reconnect = setTimeout(open, wait);
+  };
+
+  const open = () => {
+    if (closed) return;
+    const mine = ++generation;
+    const broker = BROKERS[attempt % BROKERS.length];
+    attempt += 1;
+    buffer = new Uint8Array(0);
+    try {
+      socket = new WebSocket(broker, ["mqtt"]);
+    } catch {
+      fail();
+      return;
+    }
+    socket.binaryType = "arraybuffer";
+    socket.onopen = () => {
+      if (mine !== generation) return;
+      const bytes = new Uint8Array(5);
+      crypto.getRandomValues(bytes);
+      const id = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      sendPacket(connectPacket(`h${id}`));
+    };
+    socket.onmessage = (event) => {
+      if (mine !== generation) return;
+      const chunk = new Uint8Array(event.data as ArrayBuffer);
+      const next = new Uint8Array(buffer.length + chunk.length);
+      next.set(buffer);
+      next.set(chunk, buffer.length);
+      buffer = next;
+      drain();
+    };
+    socket.onclose = () => {
+      if (mine !== generation) return;
+      fail();
+    };
+  };
+
+  const drain = () => {
+    for (;;) {
+      const packet = readPacket();
+      if (!packet) return;
+      const type = packet[0] >> 4;
+      if (type === 2) {
+        sendPacket(subscribePacket(topic));
+      } else if (type === 9) {
+        up = true;
+        retry = 0;
+        onLink(true);
+        clearInterval(ping);
+        ping = setInterval(() => sendPacket(pingPacket()), 20000);
+      } else if (type === 3) {
+        const note = readPublish(packet);
+        if (note) onNote(note);
+      }
+    }
+  };
+
+  const readPacket = (): Uint8Array | null => {
+    if (buffer.length < 2) return null;
+    let multiplier = 1;
+    let length = 0;
+    let offset = 1;
+    for (let i = 0; i < 4; i += 1) {
+      if (offset >= buffer.length) return null;
+      const byte = buffer[offset];
+      offset += 1;
+      length += (byte & 127) * multiplier;
+      multiplier *= 128;
+      if ((byte & 128) === 0) break;
+      if (i === 3) return null;
+    }
+    if (buffer.length < offset + length) return null;
+    const packet = buffer.slice(0, offset + length);
+    buffer = buffer.slice(offset + length);
+    return packet;
+  };
+
+  open();
+
+  return {
+    publish(note) {
+      if (!up) return;
+      sendPacket(publishPacket(topic, JSON.stringify(note)));
+    },
+    close() {
+      closed = true;
+      up = false;
+      generation += 1;
+      clearInterval(ping);
+      clearTimeout(reconnect);
+      socket?.close();
+      socket = null;
+    },
+  };
+}
+
+function readPublish(packet: Uint8Array): MatchNote | null {
+  let offset = 1;
+  let multiplier = 1;
+  for (let i = 0; i < 4; i += 1) {
+    const byte = packet[offset];
+    offset += 1;
+    multiplier *= 128;
+    if ((byte & 128) === 0) break;
+    if (i === 3) return null;
+  }
+  void multiplier;
+  if (offset + 2 > packet.length) return null;
+  const topicLength = (packet[offset] << 8) | packet[offset + 1];
+  offset += 2 + topicLength;
+  if (offset > packet.length) return null;
+  try {
+    const text = new TextDecoder().decode(packet.slice(offset));
+    return parseNote(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+function parseNote(value: unknown): MatchNote | null {
+  if (!value || typeof value !== "object") return null;
+  const note = value as Partial<MatchNote>;
+  if ((note.kind !== "hi" && note.kind !== "go") || typeof note.id !== "string") return null;
+  if (note.seat !== "X" && note.seat !== "O") return null;
+  if (!Array.isArray(note.moves) || note.moves.some((move) => typeof move !== "string")) return null;
+  const clock = note.clock;
+  const safeClock =
+    clock &&
+    typeof clock === "object" &&
+    typeof clock.X === "number" &&
+    typeof clock.O === "number"
+      ? { X: clock.X, O: clock.O }
+      : null;
+  return {
+    kind: note.kind,
+    id: note.id,
+    seat: note.seat,
+    at: typeof note.at === "number" ? note.at : Date.now(),
+    moves: note.moves,
+    resign: note.resign === "X" || note.resign === "O" ? note.resign : null,
+    flag: note.flag === "X" || note.flag === "O" ? note.flag : null,
+    minutes: note.minutes === 5 || note.minutes === 10 ? note.minutes : 0,
+    clock: safeClock,
+    running: Boolean(note.running),
+  };
+}
+
+function connectPacket(clientId: string): Uint8Array {
+  const id = utf8(clientId);
+  const body = [0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x04, 0x02, 0x00, 0x1e, ...id];
+  return packet(0x10, body);
+}
+
+function subscribePacket(topic: string): Uint8Array {
+  const filter = utf8(topic);
+  return packet(0x82, [0x00, 0x01, ...filter, 0x00]);
+}
+
+function publishPacket(topic: string, payload: string): Uint8Array {
+  const body = [...utf8(topic), ...new TextEncoder().encode(payload)];
+  return packet(0x30, body);
+}
+
+function pingPacket(): Uint8Array {
+  return Uint8Array.from([0xc0, 0x00]);
+}
+
+function packet(header: number, body: number[]): Uint8Array {
+  return Uint8Array.from([header, ...remaining(body.length), ...body]);
+}
+
+function utf8(text: string): number[] {
+  const bytes = new TextEncoder().encode(text);
+  return [bytes.length >> 8, bytes.length & 0xff, ...bytes];
+}
+
+function remaining(length: number): number[] {
+  const out: number[] = [];
+  do {
+    let byte = length % 128;
+    length = Math.floor(length / 128);
+    if (length > 0) byte |= 0x80;
+    out.push(byte);
+  } while (length > 0);
+  return out;
+}

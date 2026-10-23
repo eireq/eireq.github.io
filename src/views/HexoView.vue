@@ -36,6 +36,7 @@
               <small v-if="mode === 'practice'">{{
                 human === side ? "you" : "bot"
               }}</small>
+              <small v-else-if="mode === 'together' && seat === side">you</small>
             </span>
           </span>
           <strong v-if="clock">{{ formatClock(clock[side]) }}</strong>
@@ -57,8 +58,14 @@
         >
           undo
         </button>
+        <button v-if="!resultLine" type="button" :disabled="!canResign" @click="resign">
+          resign
+        </button>
         <button type="button" @click="copyLink">
-          {{ copied ? "copied" : "copy link" }}
+          {{ copied ? "copied" : mode === "together" ? "invite" : "copy link" }}
+        </button>
+        <button type="button" :disabled="!scorePlain()" @click="copyScore">
+          {{ scoreCopied ? "copied" : "copy score" }}
         </button>
       </div>
 
@@ -77,6 +84,13 @@
             @click="draft.mode = 'practice'"
           >
             practice
+          </button>
+          <button
+            type="button"
+            :aria-pressed="draft.mode === 'together'"
+            @click="draft.mode = 'together'"
+          >
+            together
           </button>
         </div>
         <div class="choice">
@@ -152,7 +166,7 @@
       </div>
 
       <p v-if="replayError" class="warn">that link isn't a valid game.</p>
-      <p v-else-if="!history.length" class="empty">no moves yet.</p>
+      <p v-else-if="!history.length && !resultLine" class="empty">no moves yet.</p>
       <ol v-else ref="listEl" class="moves">
         <li
           v-for="line in score"
@@ -167,9 +181,12 @@
             :class="{ on: view === stone.index + 1 }"
             @click="view = stone.index + 1"
           >
-            {{ index === 0 ? line.player : "" }}{{ stone.square }}
+            {{ index === 0 ? line.player : "" }}{{ stone.square }}{{
+              stone.index === mateIndex ? "#" : ""
+            }}
           </button>
         </li>
+        <li v-if="resultLine" class="result">{{ resultLine }}</li>
       </ol>
     </aside>
 
@@ -206,6 +223,7 @@
               'is-opening': cell.key === 'h8' && view === 0,
               'is-legal': legal(cell.key),
               'is-guide': guided(cell.key),
+              'is-check': checkKeys.has(cell.key),
               'is-last': lastKeys.has(cell.key) && !winKeys.has(cell.key),
               'is-win': winKeys.has(cell.key),
             }"
@@ -319,8 +337,10 @@ import {
   encodeReplay,
   playerOf,
   stonesLeft,
+  threatKeys,
   turnStart,
 } from "@/games/hexo/logic.ts";
+import { connectMatch } from "@/games/hexo/online.ts";
 
 const route = useRoute();
 const sides = ["X", "O"];
@@ -333,21 +353,62 @@ function readReplay() {
   return { moves, error: false };
 }
 
+function readRoom() {
+  const room = route.query.p;
+  if (typeof room !== "string" || !/^[a-f0-9]{12,32}$/.test(room)) return null;
+  const minutes = route.query.min === "5" || route.query.min === "10" ? Number(route.query.min) : 0;
+  return {
+    room,
+    seat: route.query.s === "O" ? "O" : "X",
+    minutes,
+  };
+}
+
+function playerId() {
+  const key = "hexo-player";
+  const existing = window.sessionStorage.getItem(key);
+  if (existing) return existing;
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const id = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  window.sessionStorage.setItem(key, id);
+  return id;
+}
+
+const joined = readRoom();
 const loaded = readReplay();
 const history = ref(loaded.moves ?? []);
 const view = ref(loaded.moves?.length ?? 0);
-const mode = ref("hotseat");
-const human = ref("X");
-const clock = ref(null);
+const mode = ref(joined ? "together" : "hotseat");
+const human = ref(joined?.seat ?? "X");
+const room = ref(joined?.room ?? null);
+const seat = ref(joined?.seat ?? null);
+const clockBudget = ref(joined?.minutes ?? 0);
+const clock = ref(
+  clockBudget.value && !loaded.moves?.length
+    ? { X: clockBudget.value * 60000, O: clockBudget.value * 60000 }
+    : null,
+);
 const clockMarks = ref([]);
 const clockRunning = ref(false);
-const timeoutWinner = ref(null);
+const timeoutWinner = ref(
+  !loaded.error && (route.query.flag === "X" || route.query.flag === "O") ? route.query.flag : null,
+);
+const resigned = ref(
+  !loaded.error && (route.query.end === "X" || route.query.end === "O") ? route.query.end : null,
+);
 const showSetup = ref(false);
 const showSettings = ref(false);
 const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
 const dragging = ref(false);
 const copied = ref(false);
+const scoreCopied = ref(false);
+const linkUp = ref(false);
+const peerKnown = ref(false);
+const peerAt = ref(0);
+const nowMs = ref(Date.now());
+const selfId = playerId();
 const replayError = ref(loaded.error);
 const particles = ref([]);
 const ready = ref(false);
@@ -431,6 +492,32 @@ const shownTurn = computed(() => {
 
 const lastKeys = computed(() => new Set(shownTurn.value.map((cell) => cell.key)));
 
+const fullGame = computed(() => applyMoves(history.value) ?? emptyPosition());
+
+const checkKeys = computed(() => {
+  if (position.value.winner || timeoutWinner.value || resigned.value) return new Set();
+  return new Set(threatKeys(stones.value, turn.value, stonesLeft(view.value)));
+});
+
+const mateIndex = computed(() => {
+  if (resigned.value || timeoutWinner.value) return -1;
+  if (!fullGame.value.winner || fullGame.value.winner === "draw") return -1;
+  return history.value.length - 1;
+});
+
+const resultLine = computed(() => {
+  if (timeoutWinner.value) return `${timeoutWinner.value} wins · time`;
+  if (resigned.value) return `${resigned.value === "X" ? "O" : "X"} wins · resign`;
+  if (fullGame.value.winner === "draw") return "draw";
+  if (fullGame.value.winner) return `${fullGame.value.winner} wins`;
+  return "";
+});
+
+const otherSeat = computed(() => (seat.value === "O" ? "X" : "O"));
+const opponentHere = computed(
+  () => peerKnown.value && nowMs.value - peerAt.value < 9000,
+);
+
 const winKeys = computed(() => {
   const keys = new Set();
   if (view.value !== history.value.length || timeoutWinner.value) return keys;
@@ -472,7 +559,8 @@ const winSegments = computed(() => {
 
 const outcome = computed(() => {
   if (view.value !== history.value.length) return null;
-  if (timeoutWinner.value) return `${timeoutWinner.value} wins on time`;
+  if (timeoutWinner.value) return `${timeoutWinner.value} wins · time`;
+  if (resigned.value) return `${resigned.value === "X" ? "O" : "X"} wins · resign`;
   if (position.value.winner === "draw") return "draw";
   if (position.value.winner) {
     const names = position.value.lines
@@ -489,15 +577,29 @@ const outcome = computed(() => {
   return null;
 });
 
+function withCheck(text) {
+  return checkKeys.value.size ? `check · ${text}` : text;
+}
+
 const statusText = computed(() => {
   if (outcome.value) return outcome.value;
-  if (view.value < history.value.length) {
-    if (view.value === 0) return "start";
-    return `after ${moveLabel(view.value)}`;
+  if (
+    mode.value === "together" &&
+    view.value === history.value.length &&
+    !showSetup.value
+  ) {
+    if (!linkUp.value) return "connecting";
+    if (!opponentHere.value) {
+      return peerKnown.value ? `${otherSeat.value} is away` : `waiting for ${otherSeat.value}`;
+    }
   }
-  if (history.value.length === 0) return "X plays h8";
-  if (stonesLeft(history.value.length) === 1) return `${turn.value} · one more`;
-  return `${turn.value} to move`;
+  if (view.value < history.value.length) {
+    if (view.value === 0) return withCheck("start");
+    return withCheck(`after ${moveLabel(view.value)}`);
+  }
+  if (history.value.length === 0) return withCheck("X plays h8");
+  if (stonesLeft(history.value.length) === 1) return withCheck(`${turn.value} · one more`);
+  return withCheck(`${turn.value} to move`);
 });
 
 const readout = computed(() => {
@@ -511,8 +613,11 @@ const canPlay = computed(() => {
   if (showSetup.value || outcome.value) return false;
   if (view.value !== history.value.length) return false;
   if (mode.value === "practice" && turn.value !== human.value) return false;
+  if (mode.value === "together" && turn.value !== seat.value) return false;
   return true;
 });
+
+const canResign = computed(() => canPlay.value);
 
 const guideSet = computed(() => {
   if (!hoverKey.value) return new Set();
@@ -620,6 +725,7 @@ function pushMove(move) {
   const latest = applyMoves(history.value);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   queueBot();
+  publishMatch();
 }
 
 let botTimer = 0;
@@ -677,15 +783,22 @@ function step(delta) {
 
 function startGame() {
   window.clearTimeout(botTimer);
+  closeMatch();
   mode.value = draft.mode;
   human.value = draft.human;
+  room.value = null;
+  seat.value = null;
+  peerKnown.value = false;
+  linkUp.value = false;
   history.value = [];
   view.value = 0;
   clockMarks.value = [];
   timeoutWinner.value = null;
+  resigned.value = null;
   replayError.value = false;
   particles.value = [];
   hoverKey.value = null;
+  clockBudget.value = draft.minutes;
   if (draft.minutes > 0) {
     const ms = draft.minutes * 60 * 1000;
     clock.value = { X: ms, O: ms };
@@ -694,6 +807,14 @@ function startGame() {
   }
   clockRunning.value = false;
   showSetup.value = false;
+  if (draft.mode === "together") {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    room.value = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    seat.value = "X";
+    human.value = "X";
+    openMatch();
+  }
   syncUrl();
   nextTick(() => fit());
   queueBot();
@@ -704,21 +825,91 @@ function syncUrl() {
   const encoded = encodeReplay(history.value);
   if (encoded) url.searchParams.set("r", encoded);
   else url.searchParams.delete("r");
+  if (mode.value === "together" && room.value && seat.value) {
+    url.searchParams.set("p", room.value);
+    url.searchParams.set("s", seat.value);
+    if (clockBudget.value) url.searchParams.set("min", String(clockBudget.value));
+    else url.searchParams.delete("min");
+  } else {
+    url.searchParams.delete("p");
+    url.searchParams.delete("s");
+    url.searchParams.delete("min");
+  }
+  if (resigned.value) url.searchParams.set("end", resigned.value);
+  else url.searchParams.delete("end");
+  if (timeoutWinner.value) url.searchParams.set("flag", timeoutWinner.value);
+  else url.searchParams.delete("flag");
   window.history.replaceState(window.history.state, "", url);
+}
+
+function inviteUrl() {
+  const url = new URL(window.location.href);
+  if (room.value && seat.value) {
+    url.searchParams.set("p", room.value);
+    url.searchParams.set("s", seat.value === "X" ? "O" : "X");
+    const encoded = encodeReplay(history.value);
+    if (encoded) url.searchParams.set("r", encoded);
+    else url.searchParams.delete("r");
+    if (clockBudget.value) url.searchParams.set("min", String(clockBudget.value));
+    else url.searchParams.delete("min");
+    if (resigned.value) url.searchParams.set("end", resigned.value);
+    else url.searchParams.delete("end");
+    if (timeoutWinner.value) url.searchParams.set("flag", timeoutWinner.value);
+    else url.searchParams.delete("flag");
+  }
+  return url.toString();
+}
+
+async function copyText(text, which) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (which === "score") scoreCopied.value = true;
+    else copied.value = true;
+    window.setTimeout(() => {
+      if (which === "score") scoreCopied.value = false;
+      else copied.value = false;
+    }, 1400);
+  } catch {
+    window.prompt("copy this", text);
+  }
 }
 
 async function copyLink() {
   syncUrl();
-  const text = window.location.href;
-  try {
-    await navigator.clipboard.writeText(text);
-    copied.value = true;
-    window.setTimeout(() => {
-      copied.value = false;
-    }, 1400);
-  } catch {
-    window.prompt("copy this link", text);
-  }
+  await copyText(mode.value === "together" ? inviteUrl() : window.location.href, "link");
+}
+
+function scorePlain() {
+  const lines = score.value.map((line) => {
+    const body = line.stones
+      .map((stone, index) => {
+        const text = `${index === 0 ? line.player : ""}${stone.square}`;
+        return stone.index === mateIndex.value ? `${text}#` : text;
+      })
+      .join(" ");
+    return `${line.number}. ${body}`;
+  });
+  if (resultLine.value) lines.push(resultLine.value);
+  return lines.join("\n");
+}
+
+async function copyScore() {
+  const text = scorePlain();
+  if (!text) return;
+  await copyText(text, "score");
+}
+
+function resign() {
+  if (!canResign.value || !seatOrTurn()) return;
+  resigned.value = seatOrTurn();
+  clockRunning.value = false;
+  particles.value = [];
+  publishMatch();
+}
+
+function seatOrTurn() {
+  if (mode.value === "together") return seat.value;
+  return turn.value;
 }
 
 let fitZoom = 1;
@@ -898,13 +1089,131 @@ function onKey(event) {
 let clockTimer = 0;
 let lastTick = 0;
 let observer;
+let match = null;
+let muteNet = false;
+let hiTimer = 0;
+
+function publishHi() {
+  if (!match || !seat.value) return;
+  match.publish({
+    kind: "hi",
+    id: selfId,
+    seat: seat.value,
+    at: Date.now(),
+    moves: [],
+    resign: null,
+    flag: null,
+    minutes: 0,
+    clock: null,
+    running: false,
+  });
+}
+
+function publishMatch() {
+  if (muteNet || mode.value !== "together" || !match || !seat.value) return;
+  match.publish({
+    kind: "go",
+    id: selfId,
+    seat: seat.value,
+    at: Date.now(),
+    moves: history.value.map((move) => `${move.letter}${move.number}`),
+    resign: resigned.value,
+    flag: timeoutWinner.value,
+    minutes: clockBudget.value,
+    clock: clock.value ? { X: clock.value.X, O: clock.value.O } : null,
+    running: clockRunning.value && !outcome.value,
+  });
+}
+
+function isPrefix(short, long) {
+  return short.length <= long.length && short.every((key, index) => key === long[index]);
+}
+
+function onNote(note) {
+  if (note.id === selfId || note.seat === seat.value) return;
+  peerKnown.value = true;
+  peerAt.value = Date.now();
+  if (note.kind === "hi") {
+    publishMatch();
+    return;
+  }
+
+  const moves = [];
+  for (const part of note.moves) {
+    const found = /^([a-o])(\d{1,2})$/.exec(part);
+    if (!found) return;
+    moves.push({ letter: found[1], number: Number(found[2]) });
+  }
+  if (!applyMoves(moves)) return;
+
+  const local = history.value.map((move) => `${move.letter}${move.number}`);
+  const remote = note.moves;
+  if (!isPrefix(local, remote)) {
+    if (isPrefix(remote, local)) publishMatch();
+    return;
+  }
+
+  const extended = remote.length > local.length;
+  if (extended) {
+    const follow = view.value === history.value.length;
+    muteNet = true;
+    history.value = moves;
+    clockMarks.value = moves.map(() => null);
+    if (follow) view.value = moves.length;
+    muteNet = false;
+    const latest = applyMoves(moves);
+    if (latest?.winner && latest.winner !== "draw") spawnConfetti();
+  }
+
+  if (note.resign === note.seat) resigned.value = note.resign;
+  if (note.flag && note.flag !== note.seat) timeoutWinner.value = note.flag;
+  if ((note.minutes === 5 || note.minutes === 10) && clockBudget.value === 0) {
+    clockBudget.value = note.minutes;
+  }
+  adoptClock(note, extended);
+}
+
+function adoptClock(note, extended) {
+  if (!note.clock) return;
+  if (!extended && clock.value) return;
+  const lag = extended ? Math.min(2500, Math.max(0, Date.now() - note.at)) : 0;
+  const next = { X: note.clock.X, O: note.clock.O };
+  const side = playerOf(history.value.length);
+  const latest = applyMoves(history.value);
+  const finished = Boolean(note.resign || note.flag || latest?.winner);
+  if (!finished && note.running) next[side] = Math.max(0, next[side] - lag);
+  clock.value = next;
+  clockRunning.value = !finished && Boolean(note.running);
+}
+
+function openMatch() {
+  closeMatch();
+  if (!room.value || !seat.value) return;
+  match = connectMatch(room.value, onNote, (up) => {
+    linkUp.value = up;
+    if (up) {
+      publishHi();
+      publishMatch();
+    }
+  });
+  hiTimer = window.setInterval(publishHi, 4000);
+}
+
+function closeMatch() {
+  window.clearInterval(hiTimer);
+  match?.close();
+  match = null;
+  linkUp.value = false;
+}
 
 function tickClock() {
   const now = performance.now();
   const dt = lastTick ? now - lastTick : 0;
   lastTick = now;
+  nowMs.value = Date.now();
   if (!clock.value || !clockRunning.value || outcome.value) return;
   if (view.value !== history.value.length) return;
+  if (mode.value === "together" && (!linkUp.value || !opponentHere.value)) return;
   const side = turn.value;
   const next = Math.max(0, clock.value[side] - dt);
   clock.value = { ...clock.value, [side]: next };
@@ -913,10 +1222,12 @@ function tickClock() {
     timeoutWinner.value = side === "X" ? "O" : "X";
     clockRunning.value = false;
     spawnConfetti();
+    publishMatch();
   }
 }
 
 watch(history, () => syncUrl(), { deep: true });
+watch([resigned, timeoutWinner, clockBudget], () => syncUrl());
 
 watch(view, async () => {
   await nextTick();
@@ -927,6 +1238,7 @@ onMounted(() => {
   if (position.value.winner && position.value.winner !== "draw") spawnConfetti();
   lastTick = performance.now();
   clockTimer = window.setInterval(tickClock, 200);
+  if (room.value) openMatch();
   observer = new ResizeObserver(() => {
     if (!userAdjusted) fit();
   });
@@ -939,6 +1251,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.clearTimeout(botTimer);
   window.clearInterval(clockTimer);
+  closeMatch();
   observer?.disconnect();
   window.removeEventListener("keydown", onKey);
 });
@@ -1196,6 +1509,11 @@ button:focus-visible {
   color: #fff;
 }
 
+.moves li.result {
+  color: #fff;
+  border-bottom: 0;
+}
+
 .empty,
 .warn {
   margin: 8px 0 0;
@@ -1263,6 +1581,12 @@ button:focus-visible {
 
 .cell.is-guide {
   fill: #2a2a2a;
+}
+
+.cell.is-check {
+  fill: #333;
+  stroke: #fff;
+  stroke-width: 2.4;
 }
 
 .viewport.can-play .cell.is-legal {

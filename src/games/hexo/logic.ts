@@ -268,6 +268,52 @@ export function winningLines(
   return lines;
 }
 
+/**
+ * Stones already on the board that the side to move can turn into a line of
+ * 6 with the stones they have left this turn. Empty winning squares are left out.
+ */
+export function threatKeys(
+  stones: Record<string, Player>,
+  player: Player,
+  left: number,
+): string[] {
+  if (left <= 0) return [];
+  const marked = new Set<string>();
+
+  for (const [dL, dN] of AXES) {
+    for (const cell of BOARD.cells) {
+      const index = letterIndex(cell.letter);
+      if (at(index - dL, cell.number - dN)) continue;
+
+      const line: string[] = [];
+      for (let step = 0; ; step += 1) {
+        const next = at(index + dL * step, cell.number + dN * step);
+        if (!next) break;
+        line.push(keyOf(next.letter, next.number));
+      }
+
+      for (let start = 0; start < line.length; start += 1) {
+        let empties = 0;
+        let own = 0;
+        for (let end = start; end < line.length; end += 1) {
+          const owner = stones[line[end]];
+          if (owner && owner !== player) break;
+          if (owner === player) own += 1;
+          else empties += 1;
+          if (empties > left) break;
+          if (end - start + 1 >= 6 && own > 0 && empties > 0) {
+            for (let cursor = start; cursor <= end; cursor += 1) {
+              if (stones[line[cursor]] === player) marked.add(line[cursor]);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return [...marked];
+}
+
 export function applyMoves(moves: Coord[]): Position | null {
   const stones: Record<string, Player> = {};
   let lines: Coord[][] = [];
