@@ -1,271 +1,218 @@
 # eireq.github.io
 
-**My main page. Everything I did is here.**
+Personal site: games, a large flag corpus, a political-values quiz, and a private map sim.
 
-A modern, interactive portfolio website built with **Vue 3** and **Vite**, featuring games, tools, and multi-language support.
+**Live:** https://eireq.github.io/
 
-**Live site:** https://eireq.github.io/
+Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `hayastan` branch.
 
----
+## Pages
 
-> NOTE: This README reflects the file layout and contents from the `hayastan` branch (not `main`). The hayastan branch contains several view components and other branch-specific changes.
+| Path | What it is |
+| --- | --- |
+| `/` | Home. Daily flag and flag database up front, a short tour, and flag of the week. |
+| `/me` | About. |
+| `/games` | Game index. |
+| `/games/racing` | Lane Runner. |
+| `/games/flagquiz` | Flag quiz. |
+| `/games/daily` | Daily flag. |
+| `/games/hexo` | HeXO. |
+| `/kht` | KHT bracket. Public to view, owner can edit. |
+| `/tools` | Tool index. |
+| `/flagdb` | Flag database. |
+| `/flagdb/detail/:flagId` | One flag: palette, record fields, Wikipedia, similar flags. |
+| `/compare` | Two flags side by side, with a similarity score. Accepts `?a=` and `?b=`. |
+| `/rc` | Random entry from the flag corpus. |
+| `/jpol` | jPol values quiz. |
+| `/jworld` | jWorld, a private shared Earth. Full-screen, no site header. |
+| `/jworld/c/:id` | One jWorld country. |
+| `/politics` | Saved political-test charts. |
+| `/elections` | Doulantese election results. |
+| `/art` | Art. |
+| `/misc` | Politics, jPol, elections, plus links out to modes and GitHub. |
+| `/contact` | Contact, with an email draft. |
+| `/modes` | Redirects to https://eireq.github.io/modes |
 
-## 🎯 Overview
+Lane Runner, the flag quiz, HeXO, and jWorld hide the site header and footer.
 
-This is a GitHub Pages portfolio site showcasing creative projects and interactive experiences.
+## Flag corpus
 
-### Key Features:
+`src/assets/master_flags.json` is the shared source for the database, quiz, daily flag, random country, compare, and flag of the week. About 1,700 records: countries, territories, subdivisions, historical flags, organizations, and a few curated collections (Soviet, revolutionary, pan-Arab, pride, and others).
 
-- ✨ **Vue 3 + Vite** — Modern, fast SPA framework
-- 🎮 **Interactive Games** — Multiple arcade-style games with leaderboards
-- 🌍 **Multi-language Support** — English and Slovak (via i18n system)
-- 🎨 **Dark Theme** — Sleek, minimal design
-- 📱 **Responsive** — Works seamlessly on mobile and desktop
-- 🗂️ **Component-based** — Modular Vue components for reusability
+A flag page reads colors out of the SVG, shows adoption and cancellation dates, proportions, and designer when those fields exist, pulls a Wikipedia summary, and lists similar flags. Compare puts two records next to each other and scores how close they are.
 
----
+**Daily flag** is one shared country flag per UTC day. Six guesses. The streak stays in this browser. The result can be copied.
 
-## 📁 Project Structure (hayastan branch)
+**Flag of the week** is picked from a short editorial list (or the country pool if that list misses) and shown on the home page, with links into the record and compare.
 
-```
-eireq.github.io/
-├── src/
-│   ├── App.vue                      # Root Vue component with routing
-│   ├── main.js                      # Vue app initialization
-│   ├── i18n.js                      # Internationalization (multi-language)
-│   ├── assets/
-│   │   └── main.css                 # Global styles
-│   ├── components/                  # Reusable Vue components
-│   │   ├── AppHeader.vue            # Navigation header
-│   │   └── AppFooter.vue            # Footer with contact info
-│   ├── views/                       # Page-level components (hayastan branch)
-│   │   ├── [AboutMeView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/AboutMeView.vue) — Personal bio and introduction
-│   │   ├── [ArtView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/ArtView.vue) — Gallery and digital art showcase
-│   │   ├── [ContactView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/ContactView.vue) — Contact information and message form
-│   │   ├── [DoulanteseElectionsView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/DoulanteseElectionsView.vue) — Mock election results / community polls
-│   │   ├── [FlagQuizView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/FlagQuizView.vue) — Flag quiz game with leaderboards
-│   │   ├── [GameRacingView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/GameRacingView.vue) — Lane Runner / racing game entry point
-│   │   ├── [GamesView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/GamesView.vue) — Games index and links
-│   │   ├── [HomeView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/HomeView.vue) — Landing / hero section
-│   │   ├── [MiscView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/MiscView.vue) — Misc tools and utilities (random country, modes, etc.)
-│   │   ├── [PoliticalPreferencesView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/PoliticalPreferencesView.vue) — Political quiz/results gallery
-│   │   └── [RandomCountryView.vue](https://github.com/eireq/eireq.github.io/blob/hayastan/src/views/RandomCountryView.vue) — Random country picker tool
-│   ├── games/                       # Game implementations
-│   │   └── racing/
-│   │       ├── config.js            # Game configuration
-│   │       └── supabase.js          # Leaderboard database
-│   ├── router/                      # Vue Router configuration
-│   └── data/                        # Static data files
-├── package.json                     # Dependencies & scripts
-├── vite.config.js                   # Vite build config
-├── index.html                       # SPA root entry point
-└── README.md                        # This file (updated for hayastan)
-```
+**Flag quiz** draws its pools from the same file:
 
----
+- countries
+- territories
+- historical
+- subdivisions
+- organizations
+- all flags
 
-## 🛠️ Technologies
+You pick a length, type names, then get a breakdown of the ones you missed. Scores go to a per-mode Supabase leaderboard. Opening devtools during a run voids that run. The player name is shared with Lane Runner and stored locally (`eirePlayerName`).
 
-**Frontend:**
+**Random country** uses the same pools and links through to the flag record.
 
-- **Vue 3** — Progressive JavaScript framework
-- **Vue Router** — Client-side routing
-- **Vite** — Next-generation build tool
-- **CSS3** — Modern styling with responsive design
+## Games
 
-**Backend & Database:**
+### Lane Runner — `/games/racing`
 
-- **Supabase** — Real-time database for leaderboards
-- **Supabase JS SDK** — Client library for database operations
+Endless 4-lane dodge game on a canvas. Arrow keys or WASD, `p` to pause. Score mixes distance, overtakes, and top speed. Global and weekly top-50 leaderboards. Optional menu, game, and click audio live in `public/games/racing/assets/`. Setup notes and the leaderboard caveats are in [`src/games/racing/README.md`](src/games/racing/README.md).
 
-**Hosting:**
+### HeXO — `/games/hexo`
 
-- **GitHub Pages** — Free static site hosting
+Hexagonal tic-tac-toe. The first stone goes on the center. After that each turn is two stones, and six in a line wins. Boards are base 8 or base 13, with no clock, 5 minutes, or 10.
 
----
+- **Two players** on one screen.
+- **Practice** against a bot, as X or O.
+- **Together** shares one game between two browsers. The room name in the invite link is the only secret. Chat sits under the move list. Rematch swaps sides.
 
-## 📦 Dependencies
+The board can be flipped, guide lines toggled, and a game undone (except in together). A replay is written into the URL, and the score line can be copied.
 
-```json
-{
-  "dependencies": {
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0",
-    "@supabase/supabase-js": "^2.49.1"
-  },
-  "devDependencies": {
-    "vite": "^6.2.0",
-    "@vitejs/plugin-vue": "^5.2.1"
-  }
-}
-```
+### KHT — `/kht`
 
----
+A 370-entry bracket. Anyone can watch it. The owner signs in with a Supabase magic link and edits names and scores; changes save as one JSON document in `kht_bracket`. Odd rounds give the last unpaired entry a bye.
 
-## 🚀 Getting Started
+## jPol — `/jpol`
 
-### Prerequisites
+Political values quiz in the vein of the political compass, 8values, and sapplyvalues. Full is 60 questions, express is 18. Five-point answers, no correct ones.
 
-- Node.js 18+ and npm
+The result is a compass dot plus six axes (equality, economy, authority, freedom, identity, progress), the topics that pulled hardest, and a short calibration note when answers were mostly neutral, mostly extreme, or mostly mild. You can download a PNG, copy a result link, keep recent runs on this device, and paste a friend's code onto the same compass.
 
-### Installation
+English, German, and Russian strings are written out. The other language modes rewrite the English copy.
+
+## jWorld — `/jworld`
+
+Private Earth sim on Leaflet. Sign-in is a display name and password; registration and password reset need the world's invite code.
+
+Once in:
+
+- Draw a country, or snap a border to a simplified real-world outline and drag the handles before saving.
+- Add territories, merge them, and edit borders.
+- Place, move, or clear a capital.
+- Fill a country page: names, motto, lore, politics, government, geography, symbols, flag upload, and the rest of the record in `src/jworld/countryFields.js`.
+- Transfer ownership.
+- Filter the list (all / mine / others), search, and open a country at `/jworld/c/:id`.
+- Admins can edit countries they do not own.
+
+The map polls for other players' changes. jWorld uses the same Supabase project as the leaderboards, with its own tables.
+
+## Languages
+
+The language menu is in the header and remembered locally.
+
+Hand-written locales:
+
+- English (`eng`)
+- German (`deu`), including jPol
+- Russian (`rus`), including jPol
+- Klingon (`kgn`), an approximate overlay so the site stays navigable
+
+The rest clone English and run a filter: drunk, pirate, uwu, serious, vulgar, brainrot, Jenglish, IPA, emoji, a toki-pona-style simplification, and shortened words. Those are jokes, not translations.
+
+## Stack
+
+- Vue 3, Vue Router, Vite
+- Leaflet and leaflet-draw for jWorld
+- topojson-client for snap-to-shape
+- Supabase for Lane Runner scores, flag-quiz scores, the KHT bracket, and jWorld
+- A public MQTT broker for HeXO together-mode
+- GitHub Pages, with a `404.html` that sends unknown paths back into the SPA
+
+After a redeploy, a tab that still asks for an old hashed chunk reloads once and continues on the same path.
+
+## Run it locally
+
+Node 22 (the deploy workflow uses 22).
 
 ```bash
-# Clone the repository
 git clone https://github.com/eireq/eireq.github.io.git
 cd eireq.github.io
-
-# Install dependencies
 npm install
-```
-
-### Development
-
-```bash
-# Start dev server (http://localhost:5173)
 npm run dev
 ```
 
-### Production Build
+Dev server: http://localhost:5173
 
 ```bash
-# Build for production
 npm run build
-
-# Preview production build
 npm run preview
 ```
 
----
+Copy `.env.example` to `.env` when you want leaderboards, KHT editing, or jWorld:
 
-## 🎮 Games
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_KHT_REDIRECT_URL=https://eireq.github.io/kht
+```
 
-### Lane Runner
+`VITE_KHT_OWNER_ID` is the Supabase Auth user id allowed to edit the bracket. Set it for production builds. Vite inlines every `VITE_*` value into the client bundle, so use the anon key only, with RLS on. Never put a service-role key in this app.
 
-An 8-bit arcade-style driving game where you dodge traffic by changing lanes.
+The site still runs with an empty `.env`. Leaderboards, KHT saving, and jWorld sign-in stay unavailable until Supabase is configured.
 
-**Features:**
+### Database
 
-- Lane-changing mechanics
-- Global and weekly leaderboards (powered by Supabase)
-- Multiple game modes (Normal & Speed Bomb)
-- Score, speed, distance, and overtake tracking
-- Player name saving
+Run these in the Supabase SQL editor:
 
-**Location:** `/src/games/racing/`
+| What | Script |
+| --- | --- |
+| Lane Runner and flag-quiz scores | `src/games/racing/supabase.sql` |
+| KHT bracket | `src/games/kht/supabase.sql` |
+| jWorld | `src/jworld/supabase.sql`, then `src/jworld/supabase_improve.sql` |
 
-### KHT tournament
+After the jWorld base script:
 
-The 370-entry bracket is available at `/kht`. Public visitors can view the
-bracket, while the configured Supabase owner can edit names and scores.
+```sql
+update public.jworld_world set invite_code = 'your-secret' where id = 1;
+```
 
-To enable shared editing:
+Other `src/jworld/supabase_*.sql` files are later upgrades (accounts, capitals, transfers, admin, flags, passwords). Read the comment at the top of a file before running it.
 
-1. Run `src/games/kht/supabase.sql` in Supabase SQL Editor.
-2. Replace the placeholder UUID in both RLS policy expressions with the
-   owner's Supabase Auth user id.
-3. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and
-   `VITE_KHT_OWNER_ID` in the deployment environment. Set
-   `VITE_KHT_REDIRECT_URL` to `https://eireq.github.io/kht` for production.
-
-In Supabase Authentication settings, add these redirect URLs:
+KHT policies need the owner's Auth user id in place of the placeholder UUID. In Supabase Authentication, allow these redirect URLs:
 
 - `https://eireq.github.io/kht`
 - `http://localhost:5173/kht`
-- `http://localhost:3000/kht` if using port 3000 locally
 
-Magic links expire and always return to the URL used when the email was
-requested. If a link points to localhost, keep the matching local dev server
-running or request a new link from the deployed site.
+Magic links return to the URL that requested them. A link minted on localhost only works while that dev server is running.
 
-The bracket saves as one JSON document in `kht_bracket`; Supabase RLS allows
-public reads and restricts inserts, updates, and deletes to the owner UUID.
+## Deploy
 
----
+`.github/workflows/deploy.yml` builds on every push to `hayastan` and publishes `dist` to GitHub Pages. Repository secrets:
 
-## 🌐 Internationalization (i18n)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_KHT_OWNER_ID`
 
-Multi-language support is built-in via `src/i18n.js`. Currently supports:
-
-- **English** (en)
-- **Slovak** (sk)
-
-Language strings are centralized in the i18n file, making it easy to add more languages.
-
----
-
-## 🔗 Navigation
-
-- **Home:** `/`
-- **About:** `/me`
-- **Random Country Tool:** `/rc`
-- **Games:** `/games`
-- **Lane Runner Game:** `/games/racing`
-
----
-
-## 🎨 Design
-
-- **Color Scheme:** Dark theme (black background, white text)
-- **Typography:** Clean, minimal sans-serif
-- **Layout:** Responsive grid-based design
-- **Animations:** Smooth transitions and hover effects
-
----
-
-## 📊 Architecture
-
-### Component Hierarchy
+## Layout
 
 ```
-App.vue
-├── AppHeader.vue (navigation)
-├── Router Views (page content)
-└── AppFooter.vue (footer)
+src/
+  App.vue                 header, router view, footer
+  i18n.js                 locales and joke filters
+  locales/                German and Russian overlays
+  router/index.js
+  views/                  one file per page
+  components/             header and footer
+  data/                   flags, daily flag, flag of the week, jPol, profile name
+  assets/master_flags.json
+  games/racing/           canvas game, audio, leaderboard client
+  games/hexo/             rules and the together-mode link
+  games/kht/              bracket client
+  jworld/                 map, geometry, country fields, Supabase
+public/404.html           GitHub Pages fallback into the SPA
 ```
 
-### Data Flow
+## Contact
 
-- Vue Router manages page navigation
-- Components fetch data as needed
-- Supabase handles leaderboard persistence
-
----
-
-## 🤝 Community
-
-- **Discord:** [Join the community](https://discord.gg/zwvvbqBFPV)
-- **GitHub:** [@eireq](https://github.com/eireq)
-- **YouTube:** [@いぃ八](https://www.youtube.com/@%E3%81%84%E4%B8%A8)
-
----
-
-## 📧 Contact
-
-Reach out via email: **eireball@proton.me**
-
----
-
-## 📝 Latest Update
-
-**v2.4** — Flag quiz and mode leaderboards! 🚀
-
----
-
-## 📄 License
+- Email: eireball@proton.me
+- GitHub: https://github.com/eireq
+- Discord: https://dsc.gg/pissedoff
+- YouTube: https://www.youtube.com/@いぃ八
 
 © 2026 eire
-
----
-
-## 🚀 Contributing
-
-Found a bug or have a feature request? Feel free to:
-
-- Open an issue on GitHub
-- Contact via email
-- Join the Discord community
-
----
-
-_Built with ❤️ using Vue 3 and Vite_
