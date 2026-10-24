@@ -3,7 +3,7 @@
  * The room id in the invite link is the only secret.
  */
 
-export type Seat = "X" | "O";
+export type Seat = "X" | "O" | "Y" | "Z";
 
 export type MatchNote = {
   kind: "hi" | "go" | "say";
@@ -17,10 +17,11 @@ export type MatchNote = {
   resign: Seat | null;
   flag: Seat | null;
   minutes: number;
-  clock: { X: number; O: number } | null;
+  clock: { X: number; O: number; Y?: number; Z?: number } | null;
   running: boolean;
   size: 8 | 13;
   text: string;
+  alt: string;
 };
 
 /** Room names are short words. Older hex codes still count. */
@@ -195,7 +196,7 @@ function parseNote(value: unknown): MatchNote | null {
   if (!value || typeof value !== "object") return null;
   const note = value as Partial<MatchNote>;
   if ((note.kind !== "hi" && note.kind !== "go" && note.kind !== "say") || typeof note.id !== "string") return null;
-  if (note.seat !== "X" && note.seat !== "O") return null;
+  if (note.seat !== "X" && note.seat !== "O" && note.seat !== "Y" && note.seat !== "Z") return null;
   const text = typeof note.text === "string" ? note.text.replace(/\s+/g, " ").trim().slice(0, 160) : "";
   if (note.kind === "say" && !text) return null;
   const moves = Array.isArray(note.moves) ? note.moves.filter((move) => typeof move === "string") : [];
@@ -206,8 +207,16 @@ function parseNote(value: unknown): MatchNote | null {
     typeof clock === "object" &&
     typeof clock.X === "number" &&
     typeof clock.O === "number"
-      ? { X: clock.X, O: clock.O }
+      ? {
+          X: clock.X,
+          O: clock.O,
+          ...(typeof clock.Y === "number" ? { Y: clock.Y } : {}),
+          ...(typeof clock.Z === "number" ? { Z: clock.Z } : {}),
+        }
       : null;
+  const side = (value: unknown): Seat | null =>
+    value === "X" || value === "O" || value === "Y" || value === "Z" ? value : null;
+  const alt = typeof note.alt === "string" ? note.alt.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80) : "";
   return {
     kind: note.kind,
     id: note.id,
@@ -219,13 +228,14 @@ function parseNote(value: unknown): MatchNote | null {
       : [],
     epoch: typeof note.epoch === "number" && note.epoch > 0 ? Math.floor(note.epoch) : 0,
     white: typeof note.white === "string" ? note.white : "",
-    resign: note.resign === "X" || note.resign === "O" ? note.resign : null,
-    flag: note.flag === "X" || note.flag === "O" ? note.flag : null,
+    resign: side(note.resign),
+    flag: side(note.flag),
     minutes: note.minutes === 5 || note.minutes === 10 ? note.minutes : 0,
     clock: safeClock,
     running: Boolean(note.running),
     size: note.size === 13 ? 13 : 8,
     text,
+    alt,
   };
 }
 

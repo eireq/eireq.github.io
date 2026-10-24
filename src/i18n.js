@@ -113,6 +113,8 @@ const messages = {
       khtText: "a giant bracket tournament. watch it update live.",
       hexo: "HeXO",
       hexoText: "hexagonal tic-tac-toe. six in a row on 169 tiles.",
+      otrio: "Otrio",
+      otrioText: "tic-tac-toe with three ring sizes. two to four players.",
     },
     tools: {
       title: "tools.",
@@ -709,6 +711,8 @@ const messages = {
       khtText: "ein riesiges Bracket-Turnier. live aktualisiert.",
       hexo: "HeXO",
       hexoText: "hexagonales tic-tac-toe. sechs in einer reihe. 169 felder.",
+      otrio: "Otrio",
+      otrioText: "tic-tac-toe mit drei ringgrößen. zwei bis vier spieler.",
     },
     tools: {
       title: "werkzeuge.",
@@ -1411,6 +1415,8 @@ messages.rus = mergeMessages(messages.eng, {
     khtText: "огромная турнирная сетка. обновляется вживую.",
     hexo: "HeXO",
     hexoText: "шестиугольные крестики-нолики. шесть в ряд. 169 клеток.",
+    otrio: "Otrio",
+    otrioText: "крестики-нолики с кольцами трёх размеров. от двух до четырёх игроков.",
   },
   tools: {
     title: "инструменты.",
@@ -1599,6 +1605,8 @@ messages.kgn = mergeMessages(messages.eng, {
     flagQuizText: "qo' Hoch joqwI' yIqel. 'ar bIyaj?",
     kht: "KHT Quj",
     khtText: "Quj bracket. yIn Qap.",
+    otrio: "Otrio",
+    otrioText: "tic-tac-toe. cha' Hutlh loS QujwI'.",
   },
   tools: {
     title: "jan.",

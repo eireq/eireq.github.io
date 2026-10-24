@@ -17,6 +17,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/games/flagquiz` | Flag quiz. |
 | `/games/daily` | Daily flag. |
 | `/games/hexo` | HeXO. |
+| `/games/otrio` | Otrio. Ring tic-tac-toe for 2–4 players. |
 | `/kht` | KHT bracket. Public to view, owner can edit. |
 | `/tools` | Tool index. |
 | `/flagdb` | Flag database. |
@@ -63,6 +64,10 @@ You pick a length, type names, then get a breakdown of the ones you missed. Scor
 ### Lane Runner — `/games/racing`
 
 Endless 4-lane dodge game on a canvas. Arrow keys or WASD, `p` to pause. Score mixes distance, overtakes, and top speed. Global and weekly top-50 leaderboards. Optional menu, game, and click audio live in `public/games/racing/assets/`. Setup notes and the leaderboard caveats are in [`src/games/racing/README.md`](src/games/racing/README.md).
+
+### Otrio — `/games/otrio`
+
+Pass-and-play ring tic-tac-toe. Each of the nine circles holds a small, medium, and large ring. A color wins with three of one size in a line, with small-medium-large along a line in either direction, or with all three sizes stacked in one circle. Two players each take a pair of opposite colors (tan with black, white with blue) and swap colors as play goes around the board. Three players leave one color out.
 
 ### HeXO — `/games/hexo`
 

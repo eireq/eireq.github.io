@@ -3,7 +3,7 @@
     <aside class="panel">
       <header class="top">
         <div>
-          <h1>HeXO</h1>
+          <h1 @click="pokeBloom">HeXO</h1>
           <p class="sub">open on {{ board.center }} · then two a turn · six in a line</p>
         </div>
         <router-link class="back" to="/games">games</router-link>
@@ -29,8 +29,14 @@
             <svg v-if="side === 'X'" class="mark" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M3 3 L13 13 M13 3 L3 13" />
             </svg>
-            <svg v-else class="mark" viewBox="0 0 16 16" aria-hidden="true">
+            <svg v-else-if="side === 'O'" class="mark" viewBox="0 0 16 16" aria-hidden="true">
               <circle cx="8" cy="8" r="5.2" />
+            </svg>
+            <svg v-else-if="side === 'Y'" class="mark" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 3 L13 13 L3 13 Z" />
+            </svg>
+            <svg v-else class="mark" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4 4 H12 V12 H4 Z" />
             </svg>
             <span>
               {{ side }}
@@ -64,6 +70,13 @@
         </button>
         <button v-if="!resultLine" type="button" :disabled="!canResign" @click="resign">
           resign
+        </button>
+        <button
+          v-if="variant && position.phase === 'trim' && canPlay"
+          type="button"
+          @click="passTurn"
+        >
+          done
         </button>
         <button v-if="mode === 'together' && resultLine" type="button" @click="rematch">
           rematch
@@ -127,6 +140,63 @@
             base 13
           </button>
         </div>
+        <div class="choice">
+          <button type="button" :aria-pressed="draft.grid === 'hex'" @click="draft.grid = 'hex'">
+            hex
+          </button>
+          <button type="button" :aria-pressed="draft.grid === 'tri'" @click="draft.grid = 'tri'">
+            triangle
+          </button>
+          <button type="button" :aria-pressed="draft.grid === 'sq'" @click="draft.grid = 'sq'">
+            square
+          </button>
+          <button type="button" :aria-pressed="draft.grid === 'oct'" @click="draft.grid = 'oct'">
+            octagon
+          </button>
+        </div>
+        <div class="choice">
+          <button
+            v-for="count in [2, 3, 4]"
+            :key="count"
+            type="button"
+            :aria-pressed="draft.players === count"
+            @click="setPlayers(count)"
+          >
+            {{ count }} players
+          </button>
+        </div>
+        <div class="choice">
+          <button type="button" :aria-pressed="draft.duck && !draft.king" @click="setDuck(!draft.duck)">
+            duck
+          </button>
+          <button type="button" :aria-pressed="draft.king" @click="setKing(!draft.king)">
+            king duck
+          </button>
+          <button type="button" :aria-pressed="draft.cap" @click="draft.cap = !draft.cap">
+            egyptian
+          </button>
+          <button type="button" :aria-pressed="draft.echo" @click="draft.echo = !draft.echo">
+            echo
+          </button>
+          <button type="button" :aria-pressed="draft.orbit" @click="draft.orbit = !draft.orbit">
+            orbit
+          </button>
+          <button type="button" :aria-pressed="draft.meteor" @click="draft.meteor = !draft.meteor">
+            meteor
+          </button>
+          <button
+            v-if="bloom || draft.rift"
+            type="button"
+            :aria-pressed="draft.rift"
+            @click="draft.rift = !draft.rift"
+          >
+            rift bloom
+          </button>
+        </div>
+        <label v-if="draft.cap" class="room">
+          <input v-model.number="draft.capN" type="number" min="1" max="40" />
+          <span>soft cap. over it, lift up to 2 older stones, or leave them.</span>
+        </label>
         <label v-if="draft.mode === 'together'" class="room">
           <input
             v-model="draft.room"
@@ -139,18 +209,13 @@
         </label>
         <div v-if="draft.mode === 'practice'" class="choice">
           <button
+            v-for="side in ['X', 'O', 'Y', 'Z'].slice(0, draft.players)"
+            :key="side"
             type="button"
-            :aria-pressed="draft.human === 'X'"
-            @click="draft.human = 'X'"
+            :aria-pressed="draft.human === side"
+            @click="draft.human = side"
           >
-            play X
-          </button>
-          <button
-            type="button"
-            :aria-pressed="draft.human === 'O'"
-            @click="draft.human = 'O'"
-          >
-            play O
+            play {{ side }}
           </button>
         </div>
         <button type="submit" class="start">start</button>
@@ -171,7 +236,25 @@
         <p>
           Together: pick a room name. It keeps the game, and the board size.
           You start as X. Send the invite. They are O. Rematch swaps sides.
-          The box under the moves is chat.
+          The box under the moves is chat. For 3 or 4, change the invite to s=Y or s=Z.
+        </p>
+        <p>
+          Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
+        </p>
+        <p>
+          Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
+        </p>
+        <p>
+          Egyptian sets a soft cap. Over it, lift up to 2 of your older stones, or leave them.
+          An echo never lifts a stone.
+        </p>
+        <p>
+          Echo copies a move onto its mirror after two full turns. Orbit turns every stone one step. The duck stays.
+          Meteor, every third turn, clears the farthest stones.
+        </p>
+        <p v-if="bloom">
+          Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
+          It becomes a stone if two of your stones touch it before it fades.
         </p>
       </div>
 
@@ -296,6 +379,8 @@
               'is-flash': flashKey === cell.key,
               'is-guide': guided(cell.key),
               'is-check': checkKeys.has(cell.key),
+              'is-panic': haloSet.has(cell.key),
+              'is-rift': riftSet.has(cell.key),
               'is-last': lastKeys.has(cell.key) && !winKeys.has(cell.key),
               'is-win': winKeys.has(cell.key),
             }"
@@ -320,13 +405,41 @@
               :class="{ 'on-win': winKeys.has(cell.key) }"
               :cx="cell.x"
               :cy="cell.y"
-              r="7.3"
+              :r="markR(cell)"
             />
+            <path
+              v-for="cell in yCells"
+              :key="'y-' + cell.key"
+              :class="{ 'on-win': winKeys.has(cell.key) }"
+              :d="yMark(cell)"
+            />
+            <path
+              v-for="cell in zCells"
+              :key="'z-' + cell.key"
+              :class="{ 'on-win': winKeys.has(cell.key) }"
+              :d="zMark(cell)"
+            />
+          </g>
+
+          <g v-if="ghostCells.length" class="ghost-stone" aria-hidden="true">
+            <template v-for="cell in ghostCells" :key="'ghost-' + cell.key">
+              <path v-if="cell.owner === 'X'" :d="xMark(cell)" />
+              <circle v-else-if="cell.owner === 'O'" :cx="cell.x" :cy="cell.y" :r="markR(cell)" />
+              <path v-else-if="cell.owner === 'Y'" :d="yMark(cell)" />
+              <path v-else :d="zMark(cell)" />
+            </template>
+          </g>
+
+          <g v-if="duckCell" class="duck" aria-hidden="true">
+            <circle :cx="duckCell.x" :cy="duckCell.y" :r="(duckCell.m || 7) * 0.72" />
+            <path :d="duckBeak(duckCell)" />
           </g>
 
           <g v-if="ghost" class="ghost" aria-hidden="true">
             <path v-if="turn === 'X'" :d="xMark(ghost)" />
-            <circle v-else :cx="ghost.x" :cy="ghost.y" r="7.3" />
+            <path v-else-if="turn === 'Y'" :d="yMark(ghost)" />
+            <path v-else-if="turn === 'Z'" :d="zMark(ghost)" />
+            <circle v-else :cx="ghost.x" :cy="ghost.y" :r="markR(ghost)" />
           </g>
 
           <template v-for="cell in shownTurn" :key="'mark-' + cell.key">
@@ -415,18 +528,47 @@ import {
   threatKeys,
   turnStart,
 } from "@/games/hexo/logic.ts";
+import { gameBoard } from "@/games/hexo/grids.ts";
+import {
+  actionCode,
+  botPick,
+  decodeAlt,
+  decodeLog,
+  encodeAlt,
+  encodeLog,
+  isPlain,
+  parseCode,
+  playerAt,
+  project,
+} from "@/games/hexo/rules.ts";
 import { connectMatch, isRoomName } from "@/games/hexo/online.ts";
 
 const route = useRoute();
-const sides = ["X", "O"];
+
+function isSide(value) {
+  return value === "X" || value === "O" || value === "Y" || value === "Z";
+}
 
 function querySize() {
   return asSize(route.query.b);
 }
 
+function queryAlt() {
+  return typeof route.query.alt === "string" ? route.query.alt : "";
+}
+
 function readReplay(boardSize) {
   const raw = route.query.r;
+  const alt = queryAlt();
   if (typeof raw !== "string" || !raw) return { moves: null, error: false };
+  if (alt) {
+    const acts = decodeLog(raw);
+    const next = decodeAlt(alt);
+    if (!acts || !project(acts, next, gameBoard(next.grid, asSize(boardSize)))) {
+      return { moves: null, error: true };
+    }
+    return { moves: acts, error: false };
+  }
   const moves = decodeReplay(raw, boardSize);
   if (!moves) return { moves: null, error: true };
   return { moves, error: false };
@@ -436,9 +578,10 @@ function readRoom() {
   const room = typeof route.query.p === "string" ? route.query.p.toLowerCase() : "";
   if (!isRoomName(room)) return null;
   const minutes = route.query.min === "5" || route.query.min === "10" ? Number(route.query.min) : 0;
+  const s = route.query.s;
   return {
     room,
-    seat: route.query.s === "O" ? "O" : "X",
+    seat: s === "O" || s === "Y" || s === "Z" ? s : "X",
     minutes,
     size: querySize(),
   };
@@ -457,15 +600,31 @@ function parseMoveList(list, boardSize) {
   return applyMoves(moves, asSize(boardSize)) ? moves : null;
 }
 
+function historyFrom(list, boardSize, alt) {
+  const next = decodeAlt(alt || "");
+  if (isPlain(next)) return parseMoveList(list, boardSize);
+  if (!Array.isArray(list)) return null;
+  const table = gameBoard(next.grid, asSize(boardSize));
+  const acts = [];
+  for (const part of list) {
+    const act = parseCode(String(part));
+    if (!act) return null;
+    if (act.kind !== "pass" && !table.byKey[act.key]) return null;
+    acts.push(act);
+  }
+  return project(acts, next, table) ? acts : null;
+}
+
 function loadRoom(name) {
   try {
     const raw = window.localStorage.getItem(`hexo-room:${name}`);
     if (!raw) return null;
     const saved = JSON.parse(raw);
     const boardSize = asSize(saved.size);
-    const moves = parseMoveList(saved.moves, boardSize);
+    const alt = typeof saved.alt === "string" ? saved.alt : "";
+    const moves = historyFrom(saved.moves, boardSize, alt);
     if (!moves || !(saved.epoch > 0)) return null;
-    return { ...saved, moves, size: boardSize };
+    return { ...saved, moves, size: boardSize, alt };
   } catch {
     return null;
   }
@@ -506,10 +665,23 @@ const openedMoves =
   remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length)
     ? remembered.moves
     : (loaded.moves ?? []);
+const openedAlt = remembered?.alt || (!remembered ? queryAlt() : "");
+const openedRules = decodeAlt(openedAlt);
 const openedSeat =
-  remembered?.white === selfId ? "X" : remembered?.white ? "O" : (joined?.seat ?? null);
+  remembered?.white === selfId
+    ? "X"
+    : isSide(remembered?.seat) && remembered.seat !== "X"
+      ? remembered.seat
+      : remembered?.white
+        ? "O"
+        : (joined?.seat ?? null);
 const size = ref(openedSize);
-const board = computed(() => boardFor(size.value));
+const rules = ref(openedRules);
+const variant = computed(() => !isPlain(rules.value));
+const sides = computed(() => ["X", "O", "Y", "Z"].slice(0, rules.value.players));
+const board = computed(() =>
+  variant.value ? gameBoard(rules.value.grid, size.value) : boardFor(size.value),
+);
 const chat = ref([]);
 const chatDraft = ref("");
 const chatEl = ref(null);
@@ -527,31 +699,27 @@ const seat = ref(openedSeat);
 const epoch = ref(remembered?.epoch || (openedMoves.length ? 1 : 0));
 const whiteId = ref(remembered?.white || "");
 const peerId = ref("");
-const flipped = ref(openedSeat === "O");
+const flipped = ref(openedSeat && openedSeat !== "X");
 const flipTouched = ref(false);
 const flashKey = ref(null);
 const typed = ref("");
+const bloom = ref(window.sessionStorage.getItem("hexo-bloom") === "1" || openedRules.rift);
+let bloomTaps = 0;
 const clockBudget = ref(remembered?.minutes || joined?.minutes || 0);
-const clock = ref(
-  remembered?.clock?.X != null && remembered?.clock?.O != null
-    ? { X: remembered.clock.X, O: remembered.clock.O }
-    : clockBudget.value && !openedMoves.length
-      ? { X: clockBudget.value * 60000, O: clockBudget.value * 60000 }
-      : null,
-);
+const clock = ref(openedClock());
 const clockMarks = ref([]);
 const clockRunning = ref(false);
 const timeoutWinner = ref(
-  remembered?.flag === "X" || remembered?.flag === "O"
+  isSide(remembered?.flag)
     ? remembered.flag
-    : !loaded.error && (route.query.flag === "X" || route.query.flag === "O")
+    : !loaded.error && isSide(route.query.flag)
       ? route.query.flag
       : null,
 );
 const resigned = ref(
-  remembered?.resign === "X" || remembered?.resign === "O"
+  isSide(remembered?.resign)
     ? remembered.resign
-    : !loaded.error && (route.query.end === "X" || route.query.end === "O")
+    : !loaded.error && isSide(route.query.end)
       ? route.query.end
       : null,
 );
@@ -583,19 +751,39 @@ const draft = reactive({
   minutes: 0,
   room: "",
   size: openedSize,
+  grid: openedRules.grid,
+  players: openedRules.players,
+  duck: openedRules.duck,
+  king: openedRules.king,
+  cap: openedRules.cap > 0,
+  capN: openedRules.cap || 12,
+  echo: openedRules.echo,
+  orbit: openedRules.orbit,
+  meteor: openedRules.meteor,
+  rift: openedRules.rift,
 });
 
-const position = computed(
-  () => applyMoves(history.value.slice(0, view.value), size.value) ?? emptyPosition(),
-);
+const position = computed(() => {
+  if (!variant.value) return applyMoves(history.value.slice(0, view.value), size.value) ?? emptyPosition();
+  return project(history.value.slice(0, view.value), rules.value, board.value) ?? emptyTable();
+});
 const stones = computed(() => position.value.stones);
 const turn = computed(() => position.value.turn);
-const xCells = computed(() =>
-  board.value.cells.filter((cell) => stones.value[cell.key] === "X"),
+const xCells = computed(() => board.value.cells.filter((cell) => stones.value[cell.key] === "X"));
+const oCells = computed(() => board.value.cells.filter((cell) => stones.value[cell.key] === "O"));
+const yCells = computed(() => board.value.cells.filter((cell) => stones.value[cell.key] === "Y"));
+const zCells = computed(() => board.value.cells.filter((cell) => stones.value[cell.key] === "Z"));
+const ghostCells = computed(() =>
+  (position.value.ghosts ?? [])
+    .map((ghost) => {
+      const cell = board.value.byKey[ghost.key];
+      return cell ? { ...cell, owner: ghost.owner } : null;
+    })
+    .filter(Boolean),
 );
-const oCells = computed(() =>
-  board.value.cells.filter((cell) => stones.value[cell.key] === "O"),
-);
+const duckCell = computed(() => (position.value.duck ? board.value.byKey[position.value.duck] : null));
+const haloSet = computed(() => new Set(position.value.halo ?? []));
+const riftSet = computed(() => new Set(position.value.rifts ?? []));
 
 const lastMove = computed(() =>
   view.value > 0 ? history.value[view.value - 1] : null,
@@ -604,16 +792,58 @@ const lastKey = computed(() =>
   lastMove.value ? `${lastMove.value.letter}${lastMove.value.number}` : null,
 );
 
+function variantLines(ply) {
+  const lines = [];
+  let index = 0;
+  let placed = 0;
+  while (index < ply) {
+    const quota = placed === 0 ? 1 : 2;
+    const stones = [];
+    let took = 0;
+    while (
+      index < ply &&
+      took < quota &&
+      (!history.value[index].kind || history.value[index].kind === "place")
+    ) {
+      const move = history.value[index];
+      stones.push({
+        index,
+        square: move.key || `${move.letter}${move.number}`,
+        key: move.key || `${move.letter}${move.number}`,
+      });
+      index += 1;
+      took += 1;
+      placed += 1;
+    }
+    while (index < ply && history.value[index].kind && history.value[index].kind !== "place") {
+      const move = history.value[index];
+      const square = move.kind === "pass" ? "pass" : move.kind === "duck" ? `~${move.key}` : `-${move.key}`;
+      stones.push({ index, square, key: move.kind === "duck" ? move.key : "" });
+      index += 1;
+    }
+    if (!stones.length) break;
+    lines.push({
+      number: lines.length + 1,
+      player: playerAt(placed - took, rules.value.players),
+      stones,
+    });
+  }
+  return lines;
+}
+
 function turnSlice(ply) {
+  if (variant.value) {
+    const line = variantLines(ply).at(-1);
+    if (!line) return null;
+    return { number: line.number, player: line.player, squares: line.stones.map((stone) => stone.square) };
+  }
   if (ply <= 0) return null;
   const end = ply - 1;
   const start = turnStart(end);
   return {
     number: start === 0 ? 1 : Math.floor((start + 1) / 2) + 1,
     player: playerOf(start),
-    squares: history.value
-      .slice(start, ply)
-      .map((move) => `${move.letter}${move.number}`),
+    squares: history.value.slice(start, ply).map((move) => `${move.letter}${move.number}`),
   };
 }
 
@@ -624,6 +854,13 @@ function moveLabel(ply) {
 }
 
 const score = computed(() => {
+  if (variant.value) {
+    return variantLines(history.value.length).map((line) => {
+      const last = line.stones[line.stones.length - 1];
+      const mark = moveTimes.value[last.index];
+      return { ...line, time: typeof mark === "number" ? formatClock(mark) : "" };
+    });
+  }
   const lines = [];
   for (let index = 0; index < history.value.length; ) {
     const start = turnStart(index);
@@ -648,6 +885,11 @@ const score = computed(() => {
 });
 
 const shownTurn = computed(() => {
+  if (variant.value) {
+    const line = variantLines(view.value).at(-1);
+    if (!line) return [];
+    return line.stones.map((stone) => board.value.byKey[stone.key]).filter(Boolean);
+  }
   const turn = turnSlice(view.value);
   if (!turn) return [];
   return turn.squares.map((key) => board.value.byKey[key]).filter(Boolean);
@@ -655,22 +897,32 @@ const shownTurn = computed(() => {
 
 const lastKeys = computed(() => new Set(shownTurn.value.map((cell) => cell.key)));
 
-const fullGame = computed(() => applyMoves(history.value, size.value) ?? emptyPosition());
+const fullGame = computed(() =>
+  variant.value
+    ? (project(history.value, rules.value, board.value) ?? emptyTable())
+    : (applyMoves(history.value, size.value) ?? emptyPosition()),
+);
 
 const checkKeys = computed(() => {
   if (position.value.winner || timeoutWinner.value || resigned.value) return new Set();
+  if (variant.value) return new Set(position.value.threats ?? []);
   return new Set(threatKeys(stones.value, turn.value, stonesLeft(view.value), size.value));
 });
 
 const mateIndex = computed(() => {
   if (resigned.value || timeoutWinner.value) return -1;
   if (!fullGame.value.winner || fullGame.value.winner === "draw") return -1;
+  if (variant.value) {
+    for (let index = history.value.length - 1; index >= 0; index -= 1) {
+      if (!history.value[index].kind || history.value[index].kind === "place") return index;
+    }
+  }
   return history.value.length - 1;
 });
 
 const resultLine = computed(() => {
   if (timeoutWinner.value) return `${timeoutWinner.value} wins · time`;
-  if (resigned.value) return `${resigned.value === "X" ? "O" : "X"} wins · resign`;
+  if (resigned.value) return `${nextSeat(resigned.value)} wins · resign`;
   if (fullGame.value.winner === "draw") return "draw";
   if (fullGame.value.winner) return `${fullGame.value.winner} wins`;
   return "";
@@ -723,7 +975,7 @@ const winSegments = computed(() => {
 const outcome = computed(() => {
   if (view.value !== history.value.length) return null;
   if (timeoutWinner.value) return `${timeoutWinner.value} wins · time`;
-  if (resigned.value) return `${resigned.value === "X" ? "O" : "X"} wins · resign`;
+  if (resigned.value) return `${nextSeat(resigned.value)} wins · resign`;
   if (position.value.winner === "draw") return "draw";
   if (position.value.winner) {
     const names = position.value.lines
@@ -753,12 +1005,22 @@ const statusText = computed(() => {
   ) {
     if (!linkUp.value) return "connecting";
     if (!opponentHere.value) {
+      if (rules.value.players > 2) return peerKnown.value ? "away" : "waiting";
       return peerKnown.value ? `${otherSeat.value} is away` : `waiting for ${otherSeat.value}`;
     }
   }
   if (view.value < history.value.length) {
     if (view.value === 0) return withCheck("start");
     return withCheck(`after ${moveLabel(view.value)}`);
+  }
+  if (variant.value) {
+    if (history.value.length === 0) return withCheck(`${turn.value} plays ${board.value.center}`);
+    if (position.value.phase === "duck") return `${turn.value} moves the duck`;
+    if (position.value.phase === "trim") return `${turn.value} may lift ${position.value.removesLeft}`;
+    if (position.value.stonesLeft === 1 && position.value.placedThisTurn?.length) {
+      return withCheck(`${turn.value} · one more`);
+    }
+    return withCheck(`${turn.value} to move`);
   }
   if (history.value.length === 0) return withCheck(`X plays ${board.value.center}`);
   if (stonesLeft(history.value.length) === 1) return withCheck(`${turn.value} · one more`);
@@ -790,6 +1052,7 @@ const guideSet = computed(() => {
 
 const ghost = computed(() => {
   if (!hoverKey.value || !legal(hoverKey.value)) return null;
+  if (variant.value && position.value.phase !== "place") return null;
   return board.value.byKey[hoverKey.value] ?? null;
 });
 
@@ -805,7 +1068,101 @@ function emptyPosition() {
   return { stones: {}, turn: "X", winner: null, lines: [] };
 }
 
+function emptyTable() {
+  return {
+    stones: {},
+    turn: "X",
+    winner: null,
+    lines: [],
+    phase: "place",
+    duck: null,
+    ghosts: [],
+    rifts: [],
+    panic: [],
+    halo: [],
+    legal: [],
+    threats: [],
+    removesLeft: 0,
+    stonesLeft: 1,
+    placedTotal: 0,
+    placedThisTurn: [],
+  };
+}
+
+function openedClock() {
+  const ms = clockBudget.value * 60000;
+  if (remembered?.clock?.X != null && remembered?.clock?.O != null) {
+    return {
+      X: remembered.clock.X,
+      O: remembered.clock.O,
+      Y: remembered.clock.Y ?? ms,
+      Z: remembered.clock.Z ?? ms,
+    };
+  }
+  if (clockBudget.value && !openedMoves.length) return { X: ms, O: ms, Y: ms, Z: ms };
+  return null;
+}
+
+function nextSeat(side) {
+  const order = ["X", "O", "Y", "Z"].slice(0, rules.value.players);
+  const index = order.indexOf(side);
+  return order[(index + 1) % order.length] || "O";
+}
+
+function freshClock(ms) {
+  return { X: ms, O: ms, Y: ms, Z: ms };
+}
+
+function codeOf(move) {
+  if (move?.kind) return actionCode(move);
+  return `${move.letter}${move.number}`;
+}
+
+function rulesFromDraft() {
+  const cap = draft.cap ? Math.max(1, Math.min(40, Number(draft.capN) || 12)) : 0;
+  return {
+    grid: draft.grid,
+    players: draft.players,
+    duck: Boolean(draft.duck || draft.king),
+    king: Boolean(draft.king),
+    cap,
+    echo: Boolean(draft.echo),
+    orbit: Boolean(draft.orbit),
+    meteor: Boolean(draft.meteor),
+    rift: Boolean(draft.rift),
+  };
+}
+
+function pokeBloom() {
+  bloomTaps += 1;
+  if (bloomTaps < 5) return;
+  bloom.value = true;
+  window.sessionStorage.setItem("hexo-bloom", "1");
+}
+
+function setPlayers(count) {
+  draft.players = count;
+  const names = ["X", "O", "Y", "Z"].slice(0, count);
+  if (!names.includes(draft.human)) draft.human = "X";
+}
+
+function setDuck(on) {
+  draft.duck = on;
+  if (!on) draft.king = false;
+}
+
+function setKing(on) {
+  draft.king = on;
+  if (on) draft.duck = true;
+}
+
+const legalSet = computed(() => {
+  if (!variant.value || !canPlay.value) return new Set();
+  return new Set((position.value.legal ?? []).map((act) => act.key));
+});
+
 function legal(key) {
+  if (variant.value) return legalSet.value.has(key);
   if (!canPlay.value || stones.value[key]) return false;
   if (history.value.length === 0) return key === board.value.center;
   return true;
@@ -821,6 +1178,16 @@ function toggleSetup() {
   showSetup.value = !showSetup.value;
   if (showSetup.value) {
     draft.size = size.value;
+    draft.grid = rules.value.grid;
+    draft.players = rules.value.players;
+    draft.duck = rules.value.duck;
+    draft.king = rules.value.king;
+    draft.cap = rules.value.cap > 0;
+    draft.capN = rules.value.cap || 12;
+    draft.echo = rules.value.echo;
+    draft.orbit = rules.value.orbit;
+    draft.meteor = rules.value.meteor;
+    draft.rift = rules.value.rift;
     showSettings.value = false;
     showRules.value = false;
   }
@@ -843,8 +1210,27 @@ function toggleRules() {
 }
 
 function xMark(cell) {
-  const u = 7.1;
+  const u = cell.m || 7.1;
   return `M ${cell.x - u} ${cell.y - u} L ${cell.x + u} ${cell.y + u} M ${cell.x + u} ${cell.y - u} L ${cell.x - u} ${cell.y + u}`;
+}
+
+function yMark(cell) {
+  const u = (cell.m || 7.1) * 0.95;
+  return `M ${cell.x} ${cell.y - u} L ${cell.x + u} ${cell.y + u * 0.72} L ${cell.x - u} ${cell.y + u * 0.72} Z`;
+}
+
+function zMark(cell) {
+  const u = (cell.m || 7.1) * 0.72;
+  return `M ${cell.x - u} ${cell.y - u} H ${cell.x + u} V ${cell.y + u} H ${cell.x - u} Z`;
+}
+
+function markR(cell) {
+  return (cell.m || 7.1) + 0.2;
+}
+
+function duckBeak(cell) {
+  const u = (cell.m || 7) * 0.55;
+  return `M ${cell.x + u * 0.15} ${cell.y - u * 0.05} L ${cell.x + u * 1.35} ${cell.y - u * 0.42} L ${cell.x + u * 0.15} ${cell.y + u * 0.32} Z`;
 }
 
 function formatClock(ms) {
@@ -890,11 +1276,11 @@ function spawnConfetti() {
 }
 
 function pushMove(move) {
-  const mover = playerOf(history.value.length);
+  const mover = variant.value ? turn.value : playerOf(history.value.length);
   if (clock.value) {
     clockMarks.value = [
       ...clockMarks.value,
-      { X: clock.value.X, O: clock.value.O },
+      { X: clock.value.X, O: clock.value.O, Y: clock.value.Y, Z: clock.value.Z },
     ];
     moveTimes.value = [...moveTimes.value, clock.value[mover]];
     clockRunning.value = true;
@@ -904,7 +1290,9 @@ function pushMove(move) {
   }
   history.value = [...history.value, move];
   view.value = history.value.length;
-  const latest = applyMoves(history.value, size.value);
+  const latest = variant.value
+    ? project(history.value, rules.value, board.value)
+    : applyMoves(history.value, size.value);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   queueBot();
   publishMatch();
@@ -918,6 +1306,18 @@ function queueBot() {
   if (showSetup.value) return;
   if (view.value !== history.value.length) return;
   if (timeoutWinner.value || position.value.winner) return;
+  if (variant.value) {
+    if (turn.value === human.value) return;
+    const seen = history.value.length;
+    botTimer = window.setTimeout(() => {
+      if (history.value.length !== seen) return;
+      if (timeoutWinner.value || position.value.winner) return;
+      if (turn.value === human.value) return;
+      const move = botPick(position.value, board.value, rules.value);
+      if (move) pushMove(move);
+    }, 380);
+    return;
+  }
   if (turn.value !== botSide()) return;
   const seen = history.value.length;
   botTimer = window.setTimeout(() => {
@@ -937,6 +1337,24 @@ function flash(key) {
 }
 
 function play(key) {
+  if (variant.value) {
+    const act = (position.value.legal ?? []).find((item) => item.key === key);
+    if (!act || !canPlay.value) {
+      if (
+        position.value.phase === "place" &&
+        !history.value.length &&
+        key !== board.value.center &&
+        board.value.byKey[key] &&
+        canPlay.value
+      ) {
+        flash(key);
+      }
+      return;
+    }
+    typed.value = "";
+    pushMove(act);
+    return;
+  }
   if (!legal(key)) {
     if (history.value.length === 0 && key !== board.value.center && board.value.byKey[key] && canPlay.value) flash(key);
     return;
@@ -947,10 +1365,15 @@ function play(key) {
   pushMove({ letter: cell.letter, number: cell.number });
 }
 
+function passTurn() {
+  if (!variant.value || position.value.phase !== "trim" || !canPlay.value) return;
+  pushMove({ kind: "pass", key: "", letter: "", number: 0 });
+}
+
 function undo() {
   if (mode.value === "together") return;
   if (view.value !== history.value.length || !history.value.length) return;
-  if (mode.value === "hotseat") {
+  if (mode.value === "hotseat" || variant.value) {
     const mark = clockMarks.value[clockMarks.value.length - 1];
     history.value = history.value.slice(0, -1);
     moveTimes.value = moveTimes.value.slice(0, -1);
@@ -959,8 +1382,9 @@ function undo() {
     resigned.value = null;
     timeoutWinner.value = null;
     particles.value = [];
-    if (mark && clock.value) clock.value = { X: mark.X, O: mark.O };
+    if (mark && clock.value) clock.value = { ...clock.value, ...mark };
     clockRunning.value = history.value.length > 0 && Boolean(clock.value);
+    if (variant.value) queueBot();
     return;
   }
   window.clearTimeout(botTimer);
@@ -1013,10 +1437,10 @@ function startGame() {
   replayError.value = false;
   particles.value = [];
   hoverKey.value = null;
+  rules.value = rulesFromDraft();
   clockBudget.value = draft.minutes;
   if (draft.minutes > 0) {
-    const ms = draft.minutes * 60 * 1000;
-    clock.value = { X: ms, O: ms };
+    clock.value = freshClock(draft.minutes * 60 * 1000);
   } else {
     clock.value = null;
   }
@@ -1046,13 +1470,20 @@ function startGame() {
   queueBot();
 }
 
-function syncUrl() {
-  const url = new URL(window.location.href);
-  const encoded = encodeReplay(history.value);
+function writeRules(url) {
+  const alt = encodeAlt(rules.value);
+  if (alt) url.searchParams.set("alt", alt);
+  else url.searchParams.delete("alt");
+  const encoded = variant.value ? encodeLog(history.value) : encodeReplay(history.value);
   if (encoded) url.searchParams.set("r", encoded);
   else url.searchParams.delete("r");
   if (size.value === 13) url.searchParams.set("b", "13");
   else url.searchParams.delete("b");
+}
+
+function syncUrl() {
+  const url = new URL(window.location.href);
+  writeRules(url);
   if (mode.value === "together" && room.value && seat.value) {
     url.searchParams.set("p", room.value);
     url.searchParams.set("s", seat.value);
@@ -1075,11 +1506,7 @@ function inviteUrl() {
   if (room.value && seat.value) {
     url.searchParams.set("p", room.value);
     url.searchParams.set("s", seat.value === "X" ? "O" : "X");
-    const encoded = encodeReplay(history.value);
-    if (encoded) url.searchParams.set("r", encoded);
-    else url.searchParams.delete("r");
-    if (size.value === 13) url.searchParams.set("b", "13");
-    else url.searchParams.delete("b");
+    writeRules(url);
     if (clockBudget.value) url.searchParams.set("min", String(clockBudget.value));
     else url.searchParams.delete("min");
     if (resigned.value) url.searchParams.set("end", resigned.value);
@@ -1322,6 +1749,14 @@ function onKey(event) {
     typed.value = `${letter}${digits}`;
     const number = Number(digits);
     window.clearTimeout(typeTimer);
+    if (variant.value) {
+      const key = `${letter}${number}`;
+      if (!board.value.byKey[key]) return;
+      const longer = board.value.cells.some((cell) => cell.key !== key && cell.key.startsWith(key));
+      if (!longer) commitTyped();
+      else typeTimer = window.setTimeout(() => commitTyped(), 450);
+      return;
+    }
     if (!isValidHex(letter, number, size.value)) return;
     if (typedReady(letter, number)) commitTyped();
     else typeTimer = window.setTimeout(() => commitTyped(), 450);
@@ -1369,6 +1804,7 @@ function publishHi() {
     running: false,
     size: size.value,
     text: "",
+    alt: encodeAlt(rules.value),
   });
 }
 
@@ -1379,7 +1815,7 @@ function saveRoomState() {
     JSON.stringify({
       epoch: epoch.value,
       white: whiteId.value,
-      moves: history.value.map((move) => `${move.letter}${move.number}`),
+      moves: history.value.map((move) => codeOf(move)),
       times: moveTimes.value,
       resign: resigned.value,
       flag: timeoutWinner.value,
@@ -1387,11 +1823,14 @@ function saveRoomState() {
       clock: clock.value,
       running: clockRunning.value,
       size: size.value,
+      alt: encodeAlt(rules.value),
+      seat: seat.value,
     }),
   );
 }
 
 function restoreSaved(saved) {
+  rules.value = decodeAlt(saved.alt || "");
   size.value = asSize(saved.size);
   history.value = saved.moves;
   moveTimes.value = saved.moves.map((_, index) =>
@@ -1400,17 +1839,22 @@ function restoreSaved(saved) {
   view.value = saved.moves.length;
   epoch.value = saved.epoch;
   whiteId.value = saved.white || "";
-  seat.value = whiteId.value === selfId ? "X" : whiteId.value ? "O" : "X";
+  seat.value = whiteId.value === selfId ? "X" : isSide(saved.seat) ? saved.seat : "O";
   human.value = seat.value;
-  if (!flipTouched.value) flipped.value = seat.value === "O";
-  resigned.value = saved.resign === "X" || saved.resign === "O" ? saved.resign : null;
-  timeoutWinner.value = saved.flag === "X" || saved.flag === "O" ? saved.flag : null;
+  if (!flipTouched.value) flipped.value = seat.value !== "X";
+  resigned.value = isSide(saved.resign) ? saved.resign : null;
+  timeoutWinner.value = isSide(saved.flag) ? saved.flag : null;
   clockBudget.value = saved.minutes === 5 || saved.minutes === 10 ? saved.minutes : 0;
   if (saved.clock?.X != null && saved.clock?.O != null) {
-    clock.value = { X: saved.clock.X, O: saved.clock.O };
-  } else if (clockBudget.value) {
     const ms = clockBudget.value * 60000;
-    clock.value = { X: ms, O: ms };
+    clock.value = {
+      X: saved.clock.X,
+      O: saved.clock.O,
+      Y: saved.clock.Y ?? ms,
+      Z: saved.clock.Z ?? ms,
+    };
+  } else if (clockBudget.value) {
+    clock.value = freshClock(clockBudget.value * 60000);
   } else {
     clock.value = null;
   }
@@ -1420,11 +1864,13 @@ function restoreSaved(saved) {
 function rematch() {
   if (mode.value !== "together" || !resultLine.value) return;
   epoch.value += 1;
-  if (peerId.value) whiteId.value = seat.value === "X" ? peerId.value : selfId;
-  else whiteId.value = selfId;
-  seat.value = whiteId.value === selfId ? "X" : "O";
+  if (rules.value.players === 2) {
+    if (peerId.value) whiteId.value = seat.value === "X" ? peerId.value : selfId;
+    else whiteId.value = selfId;
+    seat.value = whiteId.value === selfId ? "X" : "O";
+  }
   human.value = seat.value;
-  if (!flipTouched.value) flipped.value = seat.value === "O";
+  if (!flipTouched.value) flipped.value = seat.value !== "X";
   history.value = [];
   moveTimes.value = [];
   clockMarks.value = [];
@@ -1435,7 +1881,7 @@ function rematch() {
   hoverKey.value = null;
   if (clockBudget.value) {
     const ms = clockBudget.value * 60000;
-    clock.value = { X: ms, O: ms };
+    clock.value = freshClock(clockBudget.value * 60000);
   }
   clockRunning.value = false;
   publishMatch();
@@ -1472,17 +1918,20 @@ function publishMatch() {
     id: selfId,
     seat: seat.value,
     at: Date.now(),
-    moves: history.value.map((move) => `${move.letter}${move.number}`),
+    moves: history.value.map((move) => codeOf(move)),
     times: moveTimes.value,
     epoch: epoch.value,
     white: whiteId.value || (seat.value === "X" ? selfId : ""),
     resign: resigned.value,
     flag: timeoutWinner.value,
     minutes: clockBudget.value,
-    clock: clock.value ? { X: clock.value.X, O: clock.value.O } : null,
+    clock: clock.value
+      ? { X: clock.value.X, O: clock.value.O, Y: clock.value.Y, Z: clock.value.Z }
+      : null,
     running: clockRunning.value && !outcome.value,
     size: size.value,
     text: "",
+    alt: encodeAlt(rules.value),
   });
   saveRoomState();
 }
@@ -1509,6 +1958,7 @@ function sendChat() {
     running: false,
     size: size.value,
     text,
+    alt: encodeAlt(rules.value),
   });
 }
 
@@ -1528,15 +1978,16 @@ function takeMoves(moves, times, follow) {
 function applyWhite(white) {
   if (!white) return;
   whiteId.value = white;
-  seat.value = white === selfId ? "X" : "O";
+  if (white === selfId) seat.value = "X";
+  else if (seat.value !== "O" && seat.value !== "Y" && seat.value !== "Z") seat.value = "O";
   human.value = seat.value;
-  if (!flipTouched.value) flipped.value = seat.value === "O";
+  if (!flipTouched.value) flipped.value = seat.value !== "X";
 }
 
 function onNote(note) {
   if (note.id === selfId) {
     if (note.kind !== "go") return;
-    const own = parseMoveList(note.moves, note.size);
+    const own = historyFrom(note.moves, note.size, note.alt);
     if (!own) return;
     const ahead = note.epoch > epoch.value;
     const longer = note.epoch === epoch.value && own.length > history.value.length;
@@ -1568,7 +2019,7 @@ function onNote(note) {
     return;
   }
 
-  const moves = parseMoveList(note.moves, note.size);
+  const moves = historyFrom(note.moves, note.size, note.alt);
   if (!moves) return;
   if (claiming && note.epoch >= 1) {
     claiming = false;
@@ -1584,13 +2035,13 @@ function onNote(note) {
     publishMatch();
     return;
   }
-  if (asSize(note.size) !== size.value) {
+  if (asSize(note.size) !== size.value || (note.alt || "") !== encodeAlt(rules.value)) {
     adoptFresh(note, moves);
     return;
   }
   if (note.seat === seat.value) return;
 
-  const local = history.value.map((move) => `${move.letter}${move.number}`);
+  const local = history.value.map((move) => codeOf(move));
   const remote = note.moves;
   if (!isPrefix(local, remote)) {
     if (isPrefix(remote, local)) publishMatch();
@@ -1601,7 +2052,9 @@ function onNote(note) {
   if (extended) {
     const follow = view.value === history.value.length;
     takeMoves(moves, note.times, follow);
-    const latest = applyMoves(moves, size.value);
+    const latest = variant.value
+      ? project(moves, rules.value, board.value)
+      : applyMoves(moves, size.value);
     if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   }
   if (note.white) whiteId.value = note.white;
@@ -1615,11 +2068,12 @@ function onNote(note) {
 
 function adoptFresh(note, moves) {
   epoch.value = note.epoch;
+  rules.value = decodeAlt(note.alt || "");
   size.value = asSize(note.size);
   applyWhite(note.white);
   takeMoves(moves, note.times, true);
-  resigned.value = note.resign === "X" || note.resign === "O" ? note.resign : null;
-  timeoutWinner.value = note.flag === "X" || note.flag === "O" ? note.flag : null;
+  resigned.value = isSide(note.resign) ? note.resign : null;
+  timeoutWinner.value = isSide(note.flag) ? note.flag : null;
   if (note.minutes === 5 || note.minutes === 10) clockBudget.value = note.minutes;
   if (note.minutes === 0) {
     clockBudget.value = 0;
@@ -1627,7 +2081,9 @@ function adoptFresh(note, moves) {
     clockRunning.value = false;
   }
   adoptClock(note, true);
-  const latest = applyMoves(moves, size.value);
+  const latest = variant.value
+    ? project(moves, rules.value, board.value)
+    : applyMoves(moves, size.value);
   if (latest?.winner && latest.winner !== "draw") spawnConfetti();
   saveRoomState();
   publishMatch();
@@ -1648,9 +2104,16 @@ function adoptClock(note, extended) {
   if (!note.clock) return;
   if (!extended && clock.value) return;
   const lag = extended ? Math.min(2500, Math.max(0, Date.now() - note.at)) : 0;
-  const next = { X: note.clock.X, O: note.clock.O };
-  const side = playerOf(history.value.length);
-  const latest = applyMoves(history.value, size.value);
+  const next = {
+    X: note.clock.X,
+    O: note.clock.O,
+    Y: note.clock.Y ?? note.clock.X,
+    Z: note.clock.Z ?? note.clock.O,
+  };
+  const side = turn.value;
+  const latest = variant.value
+    ? project(history.value, rules.value, board.value)
+    : applyMoves(history.value, size.value);
   const finished = Boolean(note.resign || note.flag || latest?.winner);
   if (!finished && note.running) next[side] = Math.max(0, next[side] - lag);
   clock.value = next;
@@ -1695,7 +2158,7 @@ function tickClock() {
   clock.value = { ...clock.value, [side]: next };
   if (next <= 0) {
     window.clearTimeout(botTimer);
-    timeoutWinner.value = side === "X" ? "O" : "X";
+    timeoutWinner.value = nextSeat(side);
     clockRunning.value = false;
     spawnConfetti();
     publishMatch();
@@ -1713,7 +2176,7 @@ watch(view, async () => {
   listEl.value?.querySelector(".on")?.scrollIntoView({ block: "nearest" });
 });
 
-watch(size, () => {
+watch([size, () => rules.value.grid], () => {
   userAdjusted = false;
   nextTick(() => fit());
 });
@@ -1962,6 +2425,8 @@ button:focus-visible {
   display: grid;
   gap: 8px;
   margin-bottom: 12px;
+  max-height: 46vh;
+  overflow: auto;
 }
 
 .rules {
@@ -2187,6 +2652,16 @@ button:focus-visible {
   stroke-width: 2.4;
 }
 
+.cell.is-panic {
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.cell.is-rift {
+  stroke: #fff;
+  animation: rift-shimmer 1.6s ease-in-out infinite;
+}
+
 .viewport.can-play .cell.is-legal {
   cursor: pointer;
 }
@@ -2264,6 +2739,29 @@ button:focus-visible {
   stroke-width: 2.35;
 }
 
+.ghost-stone {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.ghost-stone path,
+.ghost-stone circle {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.7;
+  stroke-dasharray: 2.4 1.5;
+}
+
+.duck {
+  pointer-events: none;
+}
+
+.duck circle,
+.duck path {
+  fill: #fff;
+  stroke: none;
+}
+
 .win-halo,
 .win-line {
   fill: none;
@@ -2325,6 +2823,12 @@ button:focus-visible {
   }
 }
 
+@keyframes rift-shimmer {
+  50% {
+    stroke-opacity: 0.2;
+  }
+}
+
 @keyframes ring-pulse {
   0%,
   100% {
@@ -2366,7 +2870,8 @@ button:focus-visible {
   .plate.low.live,
   .burst i,
   .cell,
-  .cell.is-flash {
+  .cell.is-flash,
+  .cell.is-rift {
     animation: none;
     transition: none;
   }

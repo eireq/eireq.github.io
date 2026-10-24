@@ -112,6 +112,12 @@ const router = createRouter({
       },
     },
     {
+      path: "/games/otrio",
+      name: "game-otrio",
+      component: () => import("../views/OtrioView.vue"),
+      meta: { title: "Otrio - eire" },
+    },
+    {
       path: "/games/hexo",
       name: "game-hexo",
       component: () => import("../views/HexoView.vue"),

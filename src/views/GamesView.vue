@@ -7,6 +7,11 @@
     </p>
 
     <section class="games">
+      <router-link class="game" to="/games/otrio">
+        <h2>{{ t("games.otrio") }}</h2>
+        <p>{{ t("games.otrioText") }}</p>
+      </router-link>
+
       <router-link class="game" to="/games/hexo">
         <h2>{{ t("games.hexo") }}</h2>
         <p>{{ t("games.hexoText") }}</p>
