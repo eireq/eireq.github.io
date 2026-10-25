@@ -18,6 +18,8 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/games/daily` | Daily flag. |
 | `/games/hexo` | HeXO. |
 | `/games/otrio` | Otrio. Ring tic-tac-toe for 2–4 players. |
+| `/games/go` | Go. Baduk for two players on one screen. |
+| `/games/hexchess` | Hex chess. Gliński's board, 91 cells. |
 | `/kht` | KHT bracket. Public to view, owner can edit. |
 | `/tools` | Tool index. |
 | `/flagdb` | Flag database. |
@@ -34,7 +36,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/contact` | Contact, with an email draft. |
 | `/modes` | Redirects to https://eireq.github.io/modes |
 
-Lane Runner, the flag quiz, HeXO, and jWorld hide the site header and footer.
+Lane Runner, the flag quiz, HeXO, hex chess, and jWorld hide the site header and footer.
 
 ## Flag corpus
 
@@ -78,6 +80,23 @@ Hexagonal tic-tac-toe. The first stone goes on the center. After that each turn 
 - **Together** shares one game between two browsers. The room name in the invite link is the only secret. Chat sits under the move list. Rematch swaps sides.
 
 The board can be flipped, guide lines toggled, and a game undone (except in together). A replay is written into the URL, and the score line can be copied.
+
+### Go — `/games/go`
+
+Baduk for two players on one screen. Boards are 9×9, 13×13, or 19×19. Click a crossing, or move with the arrows and Enter. Stones of the same color that touch share liberties; a group with none is captured. Suicide is illegal, and positional superko forbids a move that restores any earlier arrangement of stones.
+
+Chinese rules, area scoring. Two passes open the count: click groups both players treat as dead, then accept, or go back to playing. The score is living stones plus the empty points they enclose. White receives 7.5 komi. Either side can undo or resign.
+
+### Hex chess — `/games/hexchess`
+
+Gliński's hexagonal chess. Ninety-one cells, files a–l with j skipped, ranks 1–11, center f6. Each side has three bishops and nine pawns. Rooks slide through edges, bishops through corners and stay on one color, queens do both. Kings step one cell in any of those twelve directions and do not castle. Knights jump two cells through edges, then one at a sixty-degree turn. Pawns step straight ahead on their file, may step two from a start cell when both cells are empty, and capture one cell forward at sixty degrees, including en passant. A pawn that reaches the far end of a file promotes.
+
+Checkmate wins. Stalemate wins for the side that delivered it. Threefold repetition, fifty moves with no capture or pawn move, and a position where each side has at most a king and one bishop or knight are draws.
+
+- **Two players** on one screen. White moves first.
+- **Practice** against a bot, as white or black.
+
+The board can be dragged, zoomed, and flipped. Type a square such as `g1` to select it or play it. The move list can be stepped through, and the moves can be copied.
 
 ### KHT — `/kht`
 
@@ -207,7 +226,10 @@ src/
   data/                   flags, daily flag, flag of the week, jPol, profile name
   assets/master_flags.json
   games/racing/           canvas game, audio, leaderboard client
+  games/go/               board, captures, Chinese scoring
+  games/otrio/            ring tic-tac-toe rules
   games/hexo/             rules and the together-mode link
+  games/hexchess/         Gliński board and moves
   games/kht/              bracket client
   jworld/                 map, geometry, country fields, Supabase
 public/404.html           GitHub Pages fallback into the SPA
