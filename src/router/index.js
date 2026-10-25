@@ -118,11 +118,26 @@ const router = createRouter({
       meta: { title: "Otrio - eire" },
     },
     {
+      path: "/games/go",
+      name: "game-go",
+      component: () => import("../views/GoView.vue"),
+      meta: { title: "go - eire" },
+    },
+    {
       path: "/games/hexo",
       name: "game-hexo",
       component: () => import("../views/HexoView.vue"),
       meta: {
         title: "HeXO - eire",
+        hideChrome: true,
+      },
+    },
+    {
+      path: "/games/hexchess",
+      name: "game-hexchess",
+      component: () => import("../views/HexChessView.vue"),
+      meta: {
+        title: "hex chess - eire",
         hideChrome: true,
       },
     },
