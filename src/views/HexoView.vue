@@ -89,137 +89,6 @@
         </button>
       </div>
 
-      <form v-if="showSetup" class="setup" @submit.prevent="startGame">
-        <div class="choice">
-          <button
-            type="button"
-            :aria-pressed="draft.mode === 'hotseat'"
-            @click="draft.mode = 'hotseat'"
-          >
-            two players
-          </button>
-          <button
-            type="button"
-            :aria-pressed="draft.mode === 'practice'"
-            @click="draft.mode = 'practice'"
-          >
-            practice
-          </button>
-          <button
-            type="button"
-            :aria-pressed="draft.mode === 'together'"
-            @click="draft.mode = 'together'"
-          >
-            together
-          </button>
-        </div>
-        <div class="choice">
-          <button
-            v-for="minutes in [0, 5, 10]"
-            :key="minutes"
-            type="button"
-            :aria-pressed="draft.minutes === minutes"
-            @click="draft.minutes = minutes"
-          >
-            {{ minutes === 0 ? "no clock" : minutes + " min" }}
-          </button>
-        </div>
-        <div class="choice">
-          <button
-            type="button"
-            :aria-pressed="draft.size === 8"
-            @click="draft.size = 8"
-          >
-            base 8
-          </button>
-          <button
-            type="button"
-            :aria-pressed="draft.size === 13"
-            @click="draft.size = 13"
-          >
-            base 13
-          </button>
-        </div>
-        <div class="choice">
-          <button type="button" :aria-pressed="draft.grid === 'hex'" @click="draft.grid = 'hex'">
-            hex
-          </button>
-          <button type="button" :aria-pressed="draft.grid === 'tri'" @click="draft.grid = 'tri'">
-            triangle
-          </button>
-          <button type="button" :aria-pressed="draft.grid === 'sq'" @click="draft.grid = 'sq'">
-            square
-          </button>
-          <button type="button" :aria-pressed="draft.grid === 'oct'" @click="draft.grid = 'oct'">
-            octagon
-          </button>
-        </div>
-        <div class="choice">
-          <button
-            v-for="count in [2, 3, 4]"
-            :key="count"
-            type="button"
-            :aria-pressed="draft.players === count"
-            @click="setPlayers(count)"
-          >
-            {{ count }} players
-          </button>
-        </div>
-        <div class="choice">
-          <button type="button" :aria-pressed="draft.duck && !draft.king" @click="setDuck(!draft.duck)">
-            duck
-          </button>
-          <button type="button" :aria-pressed="draft.king" @click="setKing(!draft.king)">
-            king duck
-          </button>
-          <button type="button" :aria-pressed="draft.cap" @click="draft.cap = !draft.cap">
-            egyptian
-          </button>
-          <button type="button" :aria-pressed="draft.echo" @click="draft.echo = !draft.echo">
-            echo
-          </button>
-          <button type="button" :aria-pressed="draft.orbit" @click="draft.orbit = !draft.orbit">
-            orbit
-          </button>
-          <button type="button" :aria-pressed="draft.meteor" @click="draft.meteor = !draft.meteor">
-            meteor
-          </button>
-          <button
-            v-if="bloom || draft.rift"
-            type="button"
-            :aria-pressed="draft.rift"
-            @click="draft.rift = !draft.rift"
-          >
-            rift bloom
-          </button>
-        </div>
-        <label v-if="draft.cap" class="room">
-          <input v-model.number="draft.capN" type="number" min="1" max="40" />
-          <span>soft cap. over it, lift up to 2 older stones, or leave them.</span>
-        </label>
-        <label v-if="draft.mode === 'together'" class="room">
-          <input
-            v-model="draft.room"
-            maxlength="24"
-            placeholder="room name"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <span>the room keeps the game. blank makes a short code.</span>
-        </label>
-        <div v-if="draft.mode === 'practice'" class="choice">
-          <button
-            v-for="side in ['X', 'O', 'Y', 'Z'].slice(0, draft.players)"
-            :key="side"
-            type="button"
-            :aria-pressed="draft.human === side"
-            @click="draft.human = side"
-          >
-            play {{ side }}
-          </button>
-        </div>
-        <button type="submit" class="start">start</button>
-      </form>
 
       <div v-if="showRules" class="rules">
         <p>
@@ -509,6 +378,121 @@
         <button type="button" aria-label="fit board" @click="fit">fit</button>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showSetup" class="setup-shade" @click.self="showSetup = false">
+        <form class="setup-pop" @submit.prevent="startGame">
+          <div class="pop-bar">
+            <span>new game</span>
+            <button type="button" @click="showSetup = false">close</button>
+          </div>
+          <div class="choice" @mouseleave="variantHint = ''">
+            <button
+              v-for="grid in grids"
+              :key="grid.id"
+              type="button"
+              :aria-pressed="draft.grid === grid.id"
+              @mouseenter="variantHint = grid.note"
+              @focus="variantHint = grid.note"
+              @click="draft.grid = grid.id"
+            >
+              {{ grid.label }}
+            </button>
+            <button
+              v-for="count in [2, 3, 4]"
+              :key="count"
+              type="button"
+              :aria-pressed="draft.players === count"
+              @mouseenter="variantHint = playerNote(count)"
+              @focus="variantHint = playerNote(count)"
+              @click="setPlayers(count)"
+            >
+              {{ count }} players
+            </button>
+          </div>
+          <div class="choice" @mouseleave="variantHint = ''">
+            <button
+              v-for="rule in ruleSwitches"
+              :key="rule.id"
+              type="button"
+              :aria-pressed="rule.on"
+              @mouseenter="variantHint = rule.note"
+              @focus="variantHint = rule.note"
+              @click="rule.toggle()"
+            >
+              {{ rule.label }}
+            </button>
+          </div>
+          <p class="hint">{{ variantHint || "hover a variant." }}</p>
+          <div class="choice">
+            <button
+              type="button"
+              :aria-pressed="draft.mode === 'hotseat'"
+              @click="draft.mode = 'hotseat'"
+            >
+              two players
+            </button>
+            <button
+              type="button"
+              :aria-pressed="draft.mode === 'practice'"
+              @click="draft.mode = 'practice'"
+            >
+              practice
+            </button>
+            <button
+              type="button"
+              :aria-pressed="draft.mode === 'together'"
+              @click="draft.mode = 'together'"
+            >
+              together
+            </button>
+          </div>
+          <div class="choice">
+            <button
+              v-for="minutes in [0, 5, 10]"
+              :key="minutes"
+              type="button"
+              :aria-pressed="draft.minutes === minutes"
+              @click="draft.minutes = minutes"
+            >
+              {{ minutes === 0 ? "no clock" : minutes + " min" }}
+            </button>
+            <button type="button" :aria-pressed="draft.size === 8" @click="draft.size = 8">
+              base 8
+            </button>
+            <button type="button" :aria-pressed="draft.size === 13" @click="draft.size = 13">
+              base 13
+            </button>
+          </div>
+          <label v-if="draft.cap" class="room">
+            <input v-model.number="draft.capN" type="number" min="1" max="40" />
+            <span>soft cap. over it, lift up to 2 older stones, or leave them.</span>
+          </label>
+          <label v-if="draft.mode === 'together'" class="room">
+            <input
+              v-model="draft.room"
+              maxlength="24"
+              placeholder="room name"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span>the room keeps the game. blank makes a short code.</span>
+          </label>
+          <div v-if="draft.mode === 'practice'" class="choice">
+            <button
+              v-for="side in ['X', 'O', 'Y', 'Z'].slice(0, draft.players)"
+              :key="side"
+              type="button"
+              :aria-pressed="draft.human === side"
+              @click="draft.human = side"
+            >
+              play {{ side }}
+            </button>
+          </div>
+          <button type="submit" class="start">start</button>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -761,6 +745,88 @@ const draft = reactive({
   orbit: openedRules.orbit,
   meteor: openedRules.meteor,
   rift: openedRules.rift,
+});
+
+const variantHint = ref("");
+
+const grids = [
+  { id: "hex", label: "hex", note: "hex tiles. six in a line." },
+  { id: "tri", label: "triangle", note: "place inside triangles. the other rules stay." },
+  { id: "sq", label: "square", note: "place inside squares. the other rules stay." },
+  { id: "oct", label: "octagon", note: "place inside octagons and the small diamonds." },
+];
+
+function playerNote(count) {
+  if (count === 3) return "three players, X, O, and Y. same turns.";
+  if (count === 4) return "four players, X, O, Y, and Z. same turns.";
+  return "two players, X and O.";
+}
+
+const ruleSwitches = computed(() => {
+  const list = [
+    {
+      id: "duck",
+      label: "duck",
+      note: "after your stones, move the duck. no one plays on it.",
+      on: draft.duck && !draft.king,
+      toggle: () => setDuck(!draft.duck),
+    },
+    {
+      id: "king",
+      label: "king duck",
+      note: "the ring around the duck is closed. stones there do not count.",
+      on: draft.king,
+      toggle: () => setKing(!draft.king),
+    },
+    {
+      id: "egyptian",
+      label: "egyptian",
+      note: "soft cap. over it, lift up to 2 older stones, or leave them.",
+      on: draft.cap,
+      toggle: () => {
+        draft.cap = !draft.cap;
+      },
+    },
+    {
+      id: "echo",
+      label: "echo",
+      note: "copies a move onto its mirror after two full turns. never lifts a stone.",
+      on: draft.echo,
+      toggle: () => {
+        draft.echo = !draft.echo;
+      },
+    },
+    {
+      id: "orbit",
+      label: "orbit",
+      note: "every stone turns one step around the center. the duck stays.",
+      on: draft.orbit,
+      toggle: () => {
+        draft.orbit = !draft.orbit;
+      },
+    },
+    {
+      id: "meteor",
+      label: "meteor",
+      note: "every third turn, the farthest stones are cleared.",
+      on: draft.meteor,
+      toggle: () => {
+        draft.meteor = !draft.meteor;
+      },
+    },
+  ];
+  if (bloom.value || draft.rift) {
+    list.push({
+      id: "rift",
+      label: "rift bloom",
+      note: "shimmering cells move. a ghost grows on the mirror, then becomes a stone if two of yours touch it.",
+      on: draft.rift,
+      toggle: () => {
+        draft.rift = !draft.rift;
+      },
+    });
+  }
+  return list;
 });
 
 const position = computed(() => {
@@ -1175,6 +1241,7 @@ function guided(key) {
 }
 
 function toggleSetup() {
+  variantHint.value = "";
   showSetup.value = !showSetup.value;
   if (showSetup.value) {
     draft.size = size.value;
@@ -2425,8 +2492,50 @@ button:focus-visible {
   display: grid;
   gap: 8px;
   margin-bottom: 12px;
-  max-height: 46vh;
+}
+
+.setup-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.setup-pop {
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 48px);
+  min-height: 0;
   overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 22px 24px;
+  border: 1px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.pop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+}
+
+.setup-pop .choice button {
+  flex: 0 1 auto;
+}
+
+.hint {
+  margin: 0;
+  min-height: 2.8em;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .rules {
@@ -2886,6 +2995,14 @@ button:focus-visible {
   .hexo {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(240px, 1fr) minmax(168px, 42dvh);
+  }
+
+  .setup-shade {
+    padding: 12px;
+  }
+
+  .setup-pop {
+    max-height: calc(100dvh - 24px);
   }
 
   .panel {
