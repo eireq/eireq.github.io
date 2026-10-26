@@ -3,7 +3,7 @@
     <aside class="panel">
       <header class="top">
         <div>
-          <h1>hex chess</h1>
+          <h1>hex chess (may not work)</h1>
           <p class="sub">glinski · 91 cells · three bishops</p>
         </div>
         <router-link class="back" to="/games">games</router-link>

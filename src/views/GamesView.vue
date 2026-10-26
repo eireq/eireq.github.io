@@ -23,7 +23,7 @@
       </router-link>
 
       <router-link class="game" to="/games/hexchess">
-        <h2>{{ t("games.hexchess") }}</h2>
+        <h2>{{ t("games.hexchess") }} (may not work)</h2>
         <p>{{ t("games.hexchessText") }}</p>
       </router-link>
 
