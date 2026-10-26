@@ -3,7 +3,7 @@
     <aside class="panel">
       <header class="top">
         <div>
-          <h1>hex chess (may not work)</h1>
+          <h1>hex chess</h1>
           <p class="sub">glinski · 91 cells · three bishops</p>
         </div>
         <router-link class="back" to="/games">games</router-link>
@@ -115,11 +115,12 @@
     <div
       ref="viewport"
       class="viewport"
+      tabindex="-1"
       :class="{ 'is-drag': dragging, 'can-play': canPlay }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
+      @pointercancel="onPointerCancel"
       @wheel.prevent="onWheel"
       @contextmenu.prevent
     >
@@ -132,6 +133,7 @@
           :height="boardBox.height"
           role="img"
           aria-label="hexagonal chess board"
+          draggable="false"
           @click="onBoardClick"
           @pointerover="onOver"
           @pointerleave="hoverIndex = null"
@@ -787,14 +789,37 @@ const pointers = new Map();
 let drag = null;
 let pinch = null;
 let suppressClick = false;
+const PAN_DIST = 10;
+
+function cellKeyAt(x, y) {
+  const hit = document.elementFromPoint(x, y);
+  return hit?.closest?.("[data-cell]")?.getAttribute("data-cell") || null;
+}
+
+function cellKeyFromEvent(event) {
+  const direct = event.target?.closest?.("[data-cell]")?.getAttribute("data-cell");
+  return direct || cellKeyAt(event.clientX, event.clientY);
+}
+
+function ownPiece(key) {
+  const cell = key ? cellByKey[key] : null;
+  if (!cell || !canPlay.value) return false;
+  const piece = shown.value.board[cell.index];
+  return Boolean(piece && piece.color === shown.value.turn);
+}
 
 function onPointerDown(event) {
   if (event.button != null && event.button !== 0) return;
-  if (event.target instanceof Element && event.target.closest("button")) return;
+  if (event.target instanceof Element && event.target.closest("button, a")) return;
+  event.preventDefault();
+  viewport.value?.focus({ preventScroll: true });
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-  viewport.value?.setPointerCapture?.(event.pointerId);
+  try {
+    viewport.value?.setPointerCapture?.(event.pointerId);
+  } catch {
+    // the pointer can already be gone in some browsers
+  }
   if (pointers.size === 1) {
-    const key = event.target?.closest?.("[data-cell]")?.getAttribute("data-cell");
     drag = {
       id: event.pointerId,
       x: event.clientX,
@@ -802,7 +827,8 @@ function onPointerDown(event) {
       panX: panX.value,
       panY: panY.value,
       moved: false,
-      cell: key || null,
+      panning: false,
+      cell: cellKeyFromEvent(event),
     };
     pinch = null;
   } else if (pointers.size >= 2) {
@@ -849,23 +875,43 @@ function onPointerMove(event) {
   if (!drag || drag.id !== event.pointerId) return;
   const dx = event.clientX - drag.x;
   const dy = event.clientY - drag.y;
-  if (!drag.moved && dx * dx + dy * dy > 36) {
+  if (!drag.moved && dx * dx + dy * dy > PAN_DIST * PAN_DIST) {
     drag.moved = true;
-    dragging.value = true;
-    hoverIndex.value = null;
+    drag.panning = !ownPiece(drag.cell);
+    if (drag.panning) {
+      dragging.value = true;
+      hoverIndex.value = null;
+    } else if (drag.cell && cellByKey[drag.cell]) {
+      selected.value = cellByKey[drag.cell].index;
+      promo.value = null;
+    }
   }
-  if (drag.moved) {
+  if (drag.panning) {
     panX.value = drag.panX + dx;
     panY.value = drag.panY + dy;
     userAdjusted = true;
+    return;
+  }
+  if (drag.moved) {
+    const key = cellKeyAt(event.clientX, event.clientY);
+    hoverIndex.value = key && cellByKey[key] ? cellByKey[key].index : null;
   }
 }
 
-function onPointerUp(event) {
+function releasePointer(event, play) {
   const ended = drag && drag.id === event.pointerId ? drag : null;
   pointers.delete(event.pointerId);
   if (pointers.size < 2) pinch = null;
-  if (ended?.moved) {
+  if (ended && play && !ended.panning) {
+    suppressClick = true;
+    const toKey = cellKeyAt(event.clientX, event.clientY) || ended.cell;
+    const releasedOnStart = Boolean(ended.moved && toKey && toKey === ended.cell);
+    const cell = !releasedOnStart && toKey ? cellByKey[toKey] : null;
+    if (cell) onCell(cell.index);
+    window.setTimeout(() => {
+      suppressClick = false;
+    }, 0);
+  } else if (ended?.moved) {
     suppressClick = true;
     window.setTimeout(() => {
       suppressClick = false;
@@ -884,10 +930,19 @@ function onPointerUp(event) {
       panX: panX.value,
       panY: panY.value,
       moved: true,
+      panning: true,
       cell: null,
     };
     dragging.value = true;
   }
+}
+
+function onPointerUp(event) {
+  releasePointer(event, true);
+}
+
+function onPointerCancel(event) {
+  releasePointer(event, false);
 }
 
 function onBoardClick(event) {
@@ -1214,7 +1269,13 @@ button:focus-visible {
   overflow: hidden;
   touch-action: none;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
   background: radial-gradient(ellipse at center, #121212 0%, #000 68%);
+}
+
+.viewport:focus {
+  outline: none;
 }
 
 .viewport.is-drag,
@@ -1237,6 +1298,9 @@ button:focus-visible {
 .board {
   display: block;
   max-width: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .board.flipped {
@@ -1297,9 +1361,12 @@ button:focus-visible {
 }
 
 .dots,
+.dots *,
 .pieces,
+.pieces *,
 .last-ring,
-.coords {
+.coords,
+.coords * {
   pointer-events: none;
 }
 
