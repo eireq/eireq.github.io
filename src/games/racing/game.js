@@ -442,6 +442,11 @@ export function createGame() {
       state.paused = !state.paused;
       state.lastTime = performance.now();
     },
+    abandon() {
+      state.running = false;
+      state.paused = false;
+      cancelAnimationFrame(raf);
+    },
     getState() {
       return { ...state, player: { ...state.player } };
     },

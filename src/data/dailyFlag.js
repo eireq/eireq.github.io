@@ -65,6 +65,8 @@ export function recordDailyGuess({
     lastWin = dateKey;
   } else if (guesses.length >= maxGuesses) {
     failed = true;
+    streak = 0;
+    lastWin = null;
   }
 
   const next = {
@@ -72,8 +74,8 @@ export function recordDailyGuess({
     guesses,
     solved,
     failed,
-    streak: solved ? streak : current.streak || 0,
-    lastWin: solved ? lastWin : current.lastWin || null,
+    streak: solved || failed ? streak : current.streak || 0,
+    lastWin: solved || failed ? lastWin : current.lastWin || null,
     answer: solved || failed ? answerName : null,
   };
 

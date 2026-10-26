@@ -6,7 +6,7 @@ an 8-bit arcade driving game for github pages.
 
 - 4-lane endless procedural road
 - pixel-art canvas rendering
-- keyboard controls: arrow keys or wasd
+- keyboard controls: left and right arrows, or a and d. p pauses, esc leaves the run
 - gradually increasing speed
 - traffic that becomes slightly more challenging
 - distance + overtakes scoring

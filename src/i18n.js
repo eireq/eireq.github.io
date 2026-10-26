@@ -652,6 +652,10 @@ const messages = {
       racing: "racing",
       flagQuiz: "flag quiz",
       moreProjects: "you can find more of my projects on my",
+      doulant: "doulant",
+      doulantText:
+        "doulantese elections are the discord union assembly ballot. the page keeps the parties, the votes, and the seats from the last count.",
+      doulantLink: "election results",
       currently: "currently",
       currentlyText:
         "currently, i am working on this website and also on the arcade game.",

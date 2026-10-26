@@ -354,13 +354,16 @@ function submitAnswer() {
     return;
   }
 
-  const correct = isCorrectFlagAnswer(answer.value, secret.record);
+  const guess = answer.value.trim();
+  if (!guess) return;
+
+  const correct = isCorrectFlagAnswer(guess, secret.record);
   if (correct) score.value += 1;
   else {
     wrongAnswers.value.push({
       name: secret.name,
       image: secret.image,
-      answer: answer.value.trim(),
+      answer: guess,
     });
   }
 

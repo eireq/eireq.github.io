@@ -166,6 +166,11 @@ export function normalizeAnswer(value) {
     .trim();
 }
 
+const SHORT_ALIASES = {
+  "united states": ["usa", "u s a", "us", "u s"],
+  "united kingdom": ["uk", "u k"],
+};
+
 export function answersForFlag(flag) {
   const name = shortName(flag);
   const full = flag?.name || "";
@@ -177,6 +182,11 @@ export function answersForFlag(flag) {
 
   if (/^the /i.test(name)) {
     answers.add(name.replace(/^the /i, ""));
+  }
+
+  const aliases = SHORT_ALIASES[normalizeAnswer(name)];
+  if (aliases) {
+    for (const alias of aliases) answers.add(alias);
   }
 
   return [...answers].filter(Boolean);

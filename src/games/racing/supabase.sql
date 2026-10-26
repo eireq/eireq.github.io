@@ -44,6 +44,9 @@ create index if not exists flag_quiz_scores_mode_rank_idx
 create index if not exists flag_quiz_scores_rank_idx
   on public.flag_quiz_scores (percentage desc, score desc, created_at asc);
 
+create index if not exists flag_quiz_scores_mode_score_idx
+  on public.flag_quiz_scores (mode, score desc, percentage desc, created_at asc);
+
 alter table public.scores enable row level security;
 alter table public.flag_quiz_scores enable row level security;
 
@@ -94,4 +97,34 @@ with check (
 
 -- no update/delete policy on purpose.
 -- players can submit scores and read the leaderboard,
--- but the browser cannot edit or delete existing scores.
+-- but the browser cannot edit or delete existing rows.
+
+-- one row per name: best correct-count, then percentage, then earliest run.
+-- the site calls this first and falls back to a client sort if it is missing.
+create or replace function public.flag_quiz_best(p_mode text, p_limit integer)
+returns table (
+  id bigint,
+  name text,
+  score integer,
+  total integer,
+  percentage integer,
+  created_at timestamptz
+)
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select best.id, best.name, best.score, best.total, best.percentage, best.created_at
+  from (
+    select distinct on (lower(btrim(name)))
+      id, name, score, total, percentage, created_at
+    from public.flag_quiz_scores
+    where mode = p_mode
+    order by lower(btrim(name)), score desc, percentage desc, created_at asc
+  ) as best
+  order by best.score desc, best.percentage desc, best.created_at asc
+  limit least(greatest(coalesce(p_limit, 50), 1), 50);
+$$;
+
+grant execute on function public.flag_quiz_best(text, integer) to anon, authenticated;

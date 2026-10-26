@@ -7,6 +7,7 @@ import {
   findWins,
   place,
   undo,
+  winSummary,
 } from "./logic.js";
 
 function blankBoard() {
@@ -222,4 +223,16 @@ test("undo walks the last ring back, including after a win", () => {
   assert.equal(back.winner, null);
   assert.equal(back.turn, "blue");
   assert.equal(back.board[0][2][2], null);
+});
+
+test("a win status names every line that finished together", () => {
+  assert.equal(winSummary([{ type: "same", size: 2 }]), "three large rings in a row.");
+  assert.equal(
+    winSummary([
+      { type: "same", size: 0 },
+      { type: "order", rising: true },
+      { type: "stack" },
+    ]),
+    "three small rings in a row, three in a row, smallest to biggest, and three stacked in one circle.",
+  );
 });

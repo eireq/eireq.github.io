@@ -7,6 +7,25 @@
 export const COLOR_IDS = ["tan", "white", "black", "blue"];
 export const SIZE_NAMES = ["small", "medium", "large"];
 
+export function winPhrase(win) {
+  if (win?.type === "same") {
+    return `three ${SIZE_NAMES[win.size]} rings in a row`;
+  }
+  if (win?.type === "order") {
+    return win.rising
+      ? "three in a row, smallest to biggest"
+      : "three in a row, biggest to smallest";
+  }
+  return "three stacked in one circle";
+}
+
+export function winSummary(wins) {
+  const lines = (Array.isArray(wins) ? wins : []).map(winPhrase);
+  if (lines.length < 2) return lines[0] ? `${lines[0]}.` : "";
+  if (lines.length === 2) return `${lines[0]} and ${lines[1]}.`;
+  return `${lines.slice(0, -1).join(", ")}, and ${lines.at(-1)}.`;
+}
+
 const LINES = [
   [[0, 0], [0, 1], [0, 2]],
   [[1, 0], [1, 1], [1, 2]],

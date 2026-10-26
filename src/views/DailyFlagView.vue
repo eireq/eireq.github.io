@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
   dailyShareText,
   loadDailyProgress,
@@ -91,37 +91,62 @@ import { useI18n } from "../i18n.js";
 const { t } = useI18n();
 
 const maxGuesses = 6;
-const dateKey = utcDateKey();
+const dateKey = ref(utcDateKey());
 const ready = ref(false);
 const flags = ref([]);
 const dailyFlag = ref(null);
 const flagSrc = ref("");
-const progress = ref(loadDailyProgress(dateKey));
+const progress = ref(loadDailyProgress(dateKey.value));
 const guess = ref("");
 const shareLabel = ref("");
+let dayTimer = 0;
 
 const done = computed(
   () => Boolean(progress.value.solved || progress.value.failed),
 );
 
+async function syncDay() {
+  const nextKey = utcDateKey();
+  if (nextKey === dateKey.value && dailyFlag.value) return;
+  const changed = nextKey !== dateKey.value;
+  dateKey.value = nextKey;
+  progress.value = loadDailyProgress(nextKey);
+  if (changed) guess.value = "";
+  dailyFlag.value = pickDailyFlag(flags.value, nextKey);
+  flagSrc.value = dailyFlag.value
+    ? await cachedFlagImageUrl(dailyFlag.value.svgUrl)
+    : "";
+}
+
+function onVisible() {
+  if (document.visibilityState === "visible") void syncDay();
+}
+
 onMounted(async () => {
   flags.value = await loadFlags();
-  dailyFlag.value = pickDailyFlag(flags.value, dateKey);
-  if (dailyFlag.value) {
-    flagSrc.value = await cachedFlagImageUrl(dailyFlag.value.svgUrl);
-  }
-  progress.value = loadDailyProgress(dateKey);
+  await syncDay();
   ready.value = true;
   shareLabel.value = t("dailyFlag.share");
+  dayTimer = window.setInterval(() => {
+    void syncDay();
+  }, 30000);
+  document.addEventListener("visibilitychange", onVisible);
 });
 
-function submitGuess() {
-  if (done.value || !dailyFlag.value) return;
+onUnmounted(() => {
+  window.clearInterval(dayTimer);
+  document.removeEventListener("visibilitychange", onVisible);
+});
+
+async function submitGuess() {
+  const before = dateKey.value;
+  await syncDay();
+  if (dateKey.value !== before || done.value || !dailyFlag.value) return;
   const value = guess.value.trim();
   if (!value) return;
   const correct = isCorrectFlagAnswer(value, dailyFlag.value);
   progress.value = recordDailyGuess({
-    dateKey,
+    dateKey: dateKey.value,
     guess: value,
     correct,
     answerName: shortName(dailyFlag.value),
@@ -132,7 +157,7 @@ function submitGuess() {
 
 async function shareResult() {
   const text = dailyShareText({
-    dateKey,
+    dateKey: dateKey.value,
     guesses: progress.value.guesses,
     solved: progress.value.solved,
     flag: dailyFlag.value,

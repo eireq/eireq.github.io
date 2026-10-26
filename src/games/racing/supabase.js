@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { rankFlagQuizScores } from "../../data/flagQuizRanks.js";
 
 export function createDb() {
   const db = {
@@ -150,23 +151,43 @@ export function createDb() {
         };
       }
 
+      const modes = [
+        "countries",
+        "territorial",
+        "historical",
+        "all",
+        "subdivisions",
+        "organizations",
+      ];
+      const safeMode = modes.includes(mode) ? mode : "countries";
+      const cap = Math.max(1, Math.min(50, Math.floor(limit) || 50));
+
+      const rpc = await this.client.rpc("flag_quiz_best", {
+        p_mode: safeMode,
+        p_limit: cap,
+      });
+
+      if (!rpc.error && Array.isArray(rpc.data)) {
+        return {
+          ok: true,
+          rows: rpc.data,
+        };
+      }
+
       let query = this.client
         .from("flag_quiz_scores")
         .select("id,name,score,total,percentage,created_at")
-        .order("percentage", {
+        .eq("mode", safeMode)
+        .order("score", {
           ascending: false,
         })
-        .order("score", {
+        .order("percentage", {
           ascending: false,
         })
         .order("created_at", {
           ascending: true,
         })
-        .limit(limit);
-
-      if (["countries", "territorial", "historical", "all", "subdivisions", "organizations"].includes(mode)) {
-        query = query.eq("mode", mode);
-      }
+        .limit(1000);
 
       const { data, error } = await query;
 
@@ -180,7 +201,7 @@ export function createDb() {
 
       return {
         ok: true,
-        rows: data || [],
+        rows: rankFlagQuizScores(data || [], cap),
       };
     },
   };

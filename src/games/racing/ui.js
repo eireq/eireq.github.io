@@ -9,6 +9,7 @@ export function createUI() {
 
   let pendingResult = null;
   let leaderboardPeriod = "global";
+  let leaderboardFrom = "menu";
 
   const $ = (id) => document.getElementById(id);
 
@@ -40,7 +41,30 @@ export function createUI() {
     refreshName();
   }
 
+  function goMenu() {
+    window.audio.click();
+    window.audio.stopGame();
+    window.game?.abandon?.();
+    show("menu");
+    refreshName();
+    window.audio.menu();
+  }
+
+  function closeLeaderboard() {
+    window.audio.click();
+    show(leaderboardFrom);
+    if (leaderboardFrom === "menu") {
+      refreshName();
+      window.audio.menu();
+    }
+  }
+
   async function openLeaderboard(period = leaderboardPeriod) {
+    if (!screens.leaderboard.classList.contains("active")) {
+      leaderboardFrom = screens.gameOver.classList.contains("active")
+        ? "gameOver"
+        : "menu";
+    }
     leaderboardPeriod = period;
     show("leaderboard");
     $("globalTab").classList.toggle("active", period === "global");
@@ -148,13 +172,8 @@ export function createUI() {
     window.game.start();
   };
 
-  $("menuBtn").onclick = () => {
-    window.audio.click();
-    window.audio.stopGame();
-    show("menu");
-    refreshName();
-    window.audio.menu();
-  };
+  $("menuBtn").onclick = goMenu;
+  $("quitBtn").onclick = goMenu;
 
   $("scoresBtn").onclick = () => {
     window.audio.click();
@@ -166,11 +185,7 @@ export function createUI() {
     openLeaderboard("global");
   };
 
-  $("closeScoresBtn").onclick = () => {
-    window.audio.click();
-    show("menu");
-    window.audio.menu();
-  };
+  $("closeScoresBtn").onclick = closeLeaderboard;
 
   $("globalTab").onclick = () => openLeaderboard("global");
   $("weeklyTab").onclick = () => openLeaderboard("weekly");
@@ -206,6 +221,23 @@ export function createUI() {
     }
   });
 
+  function onUiKey(event) {
+    if (event.key !== "Escape") return;
+    const tag = event.target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (screens.game.classList.contains("active")) {
+      event.preventDefault();
+      goMenu();
+      return;
+    }
+    if (screens.leaderboard.classList.contains("active")) {
+      event.preventDefault();
+      closeLeaderboard();
+    }
+  }
+
+  window.addEventListener("keydown", onUiKey);
+
   refreshName();
   window.audio.menu();
 
@@ -214,6 +246,9 @@ export function createUI() {
     gameOver,
     updateHud,
     playerName,
+    destroy() {
+      window.removeEventListener("keydown", onUiKey);
+    },
   };
 
   window.ui = ui;

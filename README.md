@@ -44,7 +44,7 @@ Lane Runner, the flag quiz, HeXO, hex chess, and jWorld hide the site header and
 
 A flag page reads colors out of the SVG, shows adoption and cancellation dates, proportions, and designer when those fields exist, pulls a Wikipedia summary, and lists similar flags. Compare puts two records next to each other and scores how close they are.
 
-**Daily flag** is one shared country flag per UTC day. Six guesses. The streak stays in this browser. The result can be copied.
+**Daily flag** is one shared country flag per UTC day. Six guesses. The streak stays in this browser, and a missed puzzle sets it to 0. A tab left open past UTC midnight loads that day's flag. The result can be copied.
 
 **Flag of the week** is picked from a short editorial list (or the country pool if that list misses) and shown on the home page, with links into the record and compare.
 
@@ -57,7 +57,7 @@ A flag page reads colors out of the SVG, shows adoption and cancellation dates, 
 - organizations
 - all flags
 
-You pick a length, type names, then get a breakdown of the ones you missed. Scores go to a per-mode Supabase leaderboard. Opening devtools during a run voids that run. The player name is shared with Lane Runner and stored locally (`eirePlayerName`).
+You pick a length, type names, then get a breakdown of the ones you missed. `USA` and `UK` count for the United States and the United Kingdom. A blank answer is ignored. Scores go to a per-mode Supabase leaderboard ranked by correct answers, then percentage, with one best run per name. Opening devtools during a run voids that run. The player name is shared with Lane Runner and stored locally (`eirePlayerName`).
 
 **Random country** uses the same pools and links through to the flag record.
 
@@ -65,7 +65,7 @@ You pick a length, type names, then get a breakdown of the ones you missed. Scor
 
 ### Lane Runner — `/games/racing`
 
-Endless 4-lane dodge game on a canvas. Arrow keys or WASD, `p` to pause. Score mixes distance, overtakes, and top speed. Global and weekly top-50 leaderboards. Optional menu, game, and click audio live in `public/games/racing/assets/`. Setup notes and the leaderboard caveats are in [`src/games/racing/README.md`](src/games/racing/README.md).
+Endless 4-lane dodge game on a canvas. Left and right arrows, or A and D, change lanes. `p` pauses, and Esc or the menu button leaves a run. Score mixes distance, overtakes, and top speed. Global and weekly top-50 leaderboards. Optional menu, game, and click audio live in `public/games/racing/assets/`. Setup notes and the leaderboard caveats are in [`src/games/racing/README.md`](src/games/racing/README.md).
 
 ### Otrio — `/games/otrio`
 
@@ -73,13 +73,15 @@ Pass-and-play ring tic-tac-toe. Each of the nine circles holds a small, medium, 
 
 ### HeXO — `/games/hexo`
 
-Hexagonal tic-tac-toe. The first stone goes on the center. After that each turn is two stones, and six in a line wins. Boards are base 8 or base 13, with no clock, 5 minutes, or 10.
+Hexagonal tic-tac-toe. X places one stone on the center (h8 on base 8, m13 on base 13). Every later turn is two stones, and O takes the first of those. Six in a line on any of the three axes wins. Check means the side to move can finish a line with the stones still left this turn. The side to move may resign. Boards are base 8 or base 13, with no clock, 5 minutes, or 10. A clock runs only on the turn. Type a square such as `g7` to play it.
 
-- **Two players** on one screen.
-- **Practice** against a bot, as X or O.
-- **Together** shares one game between two browsers. The room name in the invite link is the only secret. Chat sits under the move list. Rematch swaps sides.
+Two, three, or four players (X, O, Y, and Z) take the same kind of turn. Grids are hex, triangle, square, or octagon, and the octagon also uses the diamonds. Optional rules are duck, king duck, an Egyptian soft cap, echo, orbit, and meteor.
 
-The board can be flipped, guide lines toggled, and a game undone (except in together). A replay is written into the URL, and the score line can be copied.
+- **On one screen**, two to four players.
+- **Practice** against a bot, as any side.
+- **Together** shares one game between browsers. The room name in the invite link is the only secret, and it keeps the board size. You start as X. Chat sits under the move list. Rematch swaps sides. A third or fourth player joins with `s=Y` or `s=Z` on the invite.
+
+The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a game undone (except in together). The move list can be stepped through. A replay is written into the URL, and the score line can be copied.
 
 ### Go — `/games/go`
 
@@ -189,6 +191,8 @@ Run these in the Supabase SQL editor:
 | Lane Runner and flag-quiz scores | `src/games/racing/supabase.sql` |
 | KHT bracket | `src/games/kht/supabase.sql` |
 | jWorld | `src/jworld/supabase.sql`, then `src/jworld/supabase_improve.sql` |
+
+The flag-quiz leaderboard reads `flag_quiz_best` from the racing script (best correct count, then percentage, one row per name). If the tables already exist from an older run, run the function at the bottom of that script again. Until then the page sorts the latest 1,000 rows the same way in the browser.
 
 After the jWorld base script:
 

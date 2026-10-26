@@ -271,6 +271,7 @@ import {
   createMatch,
   place,
   undo,
+  winSummary,
 } from "@/games/otrio/logic.js";
 
 const PALETTE = {
@@ -322,17 +323,7 @@ const blurb = computed(() => {
 const statusText = computed(() => {
   const current = game.value;
   if (current.winner) {
-    const win = current.wins[0];
-    const name = who(current.winner);
-    if (win?.type === "same") {
-      return `${name} wins. three ${SIZE_NAMES[win.size]} rings in a row.`;
-    }
-    if (win?.type === "order") {
-      return win.rising
-        ? `${name} wins. three in a row, smallest to biggest.`
-        : `${name} wins. three in a row, biggest to smallest.`;
-    }
-    return `${name} wins. three stacked in one circle.`;
+    return `${who(current.winner)} wins. ${winSummary(current.wins)}`;
   }
   if (current.draw) return "draw. everybody wins this one.";
   const name = `${current.turn}'s turn · player ${current.owners[current.turn] + 1}`;
@@ -386,20 +377,33 @@ function restart() {
   hover.value = null;
 }
 
+function gameInProgress() {
+  const current = game.value;
+  return current.history.length > 0 && !current.winner && !current.draw;
+}
+
+function confirmRestart() {
+  if (!gameInProgress()) return true;
+  return confirm("throw away this game?");
+}
+
 function setPlayers(count) {
   if (players.value === count) return;
+  if (!confirmRestart()) return;
   players.value = count;
   restart();
 }
 
 function setOut(color) {
   if (sittingOut.value === color) return;
+  if (!confirmRestart()) return;
   sittingOut.value = color;
   restart();
 }
 
 function setStart(color) {
   if (start.value === color) return;
+  if (!confirmRestart()) return;
   start.value = color;
   restart();
 }

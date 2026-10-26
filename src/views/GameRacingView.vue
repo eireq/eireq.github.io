@@ -14,7 +14,7 @@
           </div>
 
           <p class="hint">
-            arrow keys / wasd to change lanes (keyboard required)
+            left / right or a / d to change lanes. p pauses. esc leaves the run.
           </p>
           <p id="savedName" class="saved-name"></p>
           <p class="hint"><router-link to="/games">← games</router-link></p>
@@ -22,21 +22,24 @@
       </section>
 
       <section id="game" class="screen">
-        <canvas
-          id="gameCanvas"
-          width="480"
-          height="720"
-          aria-label="lane runner game"
-        ></canvas>
+        <div class="stage">
+          <canvas
+            id="gameCanvas"
+            width="480"
+            height="720"
+            aria-label="lane runner game"
+          ></canvas>
 
-        <div class="hud">
-          <div><span>score</span><strong id="scoreHud">0</strong></div>
-          <div><span>speed</span><strong id="speedHud">0</strong></div>
-          <div><span>distance</span><strong id="distanceHud">0 m</strong></div>
-          <div><span>overtakes</span><strong id="overtakeHud">0</strong></div>
+          <div class="hud">
+            <div><span>score</span><strong id="scoreHud">0</strong></div>
+            <div><span>speed</span><strong id="speedHud">0</strong></div>
+            <div><span>distance</span><strong id="distanceHud">0 m</strong></div>
+            <div><span>overtakes</span><strong id="overtakeHud">0</strong></div>
+          </div>
+
+          <button id="quitBtn" class="quit-btn" type="button">menu</button>
+          <div id="pauseHint" class="pause-hint">p = pause · esc = menu</div>
         </div>
-
-        <div id="pauseHint" class="pause-hint">p = pause</div>
       </section>
 
       <section id="gameOver" class="screen overlay-screen">

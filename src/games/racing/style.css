@@ -180,10 +180,17 @@ body.lane-runner-page {
   place-items: center;
 }
 
-.lane-runner #gameCanvas {
-  width: min(100vw, 480px);
-  height: 100vh;
+.lane-runner .stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 2 / 3), 480px);
+  aspect-ratio: 2 / 3;
   max-height: 100vh;
+}
+
+.lane-runner #gameCanvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   touch-action: pan-y;
   user-select: none;
   image-rendering: pixelated;
@@ -197,7 +204,7 @@ body.lane-runner-page {
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(450px, 94vw);
+  width: min(450px, 94%);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 5px;
@@ -219,6 +226,15 @@ body.lane-runner-page {
 
 .lane-runner .hud strong {
   font-size: 9px;
+}
+
+.lane-runner .quit-btn {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  padding: 10px 12px;
+  font-size: 8px;
 }
 
 .lane-runner .pause-hint {

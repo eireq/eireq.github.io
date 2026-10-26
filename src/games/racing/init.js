@@ -7,9 +7,10 @@ export function initRacing() {
   ensureGameDb();
   createAudio();
   createGame();
-  createUI();
+  const ui = createUI();
 
   return () => {
+    ui?.destroy?.();
     window.audio?.stopMenu?.();
     window.audio?.stopGame?.();
     window.game?.destroy?.();

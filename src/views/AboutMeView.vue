@@ -38,6 +38,12 @@
         <a href="https://github.com/eireq" target="_blank">github</a>.
       </p>
 
+      <h2>{{ t("about.doulant") }}</h2>
+      <p>
+        {{ t("about.doulantText") }}
+        <router-link to="/elections">{{ t("about.doulantLink") }}</router-link>.
+      </p>
+
       <h2>{{ t("about.currently") }}</h2>
       <p>{{ t("about.currentlyText") }}</p>
       <p>{{ t("about.planning") }}</p>
