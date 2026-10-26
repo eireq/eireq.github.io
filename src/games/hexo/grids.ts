@@ -227,13 +227,13 @@ function triCell(
 function octagonBoard(size: BoardSize): GameBoard {
   const n = size === 8 ? 9 : 13;
   const step = 40;
-  const rad = 16;
   const mid = (n - 1) / 2;
   const cells: GameCell[] = [];
   const at = (col: number, row: number) => ({
     x: (col - mid) * step,
     y: (mid - row) * step,
   });
+  const radius = step / 2 / Math.cos(Math.PI / 8);
   for (let col = 0; col < n; col += 1) {
     for (let row = 0; row < n; row += 1) {
       const { x, y } = at(col, row);
@@ -247,47 +247,56 @@ function octagonBoard(size: BoardSize): GameBoard {
         x,
         y,
         m: 7,
-        points: polygon(x, y, rad, 8, Math.PI / 8),
+        points: polygon(x, y, radius, 8, Math.PI / 8),
       });
     }
   }
+  const reach = (step / 2) * (2 - Math.SQRT2);
   for (let col = 0; col < n - 1; col += 1) {
-    for (let row = 0; row < n; row += 1) {
-      const left = at(col, row);
-      const right = at(col + 1, row);
-      cells.push(diamondCell((left.x + right.x) / 2, (left.y + right.y) / 2, true, col, row));
-    }
-  }
-  for (let col = 0; col < n; col += 1) {
     for (let row = 0; row < n - 1; row += 1) {
-      const top = at(col, row + 1);
-      const bottom = at(col, row);
-      cells.push(diamondCell((top.x + bottom.x) / 2, (top.y + bottom.y) / 2, false, col, row));
+      const a = at(col, row);
+      const b = at(col + 1, row + 1);
+      cells.push(cornerDiamond((a.x + b.x) / 2, (a.y + b.y) / 2, reach, col, row));
     }
   }
   nameCells(cells);
-  const touch = nearestTouch(cells, 1.2);
+  const touch = octagonTouch(cells, step);
   return finish("oct", size, closestKey(cells.filter((cell) => cell.s === 0)), "abcdefghijklmnopqrstuvwxyz", 40, n, step, cells, [], walkLines(cells, touch), touch, 90);
 }
 
-function diamondCell(x: number, y: number, horizontal: boolean, col: number, row: number): GameCell {
-  const long = 9;
-  const short = 5;
-  const points = horizontal
-    ? `${x - short},${y} ${x},${y - long} ${x + short},${y} ${x},${y + long}`
-    : `${x},${y - short} ${x + long},${y} ${x},${y + short} ${x - long},${y}`;
+function cornerDiamond(x: number, y: number, reach: number, col: number, row: number): GameCell {
   return {
     letter: "a",
     number: 1,
-    key: horizontal ? `h${col}_${row}` : `v${col}_${row}`,
+    key: `d${col}_${row}`,
     q: col,
     r: row,
-    s: horizontal ? 1 : 2,
+    s: 1,
     x,
     y,
-    m: 3.6,
-    points,
+    m: 4.6,
+    points: `${x},${(y + reach).toFixed(2)} ${(x + reach).toFixed(2)},${y} ${x},${(y - reach).toFixed(2)} ${(x - reach).toFixed(2)},${y}`,
   };
+}
+
+function octagonTouch(cells: GameCell[], step: number): Record<string, string[]> {
+  const touch: Record<string, string[]> = {};
+  for (const cell of cells) touch[cell.key] = [];
+  const link = (a: GameCell, b: GameCell) => {
+    touch[a.key].push(b.key);
+    touch[b.key].push(a.key);
+  };
+  const beside = step / Math.SQRT2;
+  for (let i = 0; i < cells.length; i += 1) {
+    for (let j = i + 1; j < cells.length; j += 1) {
+      const dist = Math.hypot(cells[i].x - cells[j].x, cells[i].y - cells[j].y);
+      const bothOct = cells[i].s === 0 && cells[j].s === 0;
+      const mixed = cells[i].s !== cells[j].s;
+      if (bothOct && Math.abs(dist - step) < 0.01) link(cells[i], cells[j]);
+      if (mixed && Math.abs(dist - beside) < 0.01) link(cells[i], cells[j]);
+    }
+  }
+  return touch;
 }
 
 function finish(
@@ -363,7 +372,7 @@ function frame(board: GameBoard) {
     maxX = Math.max(maxX, x + pad);
     maxY = Math.max(maxY, y + pad);
   };
-  for (const cell of board.cells) include(cell.x, cell.y, board.kind === "tri" ? 16 : 20);
+  for (const cell of board.cells) include(cell.x, cell.y, board.kind === "tri" ? 16 : board.kind === "oct" ? 24 : 20);
   for (const label of board.labels) include(label.x, label.y, 16);
   board.width = maxX - minX;
   board.height = maxY - minY;
