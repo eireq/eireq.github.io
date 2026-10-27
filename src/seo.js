@@ -32,21 +32,20 @@ export const pages = [
     path: "/",
     title: "eire (eireq) — games, flags, and experiments",
     description:
-      "Personal site of eire (eireq), from Slovakia. Daily flag, a 1,700-flag database, browser games, and small web experiments.",
+      "Personal site of eire (eireq), from Slovakia. Go, HeXO, hex chess, Otrio, daily pi, jWorld, and a 1,700-flag database.",
     jsonLd: [website, person],
     fallback: `
       <h1>hey. im eire.</h1>
-      <p>games, a giant flag database, and a few experiments that somehow stayed online. eire (eireq) is from Slovakia.</p>
+      <p>board games, daily pi, a private earth, and a flag pile that somehow stayed online. eire (eireq) is from Slovakia.</p>
       <nav>
         <a href="/me">about me</a>
+        <a href="/games/go">go</a>
+        <a href="/games/otrio">Otrio</a>
+        <a href="/games/hexo">HeXO</a>
+        <a href="/games/hexchess">hex chess</a>
+        <a href="/tools/pi">daily pi</a>
+        <a href="/jworld">jWorld</a>
         <a href="/games">games</a>
-        <a href="/games/daily">daily flag</a>
-        <a href="/flagdb">flag database</a>
-        <a href="/games/flagquiz">flag quiz</a>
-        <a href="/compare">compare flags</a>
-        <a href="/games/racing">lane runner</a>
-        <a href="/jpol">jPol</a>
-        <a href="/tools">tools</a>
         <a href="/contact">contact</a>
       </nav>`,
   },
@@ -60,7 +59,7 @@ export const pages = [
     fallback: `
       <h1>about me.</h1>
       <p>you can call me eire, eireball, eireq, or irelandball. i am not actually irish. i am from slovakia.</p>
-      <p>i code useless websites and website games, and i collect flags. my username on most platforms is eireq.</p>
+      <p>i code useless websites and website games, and i collect flags. recent projects: <a href="/games/go">go</a>, <a href="/games/hexo">HeXO</a>, <a href="/games/hexchess">hex chess</a>, <a href="/games/otrio">Otrio</a>, <a href="/tools/pi">daily pi</a>, and <a href="/jworld">jWorld</a>. my username on most platforms is eireq.</p>
       <p>contact: <a href="mailto:eireball@proton.me">eireball@proton.me</a>. also on <a href="https://github.com/eireq">github</a>.</p>`,
   },
   {

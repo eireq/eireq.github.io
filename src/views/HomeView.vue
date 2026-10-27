@@ -4,11 +4,11 @@
       <h1>{{ t("home.greeting") }}<br />{{ t("home.signature") }}</h1>
       <p class="lead">{{ t("home.lead") }}</p>
       <div class="hero-actions">
-        <RouterLink class="button" to="/games/daily">{{
-          t("home.dailyCta")
+        <RouterLink class="button" to="/games/go">{{
+          t("home.goCta")
         }}</RouterLink>
-        <RouterLink class="button" to="/flagdb">{{
-          t("home.flagDbCta")
+        <RouterLink class="button" to="/games/hexo">{{
+          t("home.hexoCta")
         }}</RouterLink>
         <RouterLink class="button button--ghost" to="/me">{{
           t("home.about")
@@ -75,34 +75,34 @@ const weekImage = ref("");
 
 const features = [
   {
-    to: "/games/daily",
-    title: "home.featDaily",
-    text: "home.featDailyText",
+    to: "/games/go",
+    title: "home.featGo",
+    text: "home.featGoText",
   },
   {
-    to: "/flagdb",
-    title: "home.featDb",
-    text: "home.featDbText",
+    to: "/games/otrio",
+    title: "home.featOtrio",
+    text: "home.featOtrioText",
   },
   {
-    to: "/games/flagquiz",
-    title: "home.featQuiz",
-    text: "home.featQuizText",
+    to: "/games/hexo",
+    title: "home.featHexo",
+    text: "home.featHexoText",
   },
   {
-    to: "/compare",
-    title: "home.featCompare",
-    text: "home.featCompareText",
+    to: "/games/hexchess",
+    title: "home.featHexchess",
+    text: "home.featHexchessText",
   },
   {
-    to: "/games/racing",
-    title: "home.featRacing",
-    text: "home.featRacingText",
+    to: "/tools/pi",
+    title: "home.featPi",
+    text: "home.featPiText",
   },
   {
-    to: "/jpol",
-    title: "home.featJpol",
-    text: "home.featJpolText",
+    to: "/jworld",
+    title: "home.featJworld",
+    text: "home.featJworldText",
   },
 ];
 

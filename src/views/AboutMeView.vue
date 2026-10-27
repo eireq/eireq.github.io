@@ -28,10 +28,12 @@
       <p>{{ t("about.projectsText") }}</p>
       <p>
         {{ t("about.projectsInclude") }}
-        <a href="https://eireq.github.io/rc" target="_blank">{{ t("about.randomCountry") }}</a>,
-        <a href="https://eireq.github.io/modes" target="_blank">{{ t("about.modes") }}</a>,
-        <a href="https://eireq.github.io/games/racing" target="_blank">{{ t("about.racing") }}</a>,
-        {{ t("about.flagQuiz") }}.
+        <RouterLink to="/games/go">{{ t("about.go") }}</RouterLink>,
+        <RouterLink to="/games/hexo">{{ t("about.hexo") }}</RouterLink>,
+        <RouterLink to="/games/hexchess">{{ t("about.hexchess") }}</RouterLink>,
+        <RouterLink to="/games/otrio">{{ t("about.otrio") }}</RouterLink>,
+        <RouterLink to="/tools/pi">{{ t("about.pi") }}</RouterLink>,
+        <RouterLink to="/jworld">{{ t("about.jworld") }}</RouterLink>.
       </p>
       <p>
         {{ t("about.moreProjects") }}
