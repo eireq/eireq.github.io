@@ -1,5 +1,5 @@
 <template>
-  <main class="go">
+  <main ref="shell" class="go" :class="{ screen: full.active }">
     <p class="back"><router-link to="/games">← games</router-link></p>
     <h1>go</h1>
     <p class="intro">baduk. two players, one screen. click a crossing to play.</p>
@@ -36,6 +36,7 @@
           <button v-if="game.phase === 'mark'" type="button" @click="onResume">
             keep playing
           </button>
+          <FullscreenButton :active="full.active" @toggle="full.toggle" />
         </div>
       </div>
 
@@ -192,6 +193,8 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import { useFullscreen } from "@/games/fullscreen.js";
+import FullscreenButton from "@/games/FullscreenButton.vue";
 import {
   BLACK,
   SIZES,
@@ -215,6 +218,8 @@ const NOTES = {
   occupied: "there's already a stone there.",
 };
 
+const shell = ref(null);
+const full = useFullscreen(shell);
 const game = ref(createGame());
 const hover = ref(null);
 const note = ref("");
@@ -465,6 +470,37 @@ main.go {
   padding: 48px 24px 80px;
   align-items: stretch;
   justify-content: flex-start;
+}
+
+main.go.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  overflow: auto;
+  background: #000;
+  padding: 20px 24px 24px;
+}
+
+main.go.screen h1 {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+main.go.screen .intro,
+main.go.screen .blurb {
+  display: none;
+}
+
+main.go.screen .column {
+  max-width: none;
+}
+
+main.go.screen .frame {
+  width: min(100%, 960px, max(720px, calc(100dvh - 310px)));
 }
 
 .back {

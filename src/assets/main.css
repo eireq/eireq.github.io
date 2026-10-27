@@ -13,6 +13,11 @@ body {
   font-family: Arial, sans-serif;
 }
 
+html.game-screen,
+html.game-screen body {
+  overflow: hidden;
+}
+
 .site {
   min-height: 100vh;
   display: flex;

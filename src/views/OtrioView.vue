@@ -1,5 +1,5 @@
 <template>
-  <main class="otrio">
+  <main ref="shell" class="otrio" :class="{ screen: full.active }">
     <p class="back"><router-link to="/games">← games</router-link></p>
     <h1>Otrio</h1>
     <p class="intro">
@@ -105,6 +105,7 @@
           <button type="button" :disabled="!game.history.length" @click="onUndo">
             undo
           </button>
+          <FullscreenButton :active="full.active" @toggle="full.toggle" />
         </div>
       </div>
 
@@ -264,6 +265,8 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import { useFullscreen } from "@/games/fullscreen.js";
+import FullscreenButton from "@/games/FullscreenButton.vue";
 import {
   COLOR_IDS,
   SIZE_NAMES,
@@ -301,6 +304,8 @@ const TRAY = {
 
 const BAYS = ["tan", "white", "blue", "black"];
 
+const shell = ref(null);
+const full = useFullscreen(shell);
 const players = ref(2);
 const sittingOut = ref("tan");
 const start = ref("tan");
@@ -507,6 +512,39 @@ main.otrio {
   padding: 48px 24px 80px;
   align-items: stretch;
   justify-content: flex-start;
+}
+
+main.otrio.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  overflow: auto;
+  background: #000;
+  padding: 20px 24px 24px;
+}
+
+main.otrio.screen h1 {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+main.otrio.screen .intro,
+main.otrio.screen .ways,
+main.otrio.screen .fine,
+main.otrio.screen .blurb {
+  display: none;
+}
+
+main.otrio.screen .column {
+  max-width: 1080px;
+}
+
+main.otrio.screen .field {
+  width: min(100%, 640px);
 }
 
 .back {

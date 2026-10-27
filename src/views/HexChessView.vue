@@ -1,5 +1,5 @@
 <template>
-  <div class="hexchess">
+  <div ref="shell" class="hexchess" :class="{ screen: full.active }">
     <aside class="panel">
       <header class="top">
         <div>
@@ -206,10 +206,11 @@
         <button type="button" aria-label="zoom out" @click="zoomBy(1 / 1.18)">−</button>
         <button type="button" aria-label="zoom in" @click="zoomBy(1.18)">+</button>
         <button type="button" aria-label="fit board" @click="fit">fit</button>
+        <FullscreenButton :active="full.active" @toggle="full.toggle" />
       </div>
     </div>
 
-    <Teleport to="body">
+    <Teleport v-if="shell" :to="shell">
       <div v-if="showSetup" class="setup-shade" @click.self="showSetup = false">
         <form class="setup-pop" @submit.prevent="startGame">
           <div class="pop-bar">
@@ -272,6 +273,8 @@ import {
   rankLabels,
   startPosition,
 } from "@/games/hexchess/logic.js";
+import { useFullscreen } from "@/games/fullscreen.js";
+import FullscreenButton from "@/games/FullscreenButton.vue";
 
 const GLYPH = {
   p: [
@@ -346,6 +349,8 @@ const dragging = ref(false);
 const ready = ref(false);
 const listEl = ref(null);
 const viewport = ref(null);
+const shell = ref(null);
+const full = useFullscreen(shell);
 const panX = ref(0);
 const panY = ref(0);
 const zoom = ref(1);
@@ -998,6 +1003,14 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
+.hexchess.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: auto;
+  height: auto;
+}
+
 .panel {
   display: flex;
   flex-direction: column;
@@ -1417,9 +1430,13 @@ button:focus-visible {
 
 .zoom {
   position: absolute;
+  left: 12px;
   right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-content: flex-end;
   gap: 6px;
 }
 
