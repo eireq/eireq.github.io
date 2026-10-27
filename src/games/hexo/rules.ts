@@ -151,7 +151,7 @@ export function decodeAlt(raw: string): Rules {
   const rules = plainRules();
   if (!raw) return rules;
   for (const part of raw.split("-")) {
-    if (part === "tri" || part === "sq" || part === "oct" || part === "rad") rules.grid = part;
+    if (part === "tri" || part === "sq" || part === "oct" || part === "rad" || part === "pen") rules.grid = part;
     else if (part === "3") rules.players = 3;
     else if (part === "4") rules.players = 4;
     else if (part === "duck") rules.duck = true;

@@ -511,6 +511,7 @@
             <p>
               Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
               Radial is rings and spokes. Six around a ring, or six outward on a spoke.
+              Pentagon fills five sides with the same triangles.
             </p>
             <p>
               Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
@@ -827,6 +828,7 @@ const grids = [
   { id: "sq", label: "square", note: "place inside squares. the other rules stay." },
   { id: "oct", label: "octagon", note: "place inside octagons and the small diamonds." },
   { id: "rad", label: "radial", note: "rings and spokes. six around a ring, or six out from the center." },
+  { id: "pen", label: "pentagon", note: "triangles in a pentagon. six in a straight line." },
 ];
 
 function playerNote(count) {

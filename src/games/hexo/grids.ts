@@ -1,12 +1,12 @@
 /**
  * Boards for the other HeXO tables.
- * Hex stays the algebraic board. Triangle, square, and octagon-and-diamond
- * are the same bases with different cells.
+ * Hex stays the algebraic board. Triangle, square, octagon-and-diamond,
+ * radial, and pentagon are the same bases with different cells.
  */
 
 import { boardFor, type BoardSize, type Cell } from "./logic.ts";
 
-export type Grid = "hex" | "tri" | "sq" | "oct" | "rad";
+export type Grid = "hex" | "tri" | "sq" | "oct" | "rad" | "pen";
 
 export type GameCell = Cell & { m: number };
 
@@ -47,7 +47,9 @@ export function gameBoard(kind: Grid, size: BoardSize): GameBoard {
           ? triangleBoard(size)
           : kind === "oct"
             ? octagonBoard(size)
-            : radialBoard(size);
+            : kind === "pen"
+              ? pentagonBoard(size)
+              : radialBoard(size);
   cache.set(key, board);
   return board;
 }
@@ -231,6 +233,135 @@ function triCell(
     m: 4.4,
     points: `${a.x.toFixed(2)},${a.y.toFixed(2)} ${b.x.toFixed(2)},${b.y.toFixed(2)} ${c.x.toFixed(2)},${c.y.toFixed(2)}`,
   };
+}
+
+function pentagonBoard(size: BoardSize): GameBoard {
+  const n = size === 8 ? 6 : 10;
+  const step = 34;
+  const cells: GameCell[] = [];
+  const links: Array<[GameCell, GameCell]> = [];
+  const tied = new Set<string>();
+  const link = (a: GameCell, b: GameCell) => {
+    const id = a.key < b.key ? `${a.key}|${b.key}` : `${b.key}|${a.key}`;
+    if (tied.has(id)) return;
+    tied.add(id);
+    links.push([a, b]);
+  };
+  const at = (k: number, sector: number, t: number) => {
+    if (k <= 0) return { x: 0, y: 0 };
+    const ang = (index: number) => -Math.PI / 2 + (index * 2 * Math.PI) / 5;
+    const radius = k * step;
+    const left = { x: radius * Math.cos(ang(sector)), y: radius * Math.sin(ang(sector)) };
+    const right = { x: radius * Math.cos(ang(sector + 1)), y: radius * Math.sin(ang(sector + 1)) };
+    const u = t / k;
+    return { x: left.x + (right.x - left.x) * u, y: left.y + (right.y - left.y) * u };
+  };
+  const tri = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+    id: string,
+    sector: number,
+    flip: number,
+    p: number,
+    q: number,
+  ) => {
+    const x = (a.x + b.x + c.x) / 3;
+    const y = (a.y + b.y + c.y) / 3;
+    const reach = Math.min(lineDist(x, y, a, b), lineDist(x, y, b, c), lineDist(x, y, c, a));
+    const cell: GameCell = {
+      letter: "a",
+      number: 1,
+      key: id,
+      q: sector * 2 + flip,
+      r: p,
+      s: q,
+      x,
+      y,
+      m: Math.max(3.2, reach * 0.78),
+      points: `${a.x.toFixed(2)},${a.y.toFixed(2)} ${b.x.toFixed(2)},${b.y.toFixed(2)} ${c.x.toFixed(2)},${c.y.toFixed(2)}`,
+    };
+    cells.push(cell);
+    return cell;
+  };
+  const inn: GameCell[][][] = [];
+  const out: GameCell[][][] = [];
+  for (let sector = 0; sector < 5; sector += 1) {
+    inn[sector] = [];
+    out[sector] = [];
+    for (let ring = 1; ring <= n; ring += 1) {
+      inn[sector][ring] = [];
+      for (let t = 0; t < ring; t += 1) {
+        inn[sector][ring][t] = tri(
+          at(ring, sector, t),
+          at(ring, sector, t + 1),
+          at(ring - 1, sector, t),
+          `i${sector}_${ring}_${t}`,
+          sector,
+          0,
+          ring - 1 - t,
+          t,
+        );
+      }
+      out[sector][ring] = [];
+      for (let t = 0; t < ring - 1; t += 1) {
+        out[sector][ring][t] = tri(
+          at(ring - 1, sector, t),
+          at(ring - 1, sector, t + 1),
+          at(ring, sector, t + 1),
+          `o${sector}_${ring}_${t}`,
+          sector,
+          1,
+          ring - 1 - t,
+          t,
+        );
+      }
+    }
+  }
+  for (let sector = 0; sector < 5; sector += 1) {
+    const prev = (sector + 4) % 5;
+    const next = (sector + 1) % 5;
+    for (let ring = 1; ring <= n; ring += 1) {
+      for (let t = 0; t < ring; t += 1) {
+        const cell = inn[sector][ring][t];
+        if (ring < n) link(cell, out[sector][ring + 1][t]);
+        if (t > 0) link(cell, out[sector][ring][t - 1]);
+        else link(cell, inn[prev][ring][ring - 1]);
+        if (t < ring - 1) link(cell, out[sector][ring][t]);
+        else link(cell, inn[next][ring][0]);
+      }
+    }
+  }
+  const heart = inn[0][1][0];
+  nameCells(cells);
+  const touch: Record<string, string[]> = {};
+  for (const cell of cells) touch[cell.key] = [];
+  for (const [a, b] of links) {
+    touch[a.key].push(b.key);
+    touch[b.key].push(a.key);
+  }
+  const board = finish("pen", size, heart.key, "abcdefghijklmnopqrstuvwxyz", n, n, step, cells, [], pentagonLines(cells), touch, 72, { x: 0, y: 0 });
+  const spacing = spacingOf(cells);
+  for (const cell of cells) board.mirror[cell.key] = snap(cells, -cell.x, cell.y, spacing) ?? cell.key;
+  return board;
+}
+
+function pentagonLines(cells: GameCell[]): string[][] {
+  const lines: string[][] = [];
+  for (let sector = 0; sector < 5; sector += 1) {
+    for (const flip of [0, 1]) {
+      const group = cells.filter((cell) => cell.q === sector * 2 + flip);
+      lines.push(...axisLines(group, (cell) => cell.r), ...axisLines(group, (cell) => cell.s), ...axisLines(group, (cell) => cell.r + cell.s));
+    }
+  }
+  return lines;
+}
+
+function lineDist(x: number, y: number, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  return Math.abs((x - a.x) * dy - (y - a.y) * dx) / len;
 }
 
 function radialBoard(size: BoardSize): GameBoard {
@@ -525,7 +656,7 @@ function frame(board: GameBoard) {
     maxX = Math.max(maxX, x + pad);
     maxY = Math.max(maxY, y + pad);
   };
-  const pad = board.kind === "tri" ? 16 : board.kind === "oct" ? 24 : board.kind === "rad" ? 28 : 20;
+  const pad = board.kind === "tri" ? 16 : board.kind === "oct" ? 24 : board.kind === "rad" ? 28 : board.kind === "pen" ? 42 : 20;
   for (const cell of board.cells) include(cell.x, cell.y, pad);
   for (const label of board.labels) include(label.x, label.y, 16);
   board.width = maxX - minX;
