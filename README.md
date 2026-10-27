@@ -22,6 +22,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/games/hexchess` | Hex chess. Gliński's board, 91 cells. |
 | `/kht` | KHT bracket. Public to view, owner can edit. |
 | `/tools` | Tool index. |
+| `/tools/pi` | Daily pi. One digit lesson per UTC day. |
 | `/flagdb` | Flag database. |
 | `/flagdb/detail/:flagId` | One flag: palette, record fields, Wikipedia, similar flags. |
 | `/compare` | Two flags side by side, with a similarity score. Accepts `?a=` and `?b=`. |
@@ -36,7 +37,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/contact` | Contact, with an email draft. |
 | `/modes` | Redirects to https://eireq.github.io/modes |
 
-Lane Runner, the flag quiz, HeXO, hex chess, and jWorld hide the site header and footer.
+Lane Runner, the flag quiz, HeXO, hex chess, and jWorld hide the site header and footer. Go, Otrio, HeXO, and hex chess can fill the screen.
 
 ## Flag corpus
 
@@ -61,6 +62,10 @@ You pick a length, type names, then get a breakdown of the ones you missed. `USA
 
 **Random country** uses the same pools and links through to the flag record.
 
+## Daily pi — `/tools/pi`
+
+One lesson per UTC day, stored in this browser (`eireDailyPi`). Study a few new digits, then take the quiz. Batches start at 3 digits and grow as more are mastered, up to the 1,000 digits stored here. The quiz builds today's new digits in steps, then asks for older ones. Each question has three tries. Using them all resets the streak and leaves those digits unlearned. Once every stored digit is known, the day is recall only. A finished lesson can be copied. A tab left open past UTC midnight loads the next lesson.
+
 ## Games
 
 ### Lane Runner — `/games/racing`
@@ -75,7 +80,27 @@ Pass-and-play ring tic-tac-toe. Each of the nine circles holds a small, medium, 
 
 Hexagonal tic-tac-toe. X places one stone on the center (h8 on base 8, m13 on base 13). Every later turn is two stones, and O takes the first of those. Six in a line on any of the three axes wins. Check means the side to move can finish a line with the stones still left this turn. The side to move may resign. Boards are base 8 or base 13, with no clock, 5 minutes, or 10. A clock runs only on the turn. Type a square such as `g7` to play it.
 
-Two, three, or four players (X, O, Y, and Z) take the same kind of turn. Grids are hex, triangle, square, or octagon, and the octagon also uses the diamonds. Optional rules are duck, king duck, an Egyptian soft cap, echo, orbit, and meteor.
+Two, three, or four players (X, O, Y, and Z) take the same kind of turn. Grids are hex, triangle, square, octagon (including the diamonds), or radial. On a radial board, six around a ring or six outward on a spoke wins.
+
+Optional rules can be combined:
+
+- **Duck.** After your stones, move the duck. No one plays on it.
+- **King duck.** The ring around the duck is closed, and stones there do not count.
+- **Egyptian.** A soft cap, 12 by default and adjustable up to 40. Over it, lift up to two of your older stones, or leave them. An echo never lifts a stone.
+- **Echo.** Copies a stone onto its mirror after two full turns. A duck echo moves the duck only if it is still on that cell.
+- **Orbit.** Every stone turns one step around the center. The duck stays.
+- **Meteor.** Every third turn, the farthest ring is cleared. A copy born that turn stays.
+- **Raid.** After your stones, take one of theirs. It becomes yours.
+- **Slide.** The second action can move one of your stones onto an empty neighbor.
+- **Frost.** A stone placed this turn does not count in a line until the turn ends.
+- **Pair.** The two stones of a turn have to share a side. The opening stone is free.
+- **Scatter.** The two stones of a turn must not share a side. Pair and scatter exclude each other.
+- **Siege.** After the opening, every stone is placed beside an opponent's stone.
+- **Pendulum.** When everyone has taken a turn, each stone steps one ring toward the center. The center stone stays.
+- **Mine.** The second action can plant a mine. The next stone played there is lost, and the mine is gone.
+- **Rift bloom.** Hidden until the title is clicked five times. Shimmering cells move each turn. Play on one and a ghost grows on the mirror. It becomes a stone if two of your stones touch it before it fades.
+
+Ways to play:
 
 - **On one screen**, two to four players.
 - **Practice** against a bot, as any side.
@@ -227,8 +252,9 @@ src/
   router/index.js
   views/                  one file per page
   components/             header and footer
-  data/                   flags, daily flag, flag of the week, jPol, profile name
+  data/                   flags, daily flag, flag of the week, daily pi, jPol, profile name
   assets/master_flags.json
+  games/fullscreen.js     shared fullscreen control
   games/racing/           canvas game, audio, leaderboard client
   games/go/               board, captures, Chinese scoring
   games/otrio/            ring tic-tac-toe rules
