@@ -32,10 +32,10 @@
       </div>
 
       <div class="actions">
-        <button type="button" @click="showSetup = !showSetup">
+        <button type="button" @click="toggleSetup">
           {{ showSetup ? "close" : "new" }}
         </button>
-        <button type="button" @click="showRules = !showRules">
+        <button type="button" @click="toggleRules">
           {{ showRules ? "close" : "rules" }}
         </button>
         <button type="button" :disabled="!canUndo" @click="undo">undo</button>
@@ -49,72 +49,6 @@
         </button>
         <button type="button" @click="copyLink">{{ copied ? "copied" : "copy link" }}</button>
         <FullscreenButton :active="full.active" @toggle="full.toggle" />
-      </div>
-
-      <div v-if="showSetup" class="setup">
-        <div class="choice">
-          <button
-            v-for="game in GAMES"
-            :key="game.id"
-            type="button"
-            :aria-pressed="form.game === game.id"
-            @click="pickGame(game.id)"
-          >
-            {{ game.name }}
-          </button>
-        </div>
-        <div v-if="formInfo.sizes.length > 1" class="choice">
-          <button
-            v-for="size in formInfo.sizes"
-            :key="size"
-            type="button"
-            :aria-pressed="form.size === size"
-            @click="form.size = size"
-          >
-            {{ sizeLabel(form.game, size) }}
-          </button>
-        </div>
-        <div v-if="form.game === 'punct'" class="choice">
-          <button
-            type="button"
-            :aria-pressed="form.punctRules !== 'basic'"
-            @click="form.punctRules = 'standard'"
-          >
-            standard
-          </button>
-          <button
-            type="button"
-            :aria-pressed="form.punctRules === 'basic'"
-            @click="form.punctRules = 'basic'"
-          >
-            basic
-          </button>
-        </div>
-        <div v-if="formInfo.pie" class="choice">
-          <button type="button" :aria-pressed="form.pie" @click="form.pie = true">pie on</button>
-          <button type="button" :aria-pressed="!form.pie" @click="form.pie = false">pie off</button>
-        </div>
-        <div class="choice">
-          <button type="button" :aria-pressed="form.mode === 'hotseat'" @click="form.mode = 'hotseat'">
-            hotseat
-          </button>
-          <button type="button" :aria-pressed="form.mode === 'practice'" @click="form.mode = 'practice'">
-            practice
-          </button>
-        </div>
-        <div v-if="form.mode === 'practice'" class="choice">
-          <button type="button" :aria-pressed="form.human === 'red'" @click="form.human = 'red'">
-            play red
-          </button>
-          <button type="button" :aria-pressed="form.human === 'blue'" @click="form.human = 'blue'">
-            play blue
-          </button>
-        </div>
-        <button type="button" class="start" @click="start">start</button>
-      </div>
-
-      <div v-if="showRules" class="rules">
-        <p v-for="(line, index) in ruleLines" :key="index">{{ line }}</p>
       </div>
 
       <div v-if="shown.game === 'punct' && canAct" class="tray">
@@ -313,6 +247,101 @@
         <button type="button" @click="cam.z = Math.max(0.55, cam.z / 1.15)">−</button>
       </div>
     </div>
+
+    <Teleport v-if="shell" :to="shell">
+      <div v-if="showSetup" class="setup-shade" @click.self="showSetup = false">
+        <form class="setup-pop" @submit.prevent="start">
+          <div class="pop-bar">
+            <span>new game</span>
+            <button type="button" @click="showSetup = false">close</button>
+          </div>
+          <p class="kicker">game</p>
+          <div class="choice">
+            <button
+              v-for="game in GAMES"
+              :key="game.id"
+              type="button"
+              :aria-pressed="form.game === game.id"
+              @click="pickGame(game.id)"
+            >
+              {{ game.name }}
+            </button>
+          </div>
+          <template v-if="formInfo.sizes.length > 1">
+            <p class="kicker">size</p>
+            <div class="choice">
+              <button
+                v-for="size in formInfo.sizes"
+                :key="size"
+                type="button"
+                :aria-pressed="form.size === size"
+                @click="form.size = size"
+              >
+                {{ sizeLabel(form.game, size) }}
+              </button>
+            </div>
+          </template>
+          <template v-if="form.game === 'punct'">
+            <p class="kicker">rules</p>
+            <div class="choice">
+              <button
+                type="button"
+                :aria-pressed="form.punctRules !== 'basic'"
+                @click="form.punctRules = 'standard'"
+              >
+                standard
+              </button>
+              <button
+                type="button"
+                :aria-pressed="form.punctRules === 'basic'"
+                @click="form.punctRules = 'basic'"
+              >
+                basic
+              </button>
+            </div>
+          </template>
+          <template v-if="formInfo.pie">
+            <p class="kicker">pie</p>
+            <div class="choice">
+              <button type="button" :aria-pressed="form.pie" @click="form.pie = true">pie on</button>
+              <button type="button" :aria-pressed="!form.pie" @click="form.pie = false">pie off</button>
+            </div>
+          </template>
+          <p class="kicker">table</p>
+          <div class="choice">
+            <button type="button" :aria-pressed="form.mode === 'hotseat'" @click="form.mode = 'hotseat'">
+              hotseat
+            </button>
+            <button type="button" :aria-pressed="form.mode === 'practice'" @click="form.mode = 'practice'">
+              practice
+            </button>
+          </div>
+          <div v-if="form.mode === 'practice'" class="choice">
+            <button type="button" :aria-pressed="form.human === 'red'" @click="form.human = 'red'">
+              play red
+            </button>
+            <button type="button" :aria-pressed="form.human === 'blue'" @click="form.human = 'blue'">
+              play blue
+            </button>
+          </div>
+          <button type="submit" class="start">start</button>
+        </form>
+      </div>
+    </Teleport>
+
+    <Teleport v-if="shell" :to="shell">
+      <div v-if="showRules" class="setup-shade" @click.self="showRules = false">
+        <div class="setup-pop">
+          <div class="pop-bar">
+            <span>rules</span>
+            <button type="button" @click="showRules = false">close</button>
+          </div>
+          <div class="rules">
+            <p v-for="(line, index) in ruleLines" :key="index">{{ line }}</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -653,6 +682,16 @@ function pegFill(id) {
   if (peg === 1) return "#e23b3b";
   if (peg === 2) return "#3c7dff";
   return "transparent";
+}
+
+function toggleSetup() {
+  showSetup.value = !showSetup.value;
+  if (showSetup.value) showRules.value = false;
+}
+
+function toggleRules() {
+  showRules.value = !showRules.value;
+  if (showRules.value) showSetup.value = false;
 }
 
 function pickGame(id) {
@@ -1267,13 +1306,59 @@ button[aria-pressed="true"],
   border-color: #fff;
 }
 
-.setup,
-.rules {
-  margin-bottom: 12px;
+.choice {
+  margin: 0;
 }
 
-.choice {
-  margin-bottom: 8px;
+.setup-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.setup-pop {
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 48px);
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 22px 24px;
+  border: 1px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.pop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+}
+
+.setup-pop .choice button {
+  flex: 0 1 auto;
+}
+
+.kicker {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.rules {
+  display: grid;
+  gap: 10px;
+  color: #bbb;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .rules p,
@@ -1530,6 +1615,14 @@ button[aria-pressed="true"],
   .connect {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(240px, 1fr) minmax(180px, 46dvh);
+  }
+
+  .setup-shade {
+    padding: 12px;
+  }
+
+  .setup-pop {
+    max-height: calc(100dvh - 24px);
   }
 
   .panel {
