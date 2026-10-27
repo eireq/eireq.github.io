@@ -17,6 +17,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/games/flagquiz` | Flag quiz. |
 | `/games/daily` | Daily flag. |
 | `/games/hexo` | HeXO. |
+| `/games/connect` | Connect. Gale, Hex, TwixT, PÜNCT, Star, *Star, and Y. |
 | `/games/otrio` | Otrio. Ring tic-tac-toe for 2–4 players. |
 | `/games/go` | Go. Baduk for two players on one screen. |
 | `/games/hexchess` | Hex chess. Gliński's board, 91 cells. |
@@ -35,7 +36,7 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/contact` | Contact, with an email draft. |
 | `/modes` | Redirects to https://eireq.github.io/modes |
 
-Lane Runner, the flag quiz, HeXO, hex chess, and jWorld hide the site header and footer. Go, Otrio, HeXO, and hex chess can fill the screen.
+Lane Runner, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. Go, Otrio, HeXO, connect, and hex chess can fill the screen.
 
 ## Flag corpus
 
@@ -105,6 +106,20 @@ Ways to play:
 - **Together** shares one game between browsers. The room name in the invite link is the only secret, and it keeps the board size. You start as X. Chat sits under the move list. Rematch swaps sides. A third or fourth player joins with `s=Y` or `s=Z` on the invite.
 
 The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a game undone (except in together). The move list can be stepped through. A replay is written into the URL, and the score line can be copied.
+
+### Connect — `/games/connect`
+
+Gale, Hex, TwixT, PÜNCT, Star, *Star, and Y. The win is a connection, or a score taken from one, instead of a row of stones.
+
+Red moves first. Hotseat or practice. Where the game uses it, blue may swap seats after the first move. The board pans and zooms. A link can carry the game.
+
+- **Gale** (Bridg-it). Red joins top to bottom, blue joins the sides. A link that would cross is blocked.
+- **Hex.** Red joins left to right, blue joins top to bottom.
+- **TwixT.** Place a peg, then knight's-move links. Links cannot cross. Corners are out, and a peg cannot sit in the opponent's border.
+- **PÜNCT.** Three-dot pieces, placed or slid along the punct. Stacking and bridges are in the standard rules. Either player may join any opposite pair. The center is entered only by a move.
+- **Y.** Both players join all three sides of a triangle. Corners count for both edges.
+- **Star.** A group touching three or more border cells scores two less than it touches.
+- **\*Star.** Own edge cells with as few stars as you can. The empty center joins both colors.
 
 ### Go — `/games/go`
 
@@ -257,6 +272,7 @@ src/
   games/go/               board, captures, Chinese scoring
   games/otrio/            ring tic-tac-toe rules
   games/hexo/             rules and the together-mode link
+  games/connect/          Gale, Hex, TwixT, PÜNCT, Star, *Star, Y
   games/hexchess/         Gliński board and moves
   games/kht/              bracket client
   jworld/                 map, geometry, country fields, Supabase

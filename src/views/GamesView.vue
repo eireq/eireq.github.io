@@ -22,6 +22,11 @@
         <p>{{ t("games.hexoText") }}</p>
       </router-link>
 
+      <router-link class="game" to="/games/connect">
+        <h2>{{ t("games.connect") }}</h2>
+        <p>{{ t("games.connectText") }}</p>
+      </router-link>
+
       <router-link class="game" to="/games/hexchess">
         <h2>{{ t("games.hexchess") }}</h2>
         <p>{{ t("games.hexchessText") }}</p>

@@ -136,6 +136,15 @@ const router = createRouter({
       },
     },
     {
+      path: "/games/connect",
+      name: "game-connect",
+      component: () => import("../views/ConnectView.vue"),
+      meta: {
+        title: "connect - eire",
+        hideChrome: true,
+      },
+    },
+    {
       path: "/games/hexchess",
       name: "game-hexchess",
       component: () => import("../views/HexChessView.vue"),
