@@ -260,7 +260,7 @@ export function headTags(page) {
     `<meta property="og:url" content="${escapeHtml(url)}">`,
     `<meta property="og:type" content="${page.ogType || "website"}">`,
     `<meta name="twitter:card" content="summary">`,
-    `<meta name="google-site-verification" content="pFWynwYXRPZVZ70llOx_VIpKZGUwiM9y">`,
+    `<meta name="google-site-verification" content="ePz_bVG4jiZArH9rrItRNk8IY7gURIRRspbTQ5GZCCQ">`,
   ];
 
   const entries = page.jsonLd
