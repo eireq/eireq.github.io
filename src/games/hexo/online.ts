@@ -216,7 +216,7 @@ function parseNote(value: unknown): MatchNote | null {
       : null;
   const side = (value: unknown): Seat | null =>
     value === "X" || value === "O" || value === "Y" || value === "Z" ? value : null;
-  const alt = typeof note.alt === "string" ? note.alt.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80) : "";
+  const alt = typeof note.alt === "string" ? note.alt.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 160) : "";
   return {
     kind: note.kind,
     id: note.id,

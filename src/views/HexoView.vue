@@ -78,6 +78,14 @@
         >
           done
         </button>
+        <button
+          v-if="canMine"
+          type="button"
+          :aria-pressed="mineArm"
+          @click="armMine"
+        >
+          mine
+        </button>
         <button v-if="mode === 'together' && resultLine" type="button" @click="rematch">
           rematch
         </button>
@@ -213,6 +221,10 @@
               'is-check': checkKeys.has(cell.key),
               'is-panic': haloSet.has(cell.key),
               'is-rift': riftSet.has(cell.key),
+              'is-mine': mineSet.has(cell.key),
+              'is-frost': frostSet.has(cell.key),
+              'is-from': slideFrom === cell.key,
+              'is-source': slideSources.has(cell.key),
               'is-last': lastKeys.has(cell.key) && !winKeys.has(cell.key),
               'is-win': winKeys.has(cell.key),
             }"
@@ -260,6 +272,10 @@
               <path v-else-if="cell.owner === 'Y'" :d="yMark(cell)" />
               <path v-else :d="zMark(cell)" />
             </template>
+          </g>
+
+          <g v-if="mineCells.length" class="mine-mark" aria-hidden="true">
+            <circle v-for="cell in mineCells" :key="'mine-' + cell.key" :cx="cell.x" :cy="cell.y" r="2.4" />
           </g>
 
           <g v-if="duckCell" class="duck" aria-hidden="true">
@@ -349,6 +365,7 @@
             <span>new game</span>
             <button type="button" @click="showSetup = false">close</button>
           </div>
+          <p class="kicker">shapes</p>
           <div class="choice" @mouseleave="variantHint = ''">
             <button
               v-for="grid in grids"
@@ -361,6 +378,9 @@
             >
               {{ grid.label }}
             </button>
+          </div>
+          <p class="kicker">players</p>
+          <div class="choice" @mouseleave="variantHint = ''">
             <button
               v-for="count in [2, 3, 4]"
               :key="count"
@@ -373,6 +393,7 @@
               {{ count }} players
             </button>
           </div>
+          <p class="kicker">buts</p>
           <div class="choice" @mouseleave="variantHint = ''">
             <button
               v-for="rule in ruleSwitches"
@@ -386,7 +407,8 @@
               {{ rule.label }}
             </button>
           </div>
-          <p class="hint">{{ variantHint || "hover a variant." }}</p>
+          <p class="hint">{{ variantHint || "hover a shape or a but." }}</p>
+          <p class="kicker">table</p>
           <div class="choice">
             <button
               type="button"
@@ -410,6 +432,7 @@
               together
             </button>
           </div>
+          <p class="kicker">clocks</p>
           <div class="choice">
             <button
               v-for="minutes in [0, 5, 10]"
@@ -420,6 +443,9 @@
             >
               {{ minutes === 0 ? "no clock" : minutes + " min" }}
             </button>
+          </div>
+          <p class="kicker">sizes</p>
+          <div class="choice">
             <button type="button" :aria-pressed="draft.size === 8" @click="draft.size = 8">
               base 8
             </button>
@@ -497,6 +523,16 @@
               Meteor, every third turn, clears the farthest stones.
             </p>
             <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
+            <p>Slide: the second action can move one of your stones onto an empty neighbor.</p>
+            <p>Frost: a stone placed this turn does not count in a line until the turn ends.</p>
+            <p>Pair: the two stones of a turn have to share a side. The opening stone is free.</p>
+            <p>Scatter: the two stones of a turn must not share a side.</p>
+            <p>Siege: after the opening, every stone is placed beside an opponent's stone.</p>
+            <p>
+              Pendulum: when everyone has taken a turn, each stone steps one ring toward the center.
+              The center stone stays.
+            </p>
+            <p>Mine: the second action can plant a mine. The next stone played there is lost, and the mine is gone.</p>
             <p v-if="bloom">
               Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
               It becomes a stone if two of your stones touch it before it fades.
@@ -758,9 +794,18 @@ const draft = reactive({
   meteor: openedRules.meteor,
   rift: openedRules.rift,
   raid: openedRules.raid,
+  slide: openedRules.slide,
+  frost: openedRules.frost,
+  pair: openedRules.pair,
+  scatter: openedRules.scatter,
+  siege: openedRules.siege,
+  pendulum: openedRules.pendulum,
+  mine: openedRules.mine,
 });
 
 const variantHint = ref("");
+const slideFrom = ref("");
+const mineArm = ref(false);
 
 const grids = [
   { id: "hex", label: "hex", note: "hex tiles. six in a line." },
@@ -837,6 +882,71 @@ const ruleSwitches = computed(() => {
         draft.raid = !draft.raid;
       },
     },
+    {
+      id: "slide",
+      label: "slide",
+      note: "the second action can move one of your stones to an empty neighbor.",
+      on: draft.slide,
+      toggle: () => {
+        draft.slide = !draft.slide;
+      },
+    },
+    {
+      id: "frost",
+      label: "frost",
+      note: "a new stone does not count until the turn ends.",
+      on: draft.frost,
+      toggle: () => {
+        draft.frost = !draft.frost;
+      },
+    },
+    {
+      id: "pair",
+      label: "pair",
+      note: "the two stones of a turn must touch.",
+      on: draft.pair,
+      toggle: () => {
+        draft.pair = !draft.pair;
+        if (draft.pair) draft.scatter = false;
+      },
+    },
+    {
+      id: "scatter",
+      label: "scatter",
+      note: "the two stones of a turn must not touch.",
+      on: draft.scatter,
+      toggle: () => {
+        draft.scatter = !draft.scatter;
+        if (draft.scatter) draft.pair = false;
+      },
+    },
+    {
+      id: "siege",
+      label: "siege",
+      note: "after the opening, play next to an enemy stone.",
+      on: draft.siege,
+      toggle: () => {
+        draft.siege = !draft.siege;
+      },
+    },
+    {
+      id: "pendulum",
+      label: "pendulum",
+      note: "each full round, stones step one ring toward the center.",
+      on: draft.pendulum,
+      toggle: () => {
+        draft.pendulum = !draft.pendulum;
+      },
+    },
+    {
+      id: "mine",
+      label: "mine",
+      note: "the second action can be a mine. the next stone there is lost.",
+      on: draft.mine,
+      toggle: () => {
+        draft.mine = !draft.mine;
+      },
+    },
   ];
   if (bloom.value || draft.rift) {
     list.push({
@@ -873,6 +983,15 @@ const ghostCells = computed(() =>
 const duckCell = computed(() => (position.value.duck ? board.value.byKey[position.value.duck] : null));
 const haloSet = computed(() => new Set(position.value.halo ?? []));
 const riftSet = computed(() => new Set(position.value.rifts ?? []));
+const mineSet = computed(() => new Set(position.value.mines ?? []));
+const frostSet = computed(() => new Set(rules.value.frost ? position.value.placedThisTurn ?? [] : []));
+const mineCells = computed(() =>
+  (position.value.mines ?? []).map((key) => board.value.byKey[key]).filter(Boolean),
+);
+const slideSources = computed(() => {
+  if (!canPlay.value || !rules.value.slide) return new Set();
+  return new Set((position.value.legal ?? []).filter((act) => act.kind === "slide").map((act) => act.from));
+});
 
 const lastMove = computed(() =>
   view.value > 0 ? history.value[view.value - 1] : null,
@@ -880,6 +999,17 @@ const lastMove = computed(() =>
 const lastKey = computed(() =>
   lastMove.value ? `${lastMove.value.letter}${lastMove.value.number}` : null,
 );
+
+function spendsTurn(move) {
+  return !move.kind || move.kind === "place" || move.kind === "slide" || move.kind === "mine";
+}
+
+function squareOf(move) {
+  if (!move.kind || move.kind === "place") return move.key || `${move.letter}${move.number}`;
+  if (move.kind === "mine") return `&${move.key}`;
+  if (move.kind === "slide") return `${move.from}^${move.key}`;
+  return move.key || "";
+}
 
 function variantLines(ply) {
   const lines = [];
@@ -889,25 +1019,31 @@ function variantLines(ply) {
     const quota = placed === 0 ? 1 : 2;
     const stones = [];
     let took = 0;
-    while (
-      index < ply &&
-      took < quota &&
-      (!history.value[index].kind || history.value[index].kind === "place")
-    ) {
+    while (index < ply && took < quota && spendsTurn(history.value[index])) {
       const move = history.value[index];
       stones.push({
         index,
-        square: move.key || `${move.letter}${move.number}`,
-        key: move.key || `${move.letter}${move.number}`,
+        square: squareOf(move),
+        key: move.kind === "pass" || move.kind === "remove" ? "" : move.key || `${move.letter}${move.number}`,
       });
       index += 1;
       took += 1;
       placed += 1;
     }
-    while (index < ply && history.value[index].kind && history.value[index].kind !== "place") {
+    while (index < ply && history.value[index].kind && !spendsTurn(history.value[index])) {
       const move = history.value[index];
       const square =
-        move.kind === "pass" ? "pass" : move.kind === "duck" ? `~${move.key}` : move.kind === "steal" ? `>${move.key}` : `-${move.key}`;
+        move.kind === "pass"
+          ? "pass"
+          : move.kind === "duck"
+            ? `~${move.key}`
+            : move.kind === "steal"
+              ? `>${move.key}`
+              : move.kind === "mine"
+                ? `&${move.key}`
+                : move.kind === "slide"
+                  ? `${move.from}^${move.key}`
+                  : `-${move.key}`;
       stones.push({ index, square, key: move.kind === "remove" || move.kind === "pass" ? "" : move.key });
       index += 1;
     }
@@ -1117,7 +1253,9 @@ const statusText = computed(() => {
     if (position.value.phase === "duck") return `${turn.value} moves the duck`;
     if (position.value.phase === "steal") return `${turn.value} takes one`;
     if (position.value.phase === "trim") return `${turn.value} may lift ${position.value.removesLeft}`;
-    if (position.value.stonesLeft === 1 && position.value.placedThisTurn?.length) {
+    if (slideFrom.value) return `${turn.value} slides ${slideFrom.value}`;
+    if (mineArm.value) return `${turn.value} sets a mine`;
+    if (position.value.stonesLeft === 1 && position.value.placedTotal > 0) {
       return withCheck(`${turn.value} · one more`);
     }
     return withCheck(`${turn.value} to move`);
@@ -1144,6 +1282,15 @@ const canPlay = computed(() => {
 });
 
 const canResign = computed(() => canPlay.value);
+
+const canMine = computed(
+  () =>
+    canPlay.value &&
+    rules.value.mine &&
+    position.value.phase === "place" &&
+    position.value.stonesLeft === 1 &&
+    position.value.placedTotal > 0,
+);
 
 const guideSet = computed(() => {
   if (!hoverKey.value) return new Set();
@@ -1186,6 +1333,7 @@ function emptyTable() {
     stonesLeft: 1,
     placedTotal: 0,
     placedThisTurn: [],
+    mines: [],
   };
 }
 
@@ -1231,6 +1379,13 @@ function rulesFromDraft() {
     meteor: Boolean(draft.meteor),
     rift: Boolean(draft.rift),
     raid: Boolean(draft.raid),
+    slide: Boolean(draft.slide),
+    frost: Boolean(draft.frost),
+    pair: Boolean(draft.pair),
+    scatter: Boolean(draft.scatter),
+    siege: Boolean(draft.siege),
+    pendulum: Boolean(draft.pendulum),
+    mine: Boolean(draft.mine),
   };
 }
 
@@ -1291,6 +1446,13 @@ function toggleSetup() {
     draft.meteor = rules.value.meteor;
     draft.rift = rules.value.rift;
     draft.raid = rules.value.raid;
+    draft.slide = rules.value.slide;
+    draft.frost = rules.value.frost;
+    draft.pair = rules.value.pair;
+    draft.scatter = rules.value.scatter;
+    draft.siege = rules.value.siege;
+    draft.pendulum = rules.value.pendulum;
+    draft.mine = rules.value.mine;
     showSettings.value = false;
     showRules.value = false;
   }
@@ -1379,6 +1541,8 @@ function spawnConfetti() {
 }
 
 function pushMove(move) {
+  slideFrom.value = "";
+  mineArm.value = false;
   const mover = variant.value ? turn.value : playerOf(history.value.length);
   if (clock.value) {
     clockMarks.value = [
@@ -1439,9 +1603,34 @@ function flash(key) {
   }, 450);
 }
 
+function armMine() {
+  if (!canMine.value) return;
+  mineArm.value = !mineArm.value;
+  if (mineArm.value) slideFrom.value = "";
+}
+
 function play(key) {
   if (variant.value) {
-    const act = (position.value.legal ?? []).find((item) => item.key === key);
+    const acts = position.value.legal ?? [];
+    if (slideFrom.value && canPlay.value) {
+      const slide = acts.find((item) => item.kind === "slide" && item.from === slideFrom.value && item.key === key);
+      if (slide) {
+        typed.value = "";
+        pushMove(slide);
+        return;
+      }
+    }
+    const source = acts.find((item) => item.kind === "slide" && item.from === key);
+    if (source && canPlay.value) {
+      slideFrom.value = key;
+      mineArm.value = false;
+      return;
+    }
+    const act = mineArm.value
+      ? acts.find((item) => item.kind === "mine" && item.key === key) ||
+        acts.find((item) => item.kind === "place" && item.key === key)
+      : acts.find((item) => item.kind === "place" && item.key === key) ||
+        acts.find((item) => item.kind !== "slide" && item.kind !== "mine" && item.key === key);
     if (!act || !canPlay.value) {
       if (
         position.value.phase === "place" &&
@@ -2566,6 +2755,13 @@ button:focus-visible {
   flex: 0 1 auto;
 }
 
+.kicker {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
 .hint {
   margin: 0;
   min-height: 2.8em;
@@ -2804,6 +3000,27 @@ button:focus-visible {
 .cell.is-rift {
   stroke: #fff;
   animation: rift-shimmer 1.6s ease-in-out infinite;
+}
+
+.cell.is-mine {
+  stroke: #fff;
+  stroke-dasharray: 2 3;
+}
+
+.cell.is-frost {
+  stroke: #888;
+}
+
+.cell.is-from,
+.cell.is-source {
+  stroke: #fff;
+  stroke-width: 1.8;
+  cursor: pointer;
+}
+
+.mine-mark circle {
+  fill: none;
+  stroke: #888;
 }
 
 .viewport.can-play .cell.is-legal {
