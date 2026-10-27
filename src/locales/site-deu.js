@@ -75,18 +75,6 @@ export const siteDeu = {
     match: "Match",
     matches: "Matches",
   },
-  elections: {
-    eyebrow: "Discord-Gewerkschaftsversammlung",
-    title: "Doulantese-Wahlen.",
-    intro: "Präferenzergebnisse, wie auf dem Wahlzettel erfasst.",
-    results: "wahlergebnisse",
-    choice: "wahl",
-    review: "zuletzt geprüft: 28.08.2026, 13:30 Mitteleuropäische Sommerzeit",
-    party: "Partei",
-    votes: "Stimmen",
-    share: "Stimmenanteil",
-    seats: "Sitze",
-  },
   compare: {
     title: "flaggen vergleichen.",
     intro:

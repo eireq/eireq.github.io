@@ -30,10 +30,8 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 | `/jpol` | jPol values quiz. |
 | `/jworld` | jWorld, a private shared Earth. Full-screen, no site header. |
 | `/jworld/c/:id` | One jWorld country. |
-| `/politics` | Saved political-test charts. |
-| `/elections` | Doulantese election results. |
 | `/art` | Art. |
-| `/misc` | Politics, jPol, elections, plus links out to modes and GitHub. |
+| `/misc` | jPol, plus links out to modes and GitHub. |
 | `/contact` | Contact, with an email draft. |
 | `/modes` | Redirects to https://eireq.github.io/modes |
 

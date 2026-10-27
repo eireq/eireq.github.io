@@ -158,8 +158,6 @@ const messages = {
       title: "misc.",
       intro:
         "a collection of miscellaneous projects, experiments, and other things that do not fit into games, tools, or art.",
-      politics: "political preferences",
-      politicsText: "my ideological charts and political test results.",
       jpol: "jPol",
       jpolText:
         "full or express political values quiz with a shareable compass result.",
@@ -168,8 +166,6 @@ const messages = {
       discordBots: "discord bots",
       discordBotsText:
         "small bots and other experiments from my GitHub projects.",
-      elections: "Doulantese elections",
-      electionsText: "results from the Discord union assembly.",
     },
     art: {
       title: "art.",
@@ -269,23 +265,6 @@ const messages = {
       share: "copy result",
       copied: "copied",
     },
-    politics: {
-      title: "political compass & values",
-      subtitle:
-        "a collection of my ideological charts and political test results.",
-      results: "political test results",
-      compass: "traditional 2D axes",
-      sapply: "3D compass grid",
-      dozen: "12 core values",
-      orbs: "spherical model",
-      eight: "4 independent axes",
-      nine: "9 detailed axes",
-      scales: "8 characteristics & tags",
-      left: "left-wing spectrum",
-      right: "right-wing spectrum",
-      alt: "alternative values spectrum",
-      unavailable: "image not uploaded yet",
-    },
     footer: {
       contact: "contact",
       text: "you can contact me via",
@@ -336,18 +315,6 @@ const messages = {
         organizations: "organizations",
         all: "all flags",
       },
-    },
-    elections: {
-      eyebrow: "Discord union assembly",
-      title: "Doulantese elections.",
-      intro: "preference results as recorded from the election ballot.",
-      results: "election results",
-      choice: "choice",
-      review: "last reviewed: 2026/08/28 13:30 Central European Summer Time",
-      party: "party",
-      votes: "votes",
-      share: "vote share",
-      seats: "seats",
     },
     flagDb: {
       title: "Flag database",
@@ -691,10 +658,6 @@ const messages = {
       racing: "racing",
       flagQuiz: "flag quiz",
       moreProjects: "you can find more of my projects on my",
-      doulant: "doulant",
-      doulantText:
-        "doulantese elections are the discord union assembly ballot. the page keeps the parties, the votes, and the seats from the last count.",
-      doulantLink: "election results",
       currently: "currently",
       currentlyText:
         "currently, i am working on this website and also on the arcade game.",
@@ -826,9 +789,6 @@ const messages = {
       title: "sonstiges.",
       intro:
         "eine Sammlung verschiedener Projekte, Experimente und anderer Dinge, die nicht zu Spielen, Werkzeugen oder Kunst passen.",
-      politics: "politische Präferenzen",
-      politicsText:
-        "meine ideologischen Diagramme und Ergebnisse politischer Tests.",
       jpol: "jPol",
       jpolText:
         "volles oder express-wertequiz mit teilbarem kompass-ergebnis.",
@@ -838,8 +798,6 @@ const messages = {
       discordBots: "Discord-Bots",
       discordBotsText:
         "kleine Bots und andere Experimente aus meinen GitHub-Projekten.",
-      elections: "Doulantese-Wahlen",
-      electionsText: "Ergebnisse der Discord-Gewerkschaftsversammlung.",
     },
     art: {
       title: "kunst.",
@@ -879,23 +837,6 @@ const messages = {
       find: "Eintrag finden",
       search: "suchen...",
       empty: "keine Orte gefunden.",
-    },
-    politics: {
-      title: "politischer Kompass & Werte",
-      subtitle:
-        "eine Sammlung meiner ideologischen Diagramme und Ergebnisse politischer Tests.",
-      results: "Ergebnisse politischer Tests",
-      compass: "traditionelle 2D-Achsen",
-      sapply: "3D-Kompassraster",
-      dozen: "12 Grundwerte",
-      orbs: "sphärisches Modell",
-      eight: "4 unabhängige Achsen",
-      nine: "9 detaillierte Achsen",
-      scales: "8 Eigenschaften & Tags",
-      left: "linkes Spektrum",
-      right: "rechtes Spektrum",
-      alt: "alternatives Wertespektrum",
-      unavailable: "Bild noch nicht hochgeladen",
     },
     footer: { contact: "kontakt", text: "du kannst mich per", email: "E-Mail" },
     about: {
@@ -1571,9 +1512,6 @@ messages.rus = mergeMessages(messages.eng, {
     title: "разное.",
     intro:
       "коллекция разных проектов, экспериментов и других вещей, которые не относятся к играм, инструментам или искусству.",
-    politics: "политические предпочтения",
-    politicsText:
-      "мои идеологические диаграммы и результаты политических тестов.",
     jpol: "jPol",
     jpolText:
       "полная или короткая викторина ценностей с результатом на компасе.",
@@ -1582,8 +1520,6 @@ messages.rus = mergeMessages(messages.eng, {
     discordBots: "боты Discord",
     discordBotsText:
       "небольшие боты и эксперименты из моих проектов на GitHub.",
-    elections: "выборы Doulantese",
-    electionsText: "результаты ассамблеи Discord-союза.",
   },
   art: {
     title: "искусство.",
@@ -1623,23 +1559,6 @@ messages.rus = mergeMessages(messages.eng, {
     find: "найти запись",
     search: "поиск...",
     empty: "места не найдены.",
-  },
-  politics: {
-    title: "политический компас и ценности",
-    subtitle:
-      "коллекция моих идеологических диаграмм и результатов политических тестов.",
-    results: "результаты политических тестов",
-    compass: "традиционные 2D-оси",
-    sapply: "3D-сетка компаса",
-    dozen: "12 основных ценностей",
-    orbs: "сферическая модель",
-    eight: "4 независимые оси",
-    nine: "9 подробных осей",
-    scales: "8 характеристик и тегов",
-    left: "левый политический спектр",
-    right: "правый политический спектр",
-    alt: "альтернативный спектр ценностей",
-    unavailable: "изображение ещё не загружено",
   },
   footer: {
     contact: "контакты",
@@ -1756,14 +1675,10 @@ messages.kgn = mergeMessages(messages.eng, {
   misc: {
     title: "latlh.",
     intro: "Quj, jan, nagh je Dalutbe'chugh, latlh mIwmey tetlh.",
-    politics: "qum vu'",
-    politicsText: "jIH qum QInmey.",
     jpol: "jPol",
     jpolText: "60 yu' qum ghojmoH.",
     modes: "mIw",
     discordBots: "Discord bots",
-    elections: "Doulantese wIv",
-    electionsText: "Discord ghom wIv.",
   },
   art: {
     title: "nagh.",
@@ -1794,22 +1709,6 @@ messages.kgn = mergeMessages(messages.eng, {
     find: "yISam",
     search: "nej...",
     empty: "Daq pagh.",
-  },
-  politics: {
-    title: "qum compass je",
-    subtitle: "jIH qum QInmey je.",
-    results: "qum test QInmey",
-    compass: "2D 'och",
-    sapply: "3D compass",
-    dozen: "12 ngoQ",
-    orbs: "meq",
-    eight: "4 'och",
-    nine: "9 'och",
-    scales: "8 ghItlh",
-    left: "poS",
-    right: "nIH",
-    alt: "latlh ngoQ",
-    unavailable: "nagh wej yIlan",
   },
   footer: { contact: "Qum", text: "QumlaH", email: "QIn" },
   about: {

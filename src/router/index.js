@@ -77,21 +77,17 @@ const router = createRouter({
     },
     {
       path: "/politics",
-      name: "politics",
-      component: () => import("../views/PoliticalPreferencesView.vue"),
-      meta: { title: "political preferences - eire" },
+      redirect: "/misc",
+    },
+    {
+      path: "/elections",
+      redirect: "/misc",
     },
     {
       path: "/jpol",
       name: "jpol",
       component: () => import("../views/JPolView.vue"),
       meta: { title: "jPol - eire" },
-    },
-    {
-      path: "/elections",
-      name: "elections",
-      component: () => import("../views/DoulanteseElectionsView.vue"),
-      meta: { title: "doulantese elections - eire" },
     },
     {
       path: "/kht",

@@ -7,19 +7,9 @@
     </p>
 
     <section class="misc">
-      <router-link class="misc-piece" to="/politics">
-        <h2>{{ t("misc.politics") }}</h2>
-        <p>{{ t("misc.politicsText") }}</p>
-      </router-link>
-
       <router-link class="misc-piece" to="/jpol">
         <h2>{{ t("misc.jpol") }}</h2>
         <p>{{ t("misc.jpolText") }}</p>
-      </router-link>
-
-      <router-link class="misc-piece" to="/elections">
-        <h2>{{ t("misc.elections") }}</h2>
-        <p>{{ t("misc.electionsText") }}</p>
       </router-link>
 
       <a
