@@ -225,6 +225,10 @@ const orderedFlags = computed(() =>
 
 const flag = computed(() => findFlag(flags.value, route.params.flagId));
 const flagTitle = computed(() => flagShortName(flag.value));
+
+watch(flagTitle, (title) => {
+  if (title) document.title = `${title} flag — eire`;
+});
 const orderedIndex = computed(() => orderedFlags.value.indexOf(flag.value));
 const previousFlag = computed(() => orderedFlags.value[orderedIndex.value - 1]);
 const nextFlag = computed(() => orderedFlags.value[orderedIndex.value + 1]);

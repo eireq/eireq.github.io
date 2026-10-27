@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eire</title>
+    <!--seo:start-->
+    <!--seo:end-->
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"><!--prerender:start--><!--prerender:end--></div>
     <script>
       const redirect = sessionStorage.redirect
 
@@ -14,6 +15,8 @@
         delete sessionStorage.redirect
         history.replaceState(null, null, redirect)
       }
+
+      document.getElementById("seo-fallback")?.remove()
     </script>
     <script type="module" src="/src/main.js"></script>
   </body>

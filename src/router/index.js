@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { SITE, seoForPath } from "../seo.js";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -186,7 +187,30 @@ const router = createRouter({
 });
 
 router.afterEach((to) => {
-  document.title = to.meta.title || "eire";
+  const seo = seoForPath(to.path);
+  const flagDetail = to.path.startsWith("/flagdb/detail/");
+
+  if (seo) document.title = seo.title;
+  else if (!flagDetail) document.title = to.meta.title || "eire (eireq)";
+
+  if (seo?.description) {
+    let description = document.querySelector('meta[name="description"]');
+    if (!description) {
+      description = document.createElement("meta");
+      description.setAttribute("name", "description");
+      document.head.appendChild(description);
+    }
+    description.setAttribute("content", seo.description);
+  }
+
+  const canonicalUrl = `${SITE}${to.path === "/" ? "/" : to.path}`;
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.setAttribute("rel", "canonical");
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute("href", canonicalUrl);
 });
 
 /** After a redeploy, old tabs keep hashed chunk URLs that 404 — hard-reload once. */
