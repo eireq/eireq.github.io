@@ -39,6 +39,7 @@ export const pages = [
       <p>board games, daily pi, a private earth, and a flag pile that somehow stayed online. eire (eireq) is from Slovakia.</p>
       <nav>
         <a href="/me">about me</a>
+        <a href="/flagdb">flag database</a>
         <a href="/games/go">go</a>
         <a href="/games/otrio">Otrio</a>
         <a href="/games/hexo">HeXO</a>

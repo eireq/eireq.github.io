@@ -4,11 +4,11 @@
       <h1>{{ t("home.greeting") }}<br />{{ t("home.signature") }}</h1>
       <p class="lead">{{ t("home.lead") }}</p>
       <div class="hero-actions">
+        <RouterLink class="button" to="/flagdb">{{
+          t("home.flagDbCta")
+        }}</RouterLink>
         <RouterLink class="button" to="/games/go">{{
           t("home.goCta")
-        }}</RouterLink>
-        <RouterLink class="button" to="/games/hexo">{{
-          t("home.hexoCta")
         }}</RouterLink>
         <RouterLink class="button button--ghost" to="/me">{{
           t("home.about")
@@ -74,6 +74,11 @@ const weekly = ref(null);
 const weekImage = ref("");
 
 const features = [
+  {
+    to: "/flagdb",
+    title: "home.featDb",
+    text: "home.featDbText",
+  },
   {
     to: "/games/go",
     title: "home.featGo",
