@@ -90,45 +90,6 @@
       </div>
 
 
-      <div v-if="showRules" class="rules">
-        <p>
-          X places one stone on the center, h8 on base 8 and m13 on base 13.
-          Every later turn is two stones, and O takes the first of them.
-        </p>
-        <p>Six in a line, on any of the three axes, wins. That move ends with #.</p>
-        <p>
-          Check means the side to move can finish a line with the stones still left this turn.
-          The stones already in the run are marked.
-        </p>
-        <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
-        <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
-        <p>
-          Together: pick a room name. It keeps the game, and the board size.
-          You start as X. Send the invite. They are O. Rematch swaps sides.
-          The box under the moves is chat. For 3 or 4, change the invite to s=Y or s=Z.
-        </p>
-        <p>
-          Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
-          Radial is rings and spokes. Six around a ring, or six outward on a spoke.
-        </p>
-        <p>
-          Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
-        </p>
-        <p>
-          Egyptian sets a soft cap. Over it, lift up to 2 of your older stones, or leave them.
-          An echo never lifts a stone.
-        </p>
-        <p>
-          Echo copies a move onto its mirror after two full turns. Orbit turns every stone one step. The duck stays.
-          Meteor, every third turn, clears the farthest stones.
-        </p>
-        <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
-        <p v-if="bloom">
-          Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
-          It becomes a stone if two of your stones touch it before it fades.
-        </p>
-      </div>
-
       <div v-if="showSettings" class="setup">
         <div class="choice">
           <button
@@ -493,6 +454,55 @@
           </div>
           <button type="submit" class="start">start</button>
         </form>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showRules" class="setup-shade" @click.self="showRules = false">
+        <div class="setup-pop">
+          <div class="pop-bar">
+            <span>rules</span>
+            <button type="button" @click="showRules = false">close</button>
+          </div>
+          <div class="rules">
+            <p>
+              X places one stone on the center, h8 on base 8 and m13 on base 13.
+              Every later turn is two stones, and O takes the first of them.
+            </p>
+            <p>Six in a line, on any of the three axes, wins. That move ends with #.</p>
+            <p>
+              Check means the side to move can finish a line with the stones still left this turn.
+              The stones already in the run are marked.
+            </p>
+            <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
+            <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
+            <p>
+              Together: pick a room name. It keeps the game, and the board size.
+              You start as X. Send the invite. They are O. Rematch swaps sides.
+              The box under the moves is chat. For 3 or 4, change the invite to s=Y or s=Z.
+            </p>
+            <p>
+              Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
+              Radial is rings and spokes. Six around a ring, or six outward on a spoke.
+            </p>
+            <p>
+              Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
+            </p>
+            <p>
+              Egyptian sets a soft cap. Over it, lift up to 2 of your older stones, or leave them.
+              An echo never lifts a stone.
+            </p>
+            <p>
+              Echo copies a move onto its mirror after two full turns. Orbit turns every stone one step. The duck stays.
+              Meteor, every third turn, clears the farthest stones.
+            </p>
+            <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
+            <p v-if="bloom">
+              Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
+              It becomes a stone if two of your stones touch it before it fades.
+            </p>
+          </div>
+        </div>
       </div>
     </Teleport>
   </div>
@@ -2566,8 +2576,7 @@ button:focus-visible {
 
 .rules {
   display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
   color: #bbb;
   font-size: 14px;
   line-height: 1.45;
