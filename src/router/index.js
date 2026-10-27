@@ -28,6 +28,12 @@ const router = createRouter({
       meta: { title: "tools - eire" },
     },
     {
+      path: "/tools/pi",
+      name: "tool-pi",
+      component: () => import("../views/PiDailyView.vue"),
+      meta: { title: "daily pi - eire" },
+    },
+    {
       path: "/art",
       name: "art",
       component: () => import("../views/ArtView.vue"),
