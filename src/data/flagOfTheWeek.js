@@ -35,25 +35,39 @@ const EDITORIALS = {
     "A frigatebird over a rising sun and ocean waves. Kiribati’s flag is a map of an island nation that is mostly water, drawn with the confidence of a postage stamp that became a country.",
 };
 
+const EDITORIAL_ALIASES = {
+  Wales: ["wales", "principality of wales"],
+  "Saint Pierre and Miquelon": ["saint pierre and miquelon", "saint pierre"],
+};
+
+function editorialFlag(flags, name) {
+  const aliases = EDITORIAL_ALIASES[name] || [name.toLowerCase()];
+  return flags.find((flag) => aliases.includes(shortName(flag).toLowerCase())) || null;
+}
+
 export function pickFlagOfTheWeek(flags, weekKey = utcWeekKey()) {
   const pool = filterFlagsByMode(flags, "countries");
-  if (!pool.length) return null;
+  if (!pool.length && !flags.length) return null;
 
   const preferred = Object.keys(EDITORIALS)
-    .map((name) =>
-      pool.find((flag) => shortName(flag).toLowerCase() === name.toLowerCase()),
-    )
+    .map((name) => editorialFlag(flags, name))
     .filter(Boolean);
 
   const source = preferred.length ? preferred : pool;
+  if (!source.length) return null;
   const flag = source[seededIndex(`flag-of-the-week:${weekKey}`, source.length)];
   const name = shortName(flag);
+  const editorial = Object.keys(EDITORIALS).find((key) => {
+    const aliases = EDITORIAL_ALIASES[key] || [key.toLowerCase()];
+    return aliases.includes(name.toLowerCase());
+  });
 
   return {
     weekKey,
     flag,
     name,
     blurb:
+      (editorial && EDITORIALS[editorial]) ||
       EDITORIALS[name] ||
       flag.funFact ||
       flag.emblemMeaning ||

@@ -189,6 +189,8 @@ import { useRoute } from "vue-router";
 import {
   colorHex,
   displayCategory,
+  findFlag,
+  flagSlug,
   imageUrl,
   loadFlags,
   shortName as flagShortName,
@@ -221,15 +223,7 @@ const orderedFlags = computed(() =>
   ),
 );
 
-const flagIndex = computed(() => {
-  const index = Number(route.params.flagId);
-  return Number.isInteger(index) && index >= 0 && index < flags.value.length
-    ? index
-    : -1;
-});
-const flag = computed(() =>
-  flagIndex.value >= 0 ? flags.value[flagIndex.value] : null,
-);
+const flag = computed(() => findFlag(flags.value, route.params.flagId));
 const flagTitle = computed(() => flagShortName(flag.value));
 const orderedIndex = computed(() => orderedFlags.value.indexOf(flag.value));
 const previousFlag = computed(() => orderedFlags.value[orderedIndex.value - 1]);
@@ -325,14 +319,26 @@ function shortName(record) {
 function flagRoute(record) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(record)) },
+    params: { flagId: flagSlug(record) },
   };
 }
 
 function formatDate(value) {
   if (!value) return "Not recorded";
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) return value;
+  const text = String(value).trim();
+  const match = text.match(/^(-?\d+)-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const modern = year >= 1000 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
+    if (!modern) {
+      if (!Number.isFinite(year)) return text;
+      return year < 0 ? `${Math.abs(year)} BCE` : String(year);
+    }
+  }
+  const date = new Date(`${text}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return text;
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeZone: "UTC",

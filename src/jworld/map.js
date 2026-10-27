@@ -720,10 +720,9 @@ export function createJworldMap(container, options = {}) {
       handlers.onDrawCreated(layerToGeoJSONGeometry(event.layer), event.layer);
     });
 
-    map.on(L.Draw.Event.EDITED, (event) => {
-      event.layers.eachLayer((layer) => {
-        handlers.onDrawEdited(layerToGeoJSONGeometry(layer), layer);
-      });
+    map.on(L.Draw.Event.EDITED, () => {
+      const geometry = collectDrawGeometry();
+      if (geometry) handlers.onDrawEdited(geometry, null);
     });
 
     map.on(L.Draw.Event.DRAWVERTEX, () => {
@@ -962,6 +961,19 @@ export function createJworldMap(container, options = {}) {
     map.remove();
   }
 
+  function collectDrawGeometry() {
+    const parts = [];
+    drawLayer.eachLayer((layer) => {
+      const geo = normalizeGeometry(layerToGeoJSONGeometry(layer));
+      if (!geo) return;
+      if (geo.type === "Polygon") parts.push(geo.coordinates);
+      else if (geo.type === "MultiPolygon") parts.push(...geo.coordinates);
+    });
+    if (!parts.length) return null;
+    if (parts.length === 1) return { type: "Polygon", coordinates: parts[0] };
+    return { type: "MultiPolygon", coordinates: parts };
+  }
+
   setTimeout(() => map.invalidateSize(), 50);
 
   return {
@@ -983,20 +995,7 @@ export function createJworldMap(container, options = {}) {
     refreshFlagFills,
     invalidateSize: () => map.invalidateSize(),
     destroy,
-    getDrawGeometry: () => {
-      const parts = [];
-      drawLayer.eachLayer((layer) => {
-        const geo = normalizeGeometry(layerToGeoJSONGeometry(layer));
-        if (!geo) return;
-        if (geo.type === "Polygon") parts.push(geo.coordinates);
-        else if (geo.type === "MultiPolygon") parts.push(...geo.coordinates);
-      });
-      if (!parts.length) return null;
-      if (parts.length === 1) {
-        return { type: "Polygon", coordinates: parts[0] };
-      }
-      return { type: "MultiPolygon", coordinates: parts };
-    },
+    getDrawGeometry: () => collectDrawGeometry(),
   };
 }
 

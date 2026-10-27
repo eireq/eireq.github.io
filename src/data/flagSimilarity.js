@@ -67,8 +67,9 @@ function paletteScore(left, right) {
   return hits * 3;
 }
 
-export function similarityScore(source, candidate, sourceColors = []) {
-  if (!source || !candidate || source === candidate) return -1;
+export function similarityScore(source, candidate, sourceColors = [], candidateColors = []) {
+  if (!source || !candidate) return -1;
+  if (source === candidate) return 0;
 
   let score = 0;
   if (source.category === candidate.category) score += 6;
@@ -102,7 +103,10 @@ export function similarityScore(source, candidate, sourceColors = []) {
     .filter((token) => token.length > 3 && candidateName.includes(token));
   score += Math.min(sharedTokens.length, 2);
 
-  score += paletteScore(paletteOf(source, sourceColors), paletteOf(candidate));
+  score += paletteScore(
+    paletteOf(source, sourceColors),
+    paletteOf(candidate, candidateColors),
+  );
 
   return score;
 }

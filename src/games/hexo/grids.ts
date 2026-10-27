@@ -479,13 +479,39 @@ function finish(
   }
   const origin = pivot ?? byKey[center] ?? cells[0];
   const spacing = spacingOf(cells);
+  const shells = graphRings(origin?.key || center, cells, touch);
   for (const cell of cells) {
     board.mirror[cell.key] = snap(cells, 2 * origin.x - cell.x, 2 * origin.y - cell.y, spacing) ?? cell.key;
     const stepped = rotate(cell.x, cell.y, origin.x, origin.y, turn);
     board.orbit[cell.key] = snap(cells, stepped.x, stepped.y, spacing) ?? cell.key;
-    board.ring[cell.key] = Math.round(Math.hypot(cell.x - origin.x, cell.y - origin.y) / spacing);
+    board.ring[cell.key] = shells[cell.key] ?? 0;
   }
   return board;
+}
+
+/** Steps from the center along touching cells. One shell, not a rounded pixel radius. */
+function graphRings(
+  center: string,
+  cells: GameCell[],
+  touch: Record<string, string[]>,
+): Record<string, number> {
+  const ring: Record<string, number> = {};
+  for (const cell of cells) ring[cell.key] = 999;
+  if (!center || !touch[center]) return ring;
+  ring[center] = 0;
+  const seen = new Set([center]);
+  const queue = [center];
+  for (let i = 0; i < queue.length; i += 1) {
+    const key = queue[i];
+    const next = ring[key] + 1;
+    for (const near of touch[key] ?? []) {
+      if (seen.has(near)) continue;
+      seen.add(near);
+      ring[near] = next;
+      queue.push(near);
+    }
+  }
+  return ring;
 }
 
 function frame(board: GameBoard) {

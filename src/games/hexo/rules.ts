@@ -529,13 +529,13 @@ function finishTurn(raw: Raw, board: GameBoard, rules: Rules): Raw {
       raw.echoes.push({ due: raw.turnCount + 2, kind: "place", key, owner: raw.actor });
     }
   }
-  applyEchoes(raw, board);
+  let born = applyEchoes(raw, board);
   if (!raw.winner) raw.winner = winnerOf(raw, board, rules);
   if (!raw.winner && rules.orbit) {
-    shiftStones(raw, board, (key) => board.orbit[key] || key);
+    born = remapBorn(born, shiftStones(raw, board, (key) => board.orbit[key] || key));
     raw.winner = winnerOf(raw, board, rules);
   }
-  if (!raw.winner && rules.meteor && (raw.turnCount + 1) % 3 === 0) sweep(raw, board);
+  if (!raw.winner && rules.meteor && (raw.turnCount + 1) % 3 === 0) sweep(raw, board, born);
   if (!raw.winner) {
     anchorGhosts(raw, board);
     raw.winner = winnerOf(raw, board, rules);
@@ -557,7 +557,8 @@ function finishTurn(raw: Raw, board: GameBoard, rules: Rules): Raw {
   return raw;
 }
 
-function applyEchoes(raw: Raw, board: GameBoard) {
+function applyEchoes(raw: Raw, board: GameBoard): Set<string> {
+  const born = new Set<string>();
   const due = raw.echoes.filter((echo) => echo.due === raw.turnCount);
   raw.echoes = raw.echoes.filter((echo) => echo.due !== raw.turnCount);
   for (const echo of due) {
@@ -570,10 +571,19 @@ function applyEchoes(raw: Raw, board: GameBoard) {
         continue;
       }
       raw.stones[dest] = echo.owner;
-    } else if (dest !== echo.key) {
+      born.add(dest);
+    } else if (raw.duck === echo.key && dest !== echo.key) {
       raw.duck = dest;
     }
   }
+  return born;
+}
+
+function remapBorn(born: Set<string>, went: Map<string, string>): Set<string> {
+  if (!went.size || !born.size) return born;
+  const next = new Set<string>();
+  for (const key of born) next.add(went.get(key) || key);
+  return next;
 }
 
 function pullStones(raw: Raw, board: GameBoard) {
@@ -633,13 +643,15 @@ function shiftStones(raw: Raw, board: GameBoard, destOf: (key: string) => string
   }
   raw.stones = stones;
   if (went.size) raw.placedThisTurn = raw.placedThisTurn.map((key) => went.get(key) || key);
+  return went;
 }
 
-function sweep(raw: Raw, board: GameBoard) {
+function sweep(raw: Raw, board: GameBoard, spare: Set<string> = new Set()) {
   const keys = Object.keys(raw.stones);
   if (!keys.length) return;
   const far = Math.max(...keys.map((key) => board.ring[key] ?? 0));
   for (const key of keys) {
+    if (spare.has(key)) continue;
     if ((board.ring[key] ?? 0) === far) delete raw.stones[key];
   }
 }
@@ -764,10 +776,12 @@ function panicKeys(raw: Raw, board: GameBoard, rules: Rules): string[] {
   return (board.touch[raw.duck] ?? []).filter((key) => raw.stones[key]);
 }
 
-function winnerOf(raw: Raw, board: GameBoard, rules: Rules): Side | null {
+function winnerOf(raw: Raw, board: GameBoard, rules: Rules): Side | "draw" | null {
   const found = findLines(raw, board, rules);
   if (!found.length) return null;
   if (found.some((line) => line.owner === raw.actor)) return raw.actor;
+  const owners = new Set(found.map((line) => line.owner));
+  if (owners.size > 1) return "draw";
   return found[0].owner;
 }
 

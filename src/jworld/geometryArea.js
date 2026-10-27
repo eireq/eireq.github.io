@@ -1,5 +1,5 @@
 /** WGS84 equatorial radius (m) — same as Mapbox geojson-area. */
-import { normalizeGeometry } from "./geometry.js";
+import { normalizeGeometry, unwrapRing } from "./geometry.js";
 
 const EARTH_RADIUS_M = 6378137;
 const M2_PER_KM2 = 1_000_000;
@@ -11,12 +11,13 @@ function toRad(deg) {
 
 /** Signed spherical ring area in m² (outer rings positive, holes negative). */
 function ringAreaM2(ring) {
-  if (!ring || ring.length < 3) return 0;
+  const open = unwrapRing(ring);
+  if (!open || open.length < 3) return 0;
   let total = 0;
-  const n = ring.length;
+  const n = open.length;
   for (let i = 0; i < n; i++) {
-    const [lng1, lat1] = ring[i];
-    const [lng2, lat2] = ring[(i + 1) % n];
+    const [lng1, lat1] = open[i];
+    const [lng2, lat2] = open[(i + 1) % n];
     total +=
       (toRad(lng2) - toRad(lng1)) *
       (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));

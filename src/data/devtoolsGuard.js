@@ -29,9 +29,11 @@ export function createDevtoolsGuard(onDetect) {
   const sizeGrewLikeDevtools = () => {
     const { widthGap, heightGap } = measureGaps();
     // Docked DevTools usually adds a large pane; ignore small resize noise.
-    return (
-      widthGap - baselineWidthGap > 140 || heightGap - baselineHeightGap > 140
-    );
+    const widthGrew = widthGap - baselineWidthGap > 140;
+    const heightGrew = heightGap - baselineHeightGap > 140;
+    const phone = window.matchMedia("(pointer: coarse)").matches;
+    if (phone && !widthGrew) return false;
+    return widthGrew || heightGrew;
   };
 
   const installConsoleTrap = () => {

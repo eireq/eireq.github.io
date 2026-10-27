@@ -762,7 +762,7 @@ async function refreshCountries() {
     if (!editingId || row.id !== editingId) return row;
     if (baseline && row.updated_at && row.updated_at !== baseline) conflict = true;
     const kept = previous.find((c) => c.id === row.id);
-    if (kept && Object.prototype.hasOwnProperty.call(kept, "lore")) return kept;
+    if (kept) return kept;
     return row;
   });
   const stats = mapApi?.setCountries(
@@ -808,12 +808,25 @@ async function bootMap() {
         banner.value = "Polygon drawn — name your country and save.";
       } else {
         banner.value = "Borders updated — click Save borders.";
-        showSavePanel.value = true;
+        ensureFullCountry(editingCountryId.value)
+          .catch((err) => {
+            banner.value = err.message || "Could not load this country.";
+          })
+          .finally(() => {
+            showSavePanel.value = true;
+          });
       }
     },
-    onDrawEdited: (geometry) => {
+    onDrawEdited: async (geometry) => {
       addingTerritory.value = false;
       draftGeometry.value = geometry;
+      if (editingCountryId.value) {
+        try {
+          await ensureFullCountry(editingCountryId.value);
+        } catch (err) {
+          banner.value = err.message || "Could not load this country.";
+        }
+      }
       banner.value = "Borders edited — save when ready.";
       showSavePanel.value = true;
     },
@@ -1344,8 +1357,8 @@ async function saveCountry(payload, formGeometry = null) {
 
   try {
     const geometry =
-      formGeometry ||
       mapApi?.getDrawGeometry() ||
+      formGeometry ||
       draftGeometry.value ||
       formCountry.value?.geometry;
 

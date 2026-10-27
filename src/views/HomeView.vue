@@ -62,7 +62,7 @@
 
 <script setup>
 import { onMounted, ref } from "vue";
-import { loadFlags } from "@/data/flags.js";
+import { flagSlug, loadFlags } from "@/data/flags.js";
 import { cachedFlagImageUrl } from "@/data/flagImageCache.js";
 import { pickFlagOfTheWeek } from "@/data/flagOfTheWeek.js";
 import { useI18n } from "../i18n.js";
@@ -117,7 +117,7 @@ onMounted(async () => {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(flag)) },
+    params: { flagId: flagSlug(flag) },
   };
 }
 </script>

@@ -20,7 +20,7 @@
             <option
               v-for="flag in leftOptions"
               :key="flag.name + flag.svgUrl"
-              :value="shortName(flag)"
+              :value="flagLabel(flag)"
             />
           </datalist>
         </label>
@@ -38,7 +38,7 @@
             <option
               v-for="flag in rightOptions"
               :key="flag.name + flag.svgUrl"
-              :value="shortName(flag)"
+              :value="flagLabel(flag)"
             />
           </datalist>
         </label>
@@ -109,6 +109,7 @@ import { useRoute } from "vue-router";
 import {
   displayCategory,
   loadFlags,
+  flagSlug,
   shortName,
 } from "@/data/flags.js";
 import { cachedFlagImageUrl } from "@/data/flagImageCache.js";
@@ -145,25 +146,40 @@ onMounted(async () => {
   if (typeof route.query.b === "string") rightQuery.value = route.query.b;
 });
 
+const nameCounts = computed(() => {
+  const counts = new Map();
+  for (const flag of flags.value) {
+    const name = shortName(flag);
+    counts.set(name, (counts.get(name) || 0) + 1);
+  }
+  return counts;
+});
+
+function flagLabel(flag) {
+  const name = shortName(flag);
+  if ((nameCounts.value.get(name) || 0) < 2) return name;
+  return `${name} · ${flag.category}`;
+}
+
 function matchFlag(query) {
   const needle = query.trim().toLowerCase();
   if (!needle) return null;
-  return (
-    flags.value.find((flag) => shortName(flag).toLowerCase() === needle) ||
-    flags.value.find((flag) =>
-      shortName(flag).toLowerCase().includes(needle),
-    ) ||
-    null
-  );
+  const labeled = flags.value.find((flag) => flagLabel(flag).toLowerCase() === needle);
+  if (labeled) return labeled;
+  const exact = flags.value.filter((flag) => shortName(flag).toLowerCase() === needle);
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return exact.find((flag) => flag.category === "Country") || exact[0];
+  const partial = flags.value.filter((flag) => shortName(flag).toLowerCase().includes(needle));
+  return partial.length === 1 ? partial[0] : null;
 }
 
 const leftFlag = computed(() => matchFlag(leftQuery.value));
 const rightFlag = computed(() => matchFlag(rightQuery.value));
 
 const leftOptions = computed(() =>
-  flags.value
+    flags.value
     .filter((flag) =>
-      shortName(flag)
+      flagLabel(flag)
         .toLowerCase()
         .includes(leftQuery.value.trim().toLowerCase()),
     )
@@ -171,9 +187,9 @@ const leftOptions = computed(() =>
 );
 
 const rightOptions = computed(() =>
-  flags.value
+    flags.value
     .filter((flag) =>
-      shortName(flag)
+      flagLabel(flag)
         .toLowerCase()
         .includes(rightQuery.value.trim().toLowerCase()),
     )
@@ -201,7 +217,13 @@ const sides = computed(() => [
 
 const similarity = computed(() => {
   if (!leftFlag.value || !rightFlag.value) return "—";
-  return similarityScore(leftFlag.value, rightFlag.value, leftMeta.colors);
+  if (leftFlag.value === rightFlag.value) return "same flag";
+  return similarityScore(
+    leftFlag.value,
+    rightFlag.value,
+    leftMeta.colors,
+    rightMeta.colors,
+  );
 });
 
 watch(leftFlag, (flag) => loadSide(flag, leftMeta), { immediate: true });
@@ -236,7 +258,7 @@ async function loadSide(flag, target) {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(flag)) },
+    params: { flagId: flagSlug(flag) },
   };
 }
 

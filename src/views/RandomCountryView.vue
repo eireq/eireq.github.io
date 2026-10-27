@@ -89,6 +89,7 @@ import {
   displayCategory,
   filterFlagsByMode,
   loadFlags,
+  flagSlug,
   shortName,
   shuffle,
 } from "../data/flags.js";
@@ -150,7 +151,7 @@ function pickRandom() {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(flag)) },
+    params: { flagId: flagSlug(flag) },
   };
 }
 </script>

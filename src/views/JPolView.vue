@@ -235,7 +235,7 @@
           <div class="scale-block">
             <div class="scale-label">
               <span>{{ t("jpol.progressive") }}</span>
-              <strong>{{ percentage(result.progressive) }}%</strong>
+              <strong>{{ leanPercent(result.progressive) }}%</strong>
               <span>{{ t("jpol.conservative") }}</span>
             </div>
             <div class="scale">
@@ -294,7 +294,11 @@
           </div>
           <div class="value-bar">
             <span
-              :style="{ width: `${axis.leftPercent}%`, background: axis.color }"
+              :style="{
+                left: `${Math.min(axis.mark, 50)}%`,
+                width: `${Math.abs(axis.mark - 50)}%`,
+                background: axis.color,
+              }"
             ></span>
           </div>
           <div class="value-numbers">
@@ -319,7 +323,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   AXIS_KEYS,
@@ -440,19 +444,24 @@ const axisResults = computed(() => {
       color: AXIS_META[key].color,
       leftPercent: percentage(-score),
       rightPercent: percentage(score),
+      mark: percentage(score),
     };
   });
 });
 
-onMounted(() => {
-  const raw = route.query.r;
-  if (typeof raw === "string" && raw) {
+watch(
+  () => route.query.r,
+  (raw) => {
+    if (typeof raw !== "string" || !raw || raw === resultCode.value) return;
     const decoded = decodeResult(raw);
-    if (decoded) {
-      showDecodedResult(decoded, raw);
-    }
-  }
-});
+    if (decoded) showDecodedResult(decoded, raw);
+  },
+  { immediate: true },
+);
+
+function leanPercent(score) {
+  return Math.abs(percentage(score) - 50) * 2;
+}
 
 function capitalize(value) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
@@ -619,7 +628,10 @@ function downloadResult() {
     context.fillStyle = "#101114";
     context.fillRect(850, y + 48, 470, 36);
     context.fillStyle = axis.color;
-    context.fillRect(850, y + 48, 470 * (axis.leftPercent / 100), 36);
+    const lean = (axis.mark - 50) / 100;
+    const bar = Math.abs(lean) * 470;
+    const barX = lean >= 0 ? 850 + 235 : 850 + 235 - bar;
+    context.fillRect(barX, y + 48, bar, 36);
   });
 
   context.font = "20px Arial";

@@ -173,7 +173,7 @@
 
 <script setup>
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
-import { loadFlags } from "../data/flags.js";
+import { flagSlug, loadFlags } from "../data/flags.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
@@ -353,7 +353,7 @@ watch(pageCount, (count) => {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(flag)) },
+    params: { flagId: flagSlug(flag) },
   };
 }
 
@@ -366,7 +366,7 @@ function matchesCollection(flag) {
   }
 
   if (selectedCollection.value === "international") {
-    return /league|asean|caricom|commonwealth|cis|union|eu|nato|olympic|oau|african union|opec|red cross|red crescent|red crystal|south pacific|united nations|un\b|osn|mercosur|saarc|ctso|sadc|interpol|fifa|uefa|imf|who|unesco|world trade|world bank|greenpeace|amnesty|ilo/i.test(
+    return /league|asean|caricom|commonwealth|\bcis\b|\bunion\b|\beu\b|nato|olympic|oau|african union|opec|red cross|red crescent|red crystal|south pacific|united nations|\bun\b|\bosn\b|mercosur|saarc|ctso|sadc|interpol|fifa|uefa|\bimf\b|\bwho\b|unesco|world trade|world bank|greenpeace|amnesty|\bilo\b/i.test(
       name,
     );
   }
@@ -380,6 +380,7 @@ function matchesCollection(flag) {
   }
 
   if (selectedCollection.value === "historical") {
+    if (category === "Country" || category === "Territory") return false;
     return (
       category.toLowerCase().includes("historical") ||
       /historical|empire|kingdom|republic|dynasty/i.test(name)
@@ -415,7 +416,9 @@ function subdivisionCountry(flag) {
   if (flag.category === "Region") return "Belgium";
   if (flag.category === "US State") return "United States";
   if (flag.category === "Province") {
-    return dutchProvinces.has(subdivisionName) ? "Netherlands" : "Canada";
+    if (dutchProvinces.has(subdivisionName)) return "Netherlands";
+    if (canadianProvinces.has(subdivisionName)) return "Canada";
+    return "";
   }
   if (flag.category === "Republic") {
     return subdivisionName === "Crimea" ? "Ukraine" : "Russia";
@@ -425,6 +428,19 @@ function subdivisionCountry(flag) {
   }
   return "";
 }
+
+const canadianProvinces = new Set([
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Nova Scotia",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+]);
 
 const dutchProvinces = new Set([
   "Groningen",

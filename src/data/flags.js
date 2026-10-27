@@ -38,6 +38,40 @@ export function shortName(flag) {
     .trim();
 }
 
+function slugPart(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function slugHash(value) {
+  let hash = 0;
+  const text = String(value || "");
+  for (let i = 0; i < text.length; i += 1) hash = (hash * 33 + text.charCodeAt(i)) >>> 0;
+  return hash.toString(36);
+}
+
+/** Stable detail id. Old numeric links still resolve by index. */
+export function flagSlug(flag) {
+  const file = String(flag?.svgUrl || flag?.image || "").split("/").pop();
+  const name = slugPart(`${flag?.category || ""}-${flag?.name || ""}`);
+  const stem = slugPart(file);
+  const body = [name, stem].filter(Boolean).join("--").slice(0, 96);
+  return `${body || "flag"}-${slugHash(flag?.svgUrl || flag?.name)}`;
+}
+
+export function findFlag(flags, id) {
+  const text = decodeURIComponent(String(id || ""));
+  if (/^\d+$/.test(text)) {
+    const index = Number(text);
+    if (Number.isInteger(index) && flags[index]) return flags[index];
+  }
+  return flags.find((flag) => flagSlug(flag) === text) || null;
+}
+
 export function imageUrl(url) {
   return url?.replace(/^http:/, "https:") || "";
 }

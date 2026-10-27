@@ -7,20 +7,20 @@
     </p>
 
     <section class="art">
-      <a class="art-piece" href="#">
+      <article class="art-piece">
         <h2>{{ t("art.digital") }}</h2>
         <p>{{ t("art.digitalText") }}</p>
-      </a>
+      </article>
 
-      <a class="art-piece" href="#">
+      <article class="art-piece">
         <h2>{{ t("art.flags") }}</h2>
         <p>{{ t("art.flagsText") }}</p>
-      </a>
+      </article>
 
-      <a class="art-piece" href="#">
+      <article class="art-piece">
         <h2>{{ t("art.more") }}</h2>
         <p>{{ t("art.moreText") }}</p>
-      </a>
+      </article>
     </section>
   </main>
 </template>
@@ -68,7 +68,6 @@ h1 {
   padding: 28px;
   border: 1px solid #222;
   color: #fff;
-  text-decoration: none;
   transition: 0.2s;
   min-height: 180px;
 }

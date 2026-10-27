@@ -82,6 +82,7 @@ import {
 import {
   isCorrectFlagAnswer,
   loadFlags,
+  flagSlug,
   shortName,
   utcDateKey,
 } from "@/data/flags.js";
@@ -181,7 +182,7 @@ async function shareResult() {
 function flagRoute(flag) {
   return {
     name: "flag-detail",
-    params: { flagId: String(flags.value.indexOf(flag)) },
+    params: { flagId: flagSlug(flag) },
   };
 }
 </script>

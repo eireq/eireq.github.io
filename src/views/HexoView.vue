@@ -1,5 +1,5 @@
 <template>
-  <div class="hexo">
+  <div ref="shell" class="hexo" :class="{ screen: full.active }">
     <aside class="panel">
       <header class="top">
         <div>
@@ -355,10 +355,11 @@
           +
         </button>
         <button type="button" aria-label="fit board" @click="fit">fit</button>
+        <FullscreenButton :active="full.active" @toggle="full.toggle" />
       </div>
     </div>
 
-    <Teleport to="body">
+    <Teleport v-if="shell" :to="shell">
       <div v-if="showSetup" class="setup-shade" @click.self="showSetup = false">
         <form class="setup-pop" @submit.prevent="startGame">
           <div class="pop-bar">
@@ -483,7 +484,7 @@
       </div>
     </Teleport>
 
-    <Teleport to="body">
+    <Teleport v-if="shell" :to="shell">
       <div v-if="showRules" class="setup-shade" @click.self="showRules = false">
         <div class="setup-pop">
           <div class="pop-bar">
@@ -519,8 +520,9 @@
               An echo never lifts a stone.
             </p>
             <p>
-              Echo copies a move onto its mirror after two full turns. Orbit turns every stone one step. The duck stays.
-              Meteor, every third turn, clears the farthest stones.
+              Echo copies a stone onto its mirror after two full turns. A duck echo moves the duck only if it is still on that cell.
+              Orbit then turns every stone one step. The duck stays.
+              Meteor, every third turn, clears the farthest ring. A copy born on that turn stays.
             </p>
             <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
             <p>Slide: the second action can move one of your stones onto an empty neighbor.</p>
@@ -574,6 +576,8 @@ import {
   project,
 } from "@/games/hexo/rules.ts";
 import { connectMatch, isRoomName } from "@/games/hexo/online.ts";
+import { useFullscreen } from "@/games/fullscreen.js";
+import FullscreenButton from "@/games/FullscreenButton.vue";
 
 const route = useRoute();
 
@@ -693,10 +697,10 @@ const joined = readRoom();
 const remembered = joined ? loadRoom(joined.room) : null;
 const openedSize = remembered ? asSize(remembered.size) : joined ? joined.size : querySize();
 const loaded = readReplay(openedSize);
-const openedMoves =
-  remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length)
-    ? remembered.moves
-    : (loaded.moves ?? []);
+const replayFromRoom = Boolean(
+  remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length),
+);
+const openedMoves = replayFromRoom ? remembered.moves : (loaded.moves ?? []);
 const openedAlt = remembered?.alt || (!remembered ? queryAlt() : "");
 const openedRules = decodeAlt(openedAlt);
 const openedSeat =
@@ -720,7 +724,7 @@ const chatEl = ref(null);
 const history = ref(openedMoves);
 const moveTimes = ref(
   openedMoves.map((_, index) =>
-    typeof remembered?.times?.[index] === "number" ? remembered.times[index] : null,
+    replayFromRoom && typeof remembered?.times?.[index] === "number" ? remembered.times[index] : null,
   ),
 );
 const view = ref(openedMoves.length);
@@ -737,23 +741,31 @@ const flashKey = ref(null);
 const typed = ref("");
 const bloom = ref(window.sessionStorage.getItem("hexo-bloom") === "1" || openedRules.rift);
 let bloomTaps = 0;
-const clockBudget = ref(remembered?.minutes || joined?.minutes || 0);
+const clockBudget = ref((replayFromRoom ? remembered?.minutes : 0) || joined?.minutes || 0);
 const clock = ref(openedClock());
 const clockMarks = ref([]);
-const clockRunning = ref(false);
 const timeoutWinner = ref(
-  isSide(remembered?.flag)
+  replayFromRoom && isSide(remembered?.flag)
     ? remembered.flag
     : !loaded.error && isSide(route.query.flag)
       ? route.query.flag
       : null,
 );
 const resigned = ref(
-  isSide(remembered?.resign)
+  replayFromRoom && isSide(remembered?.resign)
     ? remembered.resign
     : !loaded.error && isSide(route.query.end)
       ? route.query.end
       : null,
+);
+const clockRunning = ref(
+  Boolean(
+    replayFromRoom &&
+      remembered?.running &&
+      openedMoves.length &&
+      !timeoutWinner.value &&
+      !resigned.value,
+  ),
 );
 const showSetup = ref(false);
 const showSettings = ref(false);
@@ -772,6 +784,8 @@ const particles = ref([]);
 const ready = ref(false);
 const listEl = ref(null);
 const viewport = ref(null);
+const shell = ref(null);
+const full = useFullscreen(shell);
 
 const panX = ref(0);
 const panY = ref(0);
@@ -849,7 +863,7 @@ const ruleSwitches = computed(() => {
     {
       id: "echo",
       label: "echo",
-      note: "copies a move onto its mirror after two full turns. never lifts a stone.",
+      note: "copies a stone onto its mirror after two full turns. a duck echo waits if the duck has already moved.",
       on: draft.echo,
       toggle: () => {
         draft.echo = !draft.echo;
@@ -867,7 +881,7 @@ const ruleSwitches = computed(() => {
     {
       id: "meteor",
       label: "meteor",
-      note: "every third turn, the farthest stones are cleared.",
+      note: "every third turn, the farthest ring is cleared. a copy born that turn stays.",
       on: draft.meteor,
       toggle: () => {
         draft.meteor = !draft.meteor;
@@ -1339,7 +1353,7 @@ function emptyTable() {
 
 function openedClock() {
   const ms = clockBudget.value * 60000;
-  if (remembered?.clock?.X != null && remembered?.clock?.O != null) {
+  if (replayFromRoom && remembered?.clock?.X != null && remembered?.clock?.O != null) {
     return {
       X: remembered.clock.X,
       O: remembered.clock.O,
@@ -1577,7 +1591,7 @@ function queueBot() {
     if (turn.value === human.value) return;
     const seen = history.value.length;
     botTimer = window.setTimeout(() => {
-      if (history.value.length !== seen) return;
+      if (history.value.length !== seen || view.value !== seen) return;
       if (timeoutWinner.value || position.value.winner) return;
       if (turn.value === human.value) return;
       const move = botPick(position.value, board.value, rules.value);
@@ -1588,7 +1602,7 @@ function queueBot() {
   if (turn.value !== botSide()) return;
   const seen = history.value.length;
   botTimer = window.setTimeout(() => {
-    if (history.value.length !== seen) return;
+    if (history.value.length !== seen || view.value !== seen) return;
     if (timeoutWinner.value || position.value.winner) return;
     if (turn.value !== botSide()) return;
     const move = chooseBotMove(stones.value, turn.value, size.value);
@@ -1693,6 +1707,7 @@ function undo() {
   moveTimes.value = moveTimes.value.slice(0, -pops);
   clockMarks.value = clockMarks.value.slice(0, -pops);
   view.value = history.value.length;
+  resigned.value = null;
   timeoutWinner.value = null;
   particles.value = [];
   if (mark && clock.value) clock.value = { X: mark.X, O: mark.O };
@@ -1738,6 +1753,7 @@ function startGame() {
   }
   clockRunning.value = false;
   showSetup.value = false;
+  if (draft.mode !== "together" && !flipTouched.value) flipped.value = false;
   if (draft.mode === "together") {
     const cleaned = cleanRoom(draft.room);
     const name = isRoomName(cleaned) ? cleaned : makeCode();
@@ -1754,8 +1770,11 @@ function startGame() {
       epoch.value = 0;
       claiming = true;
       if (!flipTouched.value) flipped.value = false;
+      clockRunning.value = Boolean(clock.value);
     }
     openMatch();
+  } else {
+    clockRunning.value = Boolean(clock.value);
   }
   syncUrl();
   nextTick(() => fit());
@@ -2150,7 +2169,8 @@ function restoreSaved(saved) {
   } else {
     clock.value = null;
   }
-  clockRunning.value = false;
+  const over = isSide(saved.resign) || isSide(saved.flag);
+  clockRunning.value = Boolean(saved.running) && !over && saved.moves.length > 0;
 }
 
 function rematch() {
@@ -2175,7 +2195,7 @@ function rematch() {
     const ms = clockBudget.value * 60000;
     clock.value = freshClock(clockBudget.value * 60000);
   }
-  clockRunning.value = false;
+  clockRunning.value = Boolean(clock.value);
   publishMatch();
 }
 
@@ -2185,11 +2205,8 @@ function toggleFlip() {
 }
 
 function typedReady(letter, number) {
-  if (number > 1) return true;
-  for (let extra = 10; extra <= board.value.span; extra += 1) {
-    if (isValidHex(letter, extra, size.value)) return false;
-  }
-  return true;
+  const key = `${letter}${number}`;
+  return !board.value.cells.some((cell) => cell.key !== key && cell.key.startsWith(key));
 }
 
 function commitTyped() {
@@ -2394,19 +2411,26 @@ function claimRoom() {
 
 function adoptClock(note, extended) {
   if (!note.clock) return;
-  if (!extended && clock.value) return;
-  const lag = extended ? Math.min(2500, Math.max(0, Date.now() - note.at)) : 0;
+  const side = turn.value;
+  const latest = variant.value
+    ? project(history.value, rules.value, board.value)
+    : applyMoves(history.value, size.value);
+  const finished = Boolean(note.resign || note.flag || latest?.winner);
+  const remoteSide = note.clock[side];
+  if (!extended && clock.value && !finished && clockRunning.value) {
+    if (note.running && typeof remoteSide === "number" && remoteSide < clock.value[side]) {
+      clock.value = { ...clock.value, [side]: remoteSide };
+    }
+    return;
+  }
+  if (!extended && clock.value && !finished && !note.running && !clockRunning.value) return;
+  const lag = !finished && note.running ? Math.min(2500, Math.max(0, Date.now() - note.at)) : 0;
   const next = {
     X: note.clock.X,
     O: note.clock.O,
     Y: note.clock.Y ?? note.clock.X,
     Z: note.clock.Z ?? note.clock.O,
   };
-  const side = turn.value;
-  const latest = variant.value
-    ? project(history.value, rules.value, board.value)
-    : applyMoves(history.value, size.value);
-  const finished = Boolean(note.resign || note.flag || latest?.winner);
   if (!finished && note.running) next[side] = Math.max(0, next[side] - lag);
   clock.value = next;
   clockRunning.value = !finished && Boolean(note.running);
@@ -2513,6 +2537,14 @@ onUnmounted(() => {
   overflow: hidden;
   padding-top: env(safe-area-inset-top);
   box-sizing: border-box;
+}
+
+.hexo.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: auto;
+  height: auto;
 }
 
 .panel {
@@ -3166,9 +3198,13 @@ button:focus-visible {
 
 .zoom {
   position: absolute;
+  left: 12px;
   right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-content: flex-end;
   gap: 6px;
 }
 
