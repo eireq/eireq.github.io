@@ -19,10 +19,11 @@ export type Rules = {
   orbit: boolean;
   meteor: boolean;
   rift: boolean;
+  raid: boolean;
 };
 
 export type Act = {
-  kind: "place" | "duck" | "remove" | "pass";
+  kind: "place" | "duck" | "remove" | "pass" | "steal";
   key: string;
   letter: string;
   number: number;
@@ -39,7 +40,7 @@ export type Table = {
   turn: Side;
   winner: Side | "draw" | null;
   lines: Coord[][];
-  phase: "place" | "trim" | "duck";
+  phase: "place" | "trim" | "duck" | "steal";
   removesLeft: number;
   stonesLeft: number;
   panic: string[];
@@ -58,7 +59,7 @@ type Raw = {
   rifts: string[];
   echoes: Echo[];
   turnCount: number;
-  phase: "place" | "trim" | "duck";
+  phase: "place" | "trim" | "duck" | "steal";
   actor: Side;
   placedTotal: number;
   placedThisTurn: string[];
@@ -79,6 +80,7 @@ export function plainRules(): Rules {
     orbit: false,
     meteor: false,
     rift: false,
+    raid: false,
   };
 }
 
@@ -92,7 +94,8 @@ export function isPlain(rules: Rules): boolean {
     !rules.echo &&
     !rules.orbit &&
     !rules.meteor &&
-    !rules.rift
+    !rules.rift &&
+    !rules.raid
   );
 }
 
@@ -108,6 +111,7 @@ export function encodeAlt(rules: Rules): string {
   if (rules.orbit) parts.push("orbit");
   if (rules.meteor) parts.push("meteor");
   if (rules.rift) parts.push("rift");
+  if (rules.raid) parts.push("raid");
   return parts.join("-");
 }
 
@@ -115,7 +119,7 @@ export function decodeAlt(raw: string): Rules {
   const rules = plainRules();
   if (!raw) return rules;
   for (const part of raw.split("-")) {
-    if (part === "tri" || part === "sq" || part === "oct") rules.grid = part;
+    if (part === "tri" || part === "sq" || part === "oct" || part === "rad") rules.grid = part;
     else if (part === "3") rules.players = 3;
     else if (part === "4") rules.players = 4;
     else if (part === "duck") rules.duck = true;
@@ -126,6 +130,7 @@ export function decodeAlt(raw: string): Rules {
     else if (part === "orbit") rules.orbit = true;
     else if (part === "meteor") rules.meteor = true;
     else if (part === "rift") rules.rift = true;
+    else if (part === "raid") rules.raid = true;
     else {
       const cap = /^cap(\d+)$/.exec(part);
       if (cap) rules.cap = Math.max(1, Math.min(40, Number(cap[1])));
@@ -145,6 +150,7 @@ export function actionCode(act: Act): string {
   if (act.kind === "pass") return "*";
   if (act.kind === "duck") return `~${act.key}`;
   if (act.kind === "remove") return `-${act.key}`;
+  if (act.kind === "steal") return `>${act.key}`;
   return act.key;
 }
 
@@ -157,6 +163,9 @@ export function parseCode(code: string): Act | null {
     body = code.slice(1);
   } else if (code.startsWith("-")) {
     kind = "remove";
+    body = code.slice(1);
+  } else if (code.startsWith(">")) {
+    kind = "steal";
     body = code.slice(1);
   }
   const match = /^([a-z])(\d+)$/.exec(body);
@@ -210,6 +219,11 @@ export function botPick(table: Table, board: GameBoard, rules: Rules): Act | nul
     }
     return acts.find((act) => act.kind === "pass") ?? acts[0];
   }
+  if (table.phase === "steal") {
+    const takes = acts.filter((act) => act.kind === "steal");
+    takes.sort((a, b) => stealRank(table, board, b.key) - stealRank(table, board, a.key));
+    return takes[0] ?? null;
+  }
   if (table.phase === "duck") {
     const spots = acts.filter((act) => act.kind === "duck");
     spots.sort((a, b) => (board.ring[a.key] ?? 0) - (board.ring[b.key] ?? 0));
@@ -239,10 +253,21 @@ export function botPick(table: Table, board: GameBoard, rules: Rules): Act | nul
   return best;
 }
 
+function stealRank(table: Table, board: GameBoard, key: string): number {
+  const owner = table.stones[key];
+  let score = 0;
+  for (const near of board.touch[key] ?? []) {
+    if (table.stones[near] === owner) score += 5;
+    if (table.stones[near] === table.turn) score += 2;
+  }
+  return score + ((board.radius || 0) - (board.ring[key] ?? 0));
+}
+
 function holeFor(table: Table, board: GameBoard, owner: Side, legal: Set<string>): string | null {
   const blocked = new Set([...table.panic, ...table.ghosts.map((ghost) => ghost.key)]);
   if (table.duck) blocked.add(table.duck);
   for (const line of board.lines) {
+    for (const keys of scans(line, board)) {
     let empty = "";
     let own = 0;
     let run = 0;
@@ -250,7 +275,7 @@ function holeFor(table: Table, board: GameBoard, owner: Side, legal: Set<string>
       if (run >= 6 && own === run - 1 && empty && legal.has(empty)) return empty;
       return "";
     };
-    for (const key of line) {
+    for (const key of keys) {
       if (blocked.has(key)) {
         const hit = flush();
         if (hit) return hit;
@@ -283,6 +308,7 @@ function holeFor(table: Table, board: GameBoard, owner: Side, legal: Set<string>
     }
     const hit = flush();
     if (hit) return hit;
+    }
   }
   return null;
 }
@@ -323,6 +349,7 @@ function step(raw: Raw, act: Act, board: GameBoard, rules: Rules): Raw | null {
   const next = clone(raw);
   if (act.kind === "place") return placed(next, act, board, rules);
   if (act.kind === "remove") return lifted(next, act, board, rules);
+  if (act.kind === "steal") return taken(next, act, board, rules);
   if (act.kind === "pass") return afterStones(next, board, rules);
   next.duck = act.key;
   if (rules.echo) {
@@ -360,8 +387,22 @@ function lifted(raw: Raw, act: Act, board: GameBoard, rules: Rules): Raw {
   return raw;
 }
 
+function taken(raw: Raw, act: Act, board: GameBoard, rules: Rules): Raw {
+  raw.stones[act.key] = raw.actor;
+  const win = winnerOf(raw, board, rules);
+  if (win) {
+    raw.winner = win;
+    return raw;
+  }
+  return afterStones(raw, board, rules);
+}
+
 function afterStones(raw: Raw, board: GameBoard, rules: Rules): Raw {
-  if (raw.phase === "place" && rules.cap > 0) {
+  if (raw.phase === "place" && rules.raid && foeKeys(raw).length) {
+    raw.phase = "steal";
+    return raw;
+  }
+  if ((raw.phase === "place" || raw.phase === "steal") && rules.cap > 0) {
     const own = Object.entries(raw.stones).filter(([, side]) => side === raw.actor);
     const spare = own.filter(([key]) => !raw.placedThisTurn.includes(key));
     if (own.length > rules.cap && spare.length) {
@@ -476,8 +517,21 @@ function anchorGhosts(raw: Raw, board: GameBoard) {
   raw.ghosts = kept;
 }
 
+function foeKeys(raw: Raw): string[] {
+  return Object.entries(raw.stones)
+    .filter(([, side]) => side !== raw.actor)
+    .map(([key]) => key);
+}
+
 function choices(raw: Raw, board: GameBoard, rules: Rules): Act[] {
   if (raw.winner) return [];
+  if (raw.phase === "steal") {
+    return foeKeys(raw).flatMap((key) => {
+      const cell = board.byKey[key];
+      if (!cell) return [];
+      return [{ kind: "steal" as const, key, letter: cell.letter, number: cell.number }];
+    });
+  }
   if (raw.phase === "trim") {
     const acts: Act[] = [{ kind: "pass", key: "", letter: "", number: 0 }];
     for (const [key, side] of Object.entries(raw.stones)) {
@@ -547,6 +601,7 @@ function findLines(raw: Raw, board: GameBoard, rules: Rules): { owner: Side; key
   const ghosted = new Set(raw.ghosts.map((ghost) => ghost.key));
   const lines: { owner: Side; keys: string[] }[] = [];
   for (const line of board.lines) {
+    for (const keys of scans(line, board)) {
     let owner: Side | null = null;
     let run: string[] = [];
     const flush = () => {
@@ -554,7 +609,7 @@ function findLines(raw: Raw, board: GameBoard, rules: Rules): { owner: Side; key
       owner = null;
       run = [];
     };
-    for (const key of line) {
+    for (const key of keys) {
       const stone = raw.stones[key];
       if (!stone || panic.has(key) || ghosted.has(key) || key === raw.duck) {
         flush();
@@ -565,8 +620,15 @@ function findLines(raw: Raw, board: GameBoard, rules: Rules): { owner: Side; key
       run.push(key);
     }
     flush();
+    }
   }
   return lines;
+}
+
+function scans(line: string[], board: GameBoard): string[][] {
+  const circular = line.length >= 6 && (board.touch[line[0]] ?? []).includes(line[line.length - 1]);
+  if (!circular) return [line];
+  return [line, line.slice(-5).concat(line.slice(0, 5))];
 }
 
 function present(raw: Raw, board: GameBoard, rules: Rules): Table {
@@ -599,11 +661,12 @@ function threats(raw: Raw, board: GameBoard, rules: Rules): string[] {
   const blocked = blockedKeys(raw, board, rules);
   const marked = new Set<string>();
   for (const line of board.lines) {
-    for (let start = 0; start < line.length; start += 1) {
+    for (const keys of scans(line, board)) {
+    for (let start = 0; start < keys.length; start += 1) {
       let empties = 0;
       let own = 0;
-      for (let end = start; end < line.length; end += 1) {
-        const key = line[end];
+      for (let end = start; end < keys.length; end += 1) {
+        const key = keys[end];
         if (blocked.has(key)) break;
         const owner = raw.stones[key];
         if (owner && owner !== raw.actor) break;
@@ -612,10 +675,11 @@ function threats(raw: Raw, board: GameBoard, rules: Rules): string[] {
         if (empties > left) break;
         if (end - start + 1 >= 6 && own > 0 && empties > 0) {
           for (let cursor = start; cursor <= end; cursor += 1) {
-            if (raw.stones[line[cursor]] === raw.actor) marked.add(line[cursor]);
+            if (raw.stones[keys[cursor]] === raw.actor) marked.add(keys[cursor]);
           }
         }
       }
+    }
     }
   }
   return [...marked];

@@ -109,6 +109,7 @@
         </p>
         <p>
           Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
+          Radial is rings and spokes. Six around a ring, or six outward on a spoke.
         </p>
         <p>
           Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
@@ -121,6 +122,7 @@
           Echo copies a move onto its mirror after two full turns. Orbit turns every stone one step. The duck stays.
           Meteor, every third turn, clears the farthest stones.
         </p>
+        <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
         <p v-if="bloom">
           Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
           It becomes a stone if two of your stones touch it before it fades.
@@ -745,6 +747,7 @@ const draft = reactive({
   orbit: openedRules.orbit,
   meteor: openedRules.meteor,
   rift: openedRules.rift,
+  raid: openedRules.raid,
 });
 
 const variantHint = ref("");
@@ -754,6 +757,7 @@ const grids = [
   { id: "tri", label: "triangle", note: "place inside triangles. the other rules stay." },
   { id: "sq", label: "square", note: "place inside squares. the other rules stay." },
   { id: "oct", label: "octagon", note: "place inside octagons and the small diamonds." },
+  { id: "rad", label: "radial", note: "rings and spokes. six around a ring, or six out from the center." },
 ];
 
 function playerNote(count) {
@@ -812,6 +816,15 @@ const ruleSwitches = computed(() => {
       on: draft.meteor,
       toggle: () => {
         draft.meteor = !draft.meteor;
+      },
+    },
+    {
+      id: "raid",
+      label: "raid",
+      note: "after your stones, take one of theirs. it becomes yours.",
+      on: draft.raid,
+      toggle: () => {
+        draft.raid = !draft.raid;
       },
     },
   ];
@@ -883,8 +896,9 @@ function variantLines(ply) {
     }
     while (index < ply && history.value[index].kind && history.value[index].kind !== "place") {
       const move = history.value[index];
-      const square = move.kind === "pass" ? "pass" : move.kind === "duck" ? `~${move.key}` : `-${move.key}`;
-      stones.push({ index, square, key: move.kind === "duck" ? move.key : "" });
+      const square =
+        move.kind === "pass" ? "pass" : move.kind === "duck" ? `~${move.key}` : move.kind === "steal" ? `>${move.key}` : `-${move.key}`;
+      stones.push({ index, square, key: move.kind === "remove" || move.kind === "pass" ? "" : move.key });
       index += 1;
     }
     if (!stones.length) break;
@@ -979,6 +993,8 @@ const mateIndex = computed(() => {
   if (resigned.value || timeoutWinner.value) return -1;
   if (!fullGame.value.winner || fullGame.value.winner === "draw") return -1;
   if (variant.value) {
+    const last = history.value[history.value.length - 1];
+    if (last?.kind === "steal") return history.value.length - 1;
     for (let index = history.value.length - 1; index >= 0; index -= 1) {
       if (!history.value[index].kind || history.value[index].kind === "place") return index;
     }
@@ -1022,19 +1038,26 @@ const winDelay = computed(() => {
 
 const winSegments = computed(() => {
   if (view.value !== history.value.length || timeoutWinner.value) return [];
-  return position.value.lines.map((line) => {
-    const a = board.value.byKey[`${line[0].letter}${line[0].number}`];
-    const b = board.value.byKey[`${line[line.length - 1].letter}${line[line.length - 1].number}`];
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ext = board.value.hex * 0.45;
-    return {
-      x1: a.x - (dx / len) * ext,
-      y1: a.y - (dy / len) * ext,
-      x2: b.x + (dx / len) * ext,
-      y2: b.y + (dy / len) * ext,
-    };
+  return position.value.lines.flatMap((line) => {
+    const pts = line
+      .map((coord) => board.value.byKey[`${coord.letter}${coord.number}`])
+      .filter(Boolean);
+    const ext = board.value.hex * 0.28;
+    const segs = [];
+    for (let i = 1; i < pts.length; i += 1) {
+      const a = pts[i - 1];
+      const b = pts[i];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      segs.push({
+        x1: a.x - (i === 1 ? (dx / len) * ext : 0),
+        y1: a.y - (i === 1 ? (dy / len) * ext : 0),
+        x2: b.x + (i === pts.length - 1 ? (dx / len) * ext : 0),
+        y2: b.y + (i === pts.length - 1 ? (dy / len) * ext : 0),
+      });
+    }
+    return segs;
   });
 });
 
@@ -1082,6 +1105,7 @@ const statusText = computed(() => {
   if (variant.value) {
     if (history.value.length === 0) return withCheck(`${turn.value} plays ${board.value.center}`);
     if (position.value.phase === "duck") return `${turn.value} moves the duck`;
+    if (position.value.phase === "steal") return `${turn.value} takes one`;
     if (position.value.phase === "trim") return `${turn.value} may lift ${position.value.removesLeft}`;
     if (position.value.stonesLeft === 1 && position.value.placedThisTurn?.length) {
       return withCheck(`${turn.value} · one more`);
@@ -1196,6 +1220,7 @@ function rulesFromDraft() {
     orbit: Boolean(draft.orbit),
     meteor: Boolean(draft.meteor),
     rift: Boolean(draft.rift),
+    raid: Boolean(draft.raid),
   };
 }
 
@@ -1255,6 +1280,7 @@ function toggleSetup() {
     draft.orbit = rules.value.orbit;
     draft.meteor = rules.value.meteor;
     draft.rift = rules.value.rift;
+    draft.raid = rules.value.raid;
     showSettings.value = false;
     showRules.value = false;
   }

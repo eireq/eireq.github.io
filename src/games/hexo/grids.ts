@@ -6,7 +6,7 @@
 
 import { boardFor, type BoardSize, type Cell } from "./logic.ts";
 
-export type Grid = "hex" | "tri" | "sq" | "oct";
+export type Grid = "hex" | "tri" | "sq" | "oct" | "rad";
 
 export type GameCell = Cell & { m: number };
 
@@ -38,7 +38,16 @@ export function gameBoard(kind: Grid, size: BoardSize): GameBoard {
   const key = `${kind}:${size}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  const board = kind === "hex" ? fromHex(size) : kind === "sq" ? squareBoard(size) : kind === "tri" ? triangleBoard(size) : octagonBoard(size);
+  const board =
+    kind === "hex"
+      ? fromHex(size)
+      : kind === "sq"
+        ? squareBoard(size)
+        : kind === "tri"
+          ? triangleBoard(size)
+          : kind === "oct"
+            ? octagonBoard(size)
+            : radialBoard(size);
   cache.set(key, board);
   return board;
 }
@@ -224,6 +233,124 @@ function triCell(
   };
 }
 
+function radialBoard(size: BoardSize): GameBoard {
+  const rings = size === 8 ? 8 : 13;
+  const spokes = 12;
+  const hole = 22;
+  const band = 28;
+  const cells: GameCell[] = [];
+  cells.push({
+    letter: "a",
+    number: 1,
+    key: "hub",
+    q: 0,
+    r: 0,
+    s: 0,
+    x: 0,
+    y: 0,
+    m: 6.4,
+    points: polygon(0, 0, hole, 28, -Math.PI / 2),
+  });
+  for (let ring = 1; ring <= rings; ring += 1) {
+    const inner = hole + (ring - 1) * band;
+    const outer = hole + ring * band;
+    const midR = (inner + outer) / 2;
+    for (let spoke = 0; spoke < spokes; spoke += 1) {
+      const a0 = -Math.PI / 2 + (spoke / spokes) * Math.PI * 2;
+      const a1 = -Math.PI / 2 + ((spoke + 1) / spokes) * Math.PI * 2;
+      const midA = (a0 + a1) / 2;
+      const halfArc = midR * Math.sin(Math.PI / spokes);
+      cells.push({
+        letter: "a",
+        number: 1,
+        key: `r${ring}_${spoke}`,
+        q: spoke,
+        r: ring,
+        s: 1,
+        x: midR * Math.cos(midA),
+        y: midR * Math.sin(midA),
+        m: Math.max(3.4, Math.min(8.2, Math.min(halfArc, band / 2) * 0.62)),
+        points: wedge(inner, outer, a0, a1),
+      });
+    }
+  }
+  nameCells(cells);
+  const touch = radialTouch(cells, spokes);
+  const lines = radialLines(cells, spokes);
+  const center = closestKey(cells.filter((cell) => cell.r === 0));
+  return finish(
+    "rad",
+    size,
+    center,
+    "abcdefghijklmnopqrstuvwxyz",
+    rings,
+    rings,
+    band,
+    cells,
+    [],
+    lines,
+    touch,
+    30,
+  );
+}
+
+function wedge(inner: number, outer: number, a0: number, a1: number): string {
+  const steps = 6;
+  const pts: string[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const angle = a0 + ((a1 - a0) * i) / steps;
+    pts.push(`${(outer * Math.cos(angle)).toFixed(2)},${(outer * Math.sin(angle)).toFixed(2)}`);
+  }
+  for (let i = steps; i >= 0; i -= 1) {
+    const angle = a0 + ((a1 - a0) * i) / steps;
+    pts.push(`${(inner * Math.cos(angle)).toFixed(2)},${(inner * Math.sin(angle)).toFixed(2)}`);
+  }
+  return pts.join(" ");
+}
+
+function radialTouch(cells: GameCell[], spokes: number): Record<string, string[]> {
+  const touch: Record<string, string[]> = {};
+  for (const cell of cells) touch[cell.key] = [];
+  const link = (a: GameCell, b: GameCell) => {
+    touch[a.key].push(b.key);
+    touch[b.key].push(a.key);
+  };
+  const at = new Map<string, GameCell>();
+  for (const cell of cells) at.set(`${cell.r}:${cell.q}`, cell);
+  const hub = cells.find((cell) => cell.r === 0);
+  for (const cell of cells) {
+    if (cell.r === 0) continue;
+    const next = at.get(`${cell.r}:${(cell.q + 1) % spokes}`);
+    if (next && (cell.q < next.q || cell.q === spokes - 1)) link(cell, next);
+    const outer = at.get(`${cell.r + 1}:${cell.q}`);
+    if (outer) link(cell, outer);
+    if (cell.r === 1 && hub) link(cell, hub);
+  }
+  return touch;
+}
+
+function radialLines(cells: GameCell[], spokes: number): string[][] {
+  const lines: string[][] = [];
+  const rings = Math.max(...cells.map((cell) => cell.r));
+  for (let ring = 1; ring <= rings; ring += 1) {
+    lines.push(
+      cells
+        .filter((cell) => cell.r === ring)
+        .sort((a, b) => a.q - b.q)
+        .map((cell) => cell.key),
+    );
+  }
+  for (let spoke = 0; spoke < spokes; spoke += 1) {
+    lines.push(
+      cells
+        .filter((cell) => cell.q === spoke && cell.r > 0)
+        .sort((a, b) => a.r - b.r)
+        .map((cell) => cell.key),
+    );
+  }
+  return lines;
+}
+
 function octagonBoard(size: BoardSize): GameBoard {
   const n = size === 8 ? 9 : 13;
   const step = 40;
@@ -372,7 +499,8 @@ function frame(board: GameBoard) {
     maxX = Math.max(maxX, x + pad);
     maxY = Math.max(maxY, y + pad);
   };
-  for (const cell of board.cells) include(cell.x, cell.y, board.kind === "tri" ? 16 : board.kind === "oct" ? 24 : 20);
+  const pad = board.kind === "tri" ? 16 : board.kind === "oct" ? 24 : board.kind === "rad" ? 28 : 20;
+  for (const cell of board.cells) include(cell.x, cell.y, pad);
   for (const label of board.labels) include(label.x, label.y, 16);
   board.width = maxX - minX;
   board.height = maxY - minY;
