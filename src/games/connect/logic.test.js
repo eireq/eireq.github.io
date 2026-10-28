@@ -194,3 +194,15 @@ test("a link round-trips through the move text", () => {
   assert.equal(played.state.stones[4], 1);
   assert.equal(played.state.seats.red, "B");
 });
+
+test("squares read like h3 and gale links name both ends", () => {
+  const hex = boardOf("hex", 11);
+  const cell = hex.cells.find((item) => item.name === "h3");
+  assert.equal(cell.q, 7);
+  assert.equal(cell.r, 2);
+  assert.ok(hex.labels.some((label) => label.text === "h"));
+  assert.ok(hex.labels.some((label) => label.text === "3"));
+  const gale = boardOf("gale", 5);
+  assert.equal(gale.bridges[0].name, "a1a2");
+  assert.ok(gale.labels.some((label) => label.text === "a"));
+});

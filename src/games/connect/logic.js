@@ -144,6 +144,44 @@ function hexPoly(x, y, scale) {
   return pts.join(" ");
 }
 
+function fileAfter(a, b) {
+  return a.length !== b.length ? a.length > b.length : a > b;
+}
+
+function labelAxial(cells, scale) {
+  if (!cells.some((cell) => cell.file)) return [];
+  const files = new Map();
+  const ranks = new Map();
+  for (const cell of cells) {
+    if (!cell.file) continue;
+    if (!files.has(cell.file)) files.set(cell.file, []);
+    files.get(cell.file).push(cell);
+    if (!ranks.has(cell.rank)) ranks.set(cell.rank, []);
+    ranks.get(cell.rank).push(cell);
+  }
+  const stepFile = { x: scale * Math.sqrt(3), y: 0 };
+  const stepRank = { x: (scale * Math.sqrt(3)) / 2, y: scale * 1.5 };
+  const out = 0.92;
+  const labels = [];
+  for (const [file, list] of files) {
+    const edge = list.reduce((best, cell) => (cell.rank > best.rank ? cell : best));
+    labels.push({
+      text: file,
+      x: edge.x + stepRank.x * out,
+      y: edge.y + stepRank.y * out,
+    });
+  }
+  for (const [rank, list] of ranks) {
+    const edge = list.reduce((best, cell) => (fileAfter(cell.file, best.file) ? cell : best));
+    labels.push({
+      text: String(rank),
+      x: edge.x + stepFile.x * out,
+      y: edge.y + stepFile.y * out,
+    });
+  }
+  return labels;
+}
+
 function finishCells(family, cells, scale, extra = {}) {
   let minX = Infinity;
   let minY = Infinity;
@@ -156,10 +194,17 @@ function finishCells(family, cells, scale, extra = {}) {
     cell.x = x;
     cell.y = y;
     cell.points = hexPoly(x, y, scale);
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
+    minX = Math.min(minX, x - scale);
+    minY = Math.min(minY, y - scale);
+    maxX = Math.max(maxX, x + scale);
+    maxY = Math.max(maxY, y + scale);
+  }
+  const labels = labelAxial(cells, scale);
+  for (const label of labels) {
+    minX = Math.min(minX, label.x - scale * 0.7);
+    minY = Math.min(minY, label.y - scale * 0.7);
+    maxX = Math.max(maxX, label.x + scale * 0.7);
+    maxY = Math.max(maxY, label.y + scale * 0.7);
   }
   for (const cell of cells) {
     for (const [dq, dr] of DIRS) {
@@ -167,13 +212,14 @@ function finishCells(family, cells, scale, extra = {}) {
       if (id != null) neighbors[cell.id].push(id);
     }
   }
-  const pad = scale * 1.8;
+  const pad = scale * 0.35;
   return {
     family,
     cells,
     neighbors,
     at,
     scale,
+    labels,
     bounds: {
       x: minX - pad,
       y: minY - pad,
@@ -193,12 +239,16 @@ function buildHex(n) {
       if (q === n - 1) sides.push("E");
       if (r === 0) sides.push("N");
       if (r === n - 1) sides.push("S");
+      const file = columnName(q);
+      const rank = r + 1;
       cells.push({
         id: cells.length,
         q,
         r,
         sides,
-        name: `${columnName(q)}${r + 1}`,
+        file,
+        rank,
+        name: `${file}${rank}`,
       });
     }
   }
@@ -221,12 +271,16 @@ function buildY(n) {
       if (q === 0) sides.push("A");
       if (r === 0) sides.push("B");
       if (q + r === n - 1) sides.push("C");
+      const file = columnName(q);
+      const rank = r + 1;
       cells.push({
         id: cells.length,
         q,
         r,
         sides,
-        name: `${columnName(q)}${r + 1}`,
+        file,
+        rank,
+        name: `${file}${rank}`,
       });
     }
   }
@@ -254,14 +308,20 @@ function buildStar(size) {
   }
   const q0 = Math.min(...raw.map((cell) => cell.q));
   const r0 = Math.min(...raw.map((cell) => cell.r));
-  const cells = raw.map((cell, id) => ({
-    id,
-    q: cell.q,
-    r: cell.r,
-    s: cell.s,
-    sides: [],
-    name: `${columnName(cell.q - q0)}${cell.r - r0 + 1}`,
-  }));
+  const cells = raw.map((cell, id) => {
+    const file = columnName(cell.q - q0);
+    const rank = cell.r - r0 + 1;
+    return {
+      id,
+      q: cell.q,
+      r: cell.r,
+      s: cell.s,
+      sides: [],
+      file,
+      rank,
+      name: `${file}${rank}`,
+    };
+  });
   const board = finishCells("cell", cells, 20, { game: "star", goals: null });
   const partials = [];
   const partialAt = new Map();
@@ -389,8 +449,19 @@ function buildSStar(rings) {
       cell.x = Math.cos(ang) * rad;
       cell.y = Math.sin(ang) * rad;
       cell.points = hexPoly(cell.x, cell.y, scale * 0.7);
-      cell.name = `${ring}.${cell.s}${columnName(cell.a)}`;
+      cell.name = `${"abcde"[cell.s]}${cell.ring}${columnName(cell.a)}`;
     });
+  }
+  const labels = [];
+  for (const cell of cells) {
+    if (cell.corner) {
+      const ang = Math.atan2(cell.y, cell.x);
+      labels.push({
+        text: "abcde"[cell.s],
+        x: cell.x + Math.cos(ang) * scale * 1.2,
+        y: cell.y + Math.sin(ang) * scale * 1.2,
+      });
+    }
   }
   let minX = Infinity;
   let minY = Infinity;
@@ -402,7 +473,13 @@ function buildSStar(rings) {
     maxX = Math.max(maxX, cell.x);
     maxY = Math.max(maxY, cell.y);
   }
-  const pad = scale * 1.6;
+  for (const label of labels) {
+    minX = Math.min(minX, label.x);
+    minY = Math.min(minY, label.y);
+    maxX = Math.max(maxX, label.x);
+    maxY = Math.max(maxY, label.y);
+  }
+  const pad = scale * 1.7;
   return {
     family: "cell",
     game: "sstar",
@@ -413,6 +490,7 @@ function buildSStar(rings) {
     perimIndex,
     corners,
     hub,
+    labels,
     goals: null,
     bounds: {
       x: minX - pad,
@@ -456,7 +534,9 @@ function buildGale(n) {
     }
   }
   const bridges = [];
-  const add = (color, a, b, x1, y1, x2, y2) => {
+  const linkName = (x1, y1, x2, y2) =>
+    `${columnName(x1)}${y1}${columnName(x2)}${y2}`;
+  const add = (color, a, b, x1, y1, x2, y2, name) => {
     bridges.push({
       id: bridges.length,
       color,
@@ -467,23 +547,41 @@ function buildGale(n) {
       x2,
       y2,
       cross: null,
-      name: "",
+      name,
     });
   };
   for (let y = 0; y < n; y += 1) {
     for (let x = 0; x < n; x += 1) {
-      add("red", y * n + x, (y + 1) * n + x, x, y, x, y + 1);
+      add("red", y * n + x, (y + 1) * n + x, x, y, x, y + 1, linkName(x, y + 1, x, y + 2));
     }
   }
   for (let y = 0; y <= n; y += 1) {
     for (let x = 0; x < n - 1; x += 1) {
-      add("red", y * n + x, y * n + x + 1, x, y, x + 1, y);
+      add(
+        "red",
+        y * n + x,
+        y * n + x + 1,
+        x,
+        y,
+        x + 1,
+        y,
+        linkName(x, y + 1, x + 1, y + 1),
+      );
     }
   }
   const redCount = bridges.length;
   for (let y = 0; y < n; y += 1) {
     for (let x = 0; x < n; x += 1) {
-      add("blue", y * (n + 1) + x, y * (n + 1) + x + 1, x - 0.5, y + 0.5, x + 0.5, y + 0.5);
+      add(
+        "blue",
+        y * (n + 1) + x,
+        y * (n + 1) + x + 1,
+        x - 0.5,
+        y + 0.5,
+        x + 0.5,
+        y + 0.5,
+        linkName(x, y + 1, x + 1, y + 1),
+      );
     }
   }
   const blueVert = bridges.length;
@@ -497,6 +595,7 @@ function buildGale(n) {
         y + 0.5,
         x - 0.5,
         y + 1.5,
+        linkName(x, y + 1, x, y + 2),
       );
     }
   }
@@ -512,9 +611,6 @@ function buildGale(n) {
       bridges[blueId].cross = redId;
     }
   }
-  bridges.forEach((bridge, id) => {
-    bridge.name = `${bridge.color[0]}${id}`;
-  });
   const scale = 46;
   const map = (x, y) => [x * scale, y * scale];
   for (const dot of red) {
@@ -535,7 +631,20 @@ function buildGale(n) {
     bridge.px2 = x2;
     bridge.py2 = y2;
   }
-  const pad = scale * 0.8;
+  const labels = [];
+  for (let x = 0; x < n; x += 1) labels.push({ text: columnName(x), x: x * scale, y: -scale * 0.9 });
+  for (let y = 0; y <= n; y += 1) labels.push({ text: String(y + 1), x: -scale * 1.05, y: y * scale });
+  let minX = -0.55 * scale;
+  let minY = 0;
+  let maxX = (n - 0.45) * scale;
+  let maxY = n * scale;
+  for (const label of labels) {
+    minX = Math.min(minX, label.x);
+    minY = Math.min(minY, label.y);
+    maxX = Math.max(maxX, label.x);
+    maxY = Math.max(maxY, label.y);
+  }
+  const pad = scale * 0.55;
   return {
     family: "gale",
     game: "gale",
@@ -544,11 +653,12 @@ function buildGale(n) {
     blue,
     bridges,
     scale,
+    labels,
     bounds: {
-      x: -scale * 0.8 - pad,
-      y: -pad,
-      w: (n - 1) * scale + scale * 1.6 + pad * 2,
-      h: n * scale + pad * 2,
+      x: minX - pad,
+      y: minY - pad,
+      w: maxX - minX + pad * 2,
+      h: maxY - minY + pad * 2,
     },
   };
 }
@@ -579,7 +689,10 @@ function buildTwixt(n) {
     hole.x = hole.c * scale;
     hole.y = hole.r * scale;
   }
-  const pad = scale * 1.1;
+  const labels = [];
+  for (let c = 0; c < n; c += 1) labels.push({ text: columnName(c), x: c * scale, y: -scale * 0.72 });
+  for (let r = 0; r < n; r += 1) labels.push({ text: String(r + 1), x: -scale * 0.78, y: r * scale });
+  const pad = scale * 1.35;
   return {
     family: "twixt",
     game: "twixt",
@@ -587,6 +700,7 @@ function buildTwixt(n) {
     holes,
     holeAt,
     scale,
+    labels,
     bounds: {
       x: -pad,
       y: -pad,
@@ -629,6 +743,8 @@ function buildPunct() {
       s: cell.s,
       sides,
       center,
+      file: columnName(cell.q - q0),
+      rank: cell.r - r0 + 1,
       name: `${columnName(cell.q - q0)}${cell.r - r0 + 1}`,
     };
   });

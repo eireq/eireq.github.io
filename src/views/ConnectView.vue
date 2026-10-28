@@ -10,7 +10,7 @@
       </header>
 
       <p class="readout" :class="{ dim: readout === '–' }">{{ readout }}</p>
-      <p class="status" :class="{ over: shown.result }" aria-live="polite">{{ statusText }}</p>
+      <p class="status" :class="{ over: shown.result || flag }" aria-live="polite">{{ statusText }}</p>
       <p v-if="badLink" class="warn">that link isn't a valid game.</p>
 
       <div class="plates">
@@ -18,7 +18,13 @@
           v-for="color in ['red', 'blue']"
           :key="color"
           class="plate"
-          :class="[color, { live: !shown.result && shown.turn === color && atEnd }]"
+          :class="[
+            color,
+            {
+              live: !shown.result && !flag && shown.turn === color && atEnd,
+              low: clock && shownClock(color) <= 30000 && shownClock(color) > 0,
+            },
+          ]"
         >
           <span class="side">
             <i :class="color" />
@@ -27,7 +33,10 @@
               <small>{{ seatLabel(color) }}</small>
             </span>
           </span>
-          <strong>{{ plateStat(color) }}</strong>
+          <span class="plate-figures">
+            <strong>{{ clock ? formatClock(shownClock(color)) : plateStat(color) }}</strong>
+            <small v-if="clock">{{ plateStat(color) }}</small>
+          </span>
         </div>
       </div>
 
@@ -48,6 +57,9 @@
           resign
         </button>
         <button type="button" @click="copyLink">{{ copied ? "copied" : "copy link" }}</button>
+        <button type="button" :disabled="!log.length" @click="copyScore">
+          {{ scoreCopied ? "copied" : "copy score" }}
+        </button>
         <FullscreenButton :active="full.active" @toggle="full.toggle" />
       </div>
 
@@ -81,9 +93,10 @@
           <button type="button" @click="cursor = index + 1">
             <span v-if="line.color" class="who">{{ line.color }}</span>
             {{ line.label }}
+            <span v-if="line.time" class="time">{{ line.time }}</span>
           </button>
         </li>
-        <li v-if="shown.result" class="result">{{ statusText }}</li>
+        <li v-if="atEnd && (shown.result || flag)" class="result">{{ statusText }}</li>
       </ol>
     </aside>
 
@@ -101,6 +114,7 @@
       <svg
         ref="svgEl"
         class="board"
+        :class="{ flipped }"
         :viewBox="viewBox"
         role="application"
         :aria-label="`${info.name}. ${statusText}`"
@@ -240,8 +254,14 @@
             :fill="pegFill(hole.id)"
           />
         </template>
+        <g class="coords" aria-hidden="true">
+          <text v-for="(label, index) in board.labels || []" :key="index" :x="label.x" :y="label.y">
+            {{ label.text }}
+          </text>
+        </g>
       </svg>
       <div class="zoom" @pointerdown.stop>
+        <button type="button" @click="flipped = !flipped">flip</button>
         <button type="button" @click="cam = { x: 0, y: 0, z: 1 }">fit</button>
         <button type="button" @click="cam.z = Math.min(3.2, cam.z * 1.15)">+</button>
         <button type="button" @click="cam.z = Math.max(0.55, cam.z / 1.15)">−</button>
@@ -316,6 +336,18 @@
               practice
             </button>
           </div>
+          <p class="kicker">clocks</p>
+          <div class="choice">
+            <button
+              v-for="minutes in [0, 5, 10]"
+              :key="minutes"
+              type="button"
+              :aria-pressed="form.minutes === minutes"
+              @click="form.minutes = minutes"
+            >
+              {{ minutes === 0 ? "no clock" : minutes + " min" }}
+            </button>
+          </div>
           <div v-if="form.mode === 'practice'" class="choice">
             <button type="button" :aria-pressed="form.human === 'red'" @click="form.human = 'red'">
               play red
@@ -338,6 +370,7 @@
           </div>
           <div class="rules">
             <p v-for="(line, index) in ruleLines" :key="index">{{ line }}</p>
+            <p>Type a square, such as h3, to play it. Flip turns the board around. A clock runs only on the turn.</p>
           </div>
         </div>
       </div>
@@ -395,13 +428,16 @@ function readLaunch() {
     punctRules: queryString(route.query.rules) === "basic" ? "basic" : "standard",
     mode: queryString(route.query.mode) === "practice" ? "practice" : "hotseat",
     human: queryString(route.query.as) === "blue" ? "blue" : "red",
+    minutes: queryString(route.query.min) === "10" ? 10 : queryString(route.query.min) === "5" ? 5 : 0,
   };
   const decoded = decodeMoves(queryString(route.query.m));
   const played = decoded.length ? replay(options, decoded) : null;
+  const flag = queryString(route.query.flag);
   return {
     options,
     moves: played && !played.error ? decoded : [],
     bad: Boolean(played && played.error),
+    flag: flag === "red" || flag === "blue" ? flag : null,
   };
 }
 
@@ -414,7 +450,17 @@ const badLink = ref(launch.bad);
 const showSetup = ref(false);
 const showRules = ref(false);
 const copied = ref(false);
+const scoreCopied = ref(false);
 const hover = ref(null);
+const flipped = ref(false);
+const typed = ref("");
+const flag = ref(launch.flag);
+const clockMarks = ref([]);
+const moveTimes = ref([]);
+const clock = ref(
+  launch.options.minutes ? { red: launch.options.minutes * 60000, blue: launch.options.minutes * 60000 } : null,
+);
+const clockRunning = ref(Boolean(clock.value) && launch.moves.length > 0 && !launch.flag);
 const draft = ref(null);
 const punctKind = ref("se");
 const punctOrient = ref(0);
@@ -428,7 +474,7 @@ const info = computed(() => gameInfo(shown.value.game));
 const formInfo = computed(() => gameInfo(form.value.game));
 const board = computed(() => boardOf(shown.value.game, shown.value.size));
 const canAct = computed(
-  () => atEnd.value && !shown.value.result && !botToMove(shown.value),
+  () => atEnd.value && !shown.value.result && !flag.value && !botToMove(shown.value),
 );
 const canSwap = computed(() => canAct.value && shown.value.pieOpen);
 const canPass = computed(
@@ -533,16 +579,18 @@ const scores = computed(() => scoreState(shown.value));
 
 const log = computed(() => {
   let state = initialState(setup.value);
-  return moves.value.map((move) => {
+  return moves.value.map((move, index) => {
     const color = move.t === "swap" || move.t === "count" ? "" : state.turn;
     const label = describeMove(state, move);
     const next = apply(state, move);
     if (next.ok) state = next.state;
-    return { color, label };
+    const time = moveTimes.value[index];
+    return { color, label, time: typeof time === "number" ? formatClock(time) : "" };
   });
 });
 
 const readout = computed(() => {
+  if (typed.value) return typed.value;
   if (hover.value?.kind === "cell" && board.value.cells) {
     return board.value.cells[hover.value.id]?.name || "–";
   }
@@ -556,6 +604,7 @@ const readout = computed(() => {
 const statusText = computed(() => {
   const state = shown.value;
   if (!atEnd.value) return "looking back";
+  if (flag.value) return `${flag.value} wins · time`;
   if (state.result) {
     const score =
       state.result.red == null ? "" : ` · ${state.result.red}–${state.result.blue}`;
@@ -588,6 +637,24 @@ const hubStar = computed(() => {
   }
   return pts.join(" ");
 });
+
+function freshClock(minutes) {
+  return minutes ? { red: minutes * 60000, blue: minutes * 60000 } : null;
+}
+
+function formatClock(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000 - 1e-9));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function shownClock(color) {
+  if (!clock.value) return 0;
+  if (atEnd.value) return clock.value[color];
+  if (cursor.value === 0) return setup.value.minutes * 60000;
+  return clockMarks.value[cursor.value - 1]?.[color] ?? clock.value[color];
+}
 
 function seatLabel(color) {
   const seat = shown.value.seats[color];
@@ -713,11 +780,18 @@ function start() {
     punctRules: form.value.punctRules === "basic" ? "basic" : "standard",
     mode: form.value.mode === "practice" ? "practice" : "hotseat",
     human: form.value.human === "blue" ? "blue" : "red",
+    minutes: form.value.minutes === 10 ? 10 : form.value.minutes === 5 ? 5 : 0,
   };
   moves.value = [];
   cursor.value = 0;
   draft.value = null;
   lift.value = null;
+  typed.value = "";
+  flag.value = null;
+  clockMarks.value = [];
+  moveTimes.value = [];
+  clock.value = freshClock(setup.value.minutes);
+  clockRunning.value = false;
   badLink.value = false;
   cam.value = { x: 0, y: 0, z: 1 };
   showSetup.value = false;
@@ -731,11 +805,22 @@ function push(move) {
   if (move.t === "resign" && (!atEnd.value || shown.value.result)) return;
   const next = apply(shown.value, move);
   if (!next.ok) return;
-  if (!atEnd.value) moves.value = moves.value.slice(0, cursor.value);
+  if (!atEnd.value) {
+    moves.value = moves.value.slice(0, cursor.value);
+    clockMarks.value = clockMarks.value.slice(0, cursor.value);
+    moveTimes.value = moveTimes.value.slice(0, cursor.value);
+  }
+  if (clock.value) {
+    const snap = { red: clock.value.red, blue: clock.value.blue };
+    clockMarks.value = [...clockMarks.value, snap];
+    moveTimes.value = [...moveTimes.value, snap[shown.value.turn]];
+    clockRunning.value = true;
+  }
   moves.value = [...moves.value, move];
   cursor.value = moves.value.length;
   draft.value = null;
   lift.value = null;
+  typed.value = "";
 }
 
 function undo() {
@@ -751,6 +836,14 @@ function undo() {
     const state = replay(setup.value, next).state;
     if (botToMove(state)) next = next.slice(0, -1);
   }
+  clockMarks.value = clockMarks.value.slice(0, next.length);
+  moveTimes.value = moveTimes.value.slice(0, next.length);
+  if (clock.value) {
+    const mark = clockMarks.value[clockMarks.value.length - 1];
+    clock.value = mark ? { red: mark.red, blue: mark.blue } : freshClock(setup.value.minutes);
+    clockRunning.value = next.length > 0;
+  }
+  flag.value = null;
   moves.value = next;
   cursor.value = next.length;
 }
@@ -803,6 +896,8 @@ function copyLink() {
   url.searchParams.set("mode", setup.value.mode);
   if (setup.value.mode === "practice") url.searchParams.set("as", setup.value.human);
   if (setup.value.game === "punct") url.searchParams.set("rules", setup.value.punctRules);
+  if (setup.value.minutes) url.searchParams.set("min", String(setup.value.minutes));
+  if (flag.value) url.searchParams.set("flag", flag.value);
   if (moves.value.length) url.searchParams.set("m", encodeMoves(moves.value));
   navigator.clipboard.writeText(url.toString()).then(() => {
     copied.value = true;
@@ -1012,14 +1107,62 @@ function onWheel(event) {
 function onKey(event) {
   const tag = event.target?.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA") return;
-  if ((event.key === "z" || event.key === "Z") && !event.shiftKey) {
+  if (event.key === "Backspace") {
+    typed.value = typed.value.slice(0, -1);
+    window.clearTimeout(typeTimer);
+    return;
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    step(-1);
+    return;
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    step(1);
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && (event.key === "z" || event.key === "Z")) {
     event.preventDefault();
     undo();
-  } else if (event.key === "r" || event.key === "R") {
-    if (shown.value.game === "punct") rotate(event.shiftKey ? -1 : 1);
-  } else if (event.key === "Enter") {
-    commitTwixt();
-  } else if (event.key === "Escape") {
+    return;
+  }
+  if ((event.key === "z" || event.key === "Z") && !event.shiftKey && !typed.value) {
+    event.preventDefault();
+    undo();
+    return;
+  }
+  if ((event.key === "r" || event.key === "R") && !typed.value && shown.value.game === "punct") {
+    rotate(event.shiftKey ? -1 : 1);
+    return;
+  }
+  if (event.key.length === 1 && /[a-z]/i.test(event.key) && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    const letter = event.key.toLowerCase();
+    typed.value = typed.value && /\d/.test(typed.value) ? `${typed.value}${letter}`.slice(0, 6) : letter;
+    window.clearTimeout(typeTimer);
+    const found = nameHit(typed.value);
+    if (found.exact && !found.longer) commitTyped();
+    else if (found.exact) typeTimer = window.setTimeout(commitTyped, 450);
+    return;
+  }
+  if (/^\d$/.test(event.key) && /[a-z]/.test(typed.value[0] || "")) {
+    event.preventDefault();
+    typed.value = `${typed.value[0]}${typed.value.slice(1)}${event.key}`.slice(0, 6);
+    window.clearTimeout(typeTimer);
+    const found = nameHit(typed.value);
+    if (!found.exact) return;
+    if (found.longer) typeTimer = window.setTimeout(commitTyped, 450);
+    else commitTyped();
+    return;
+  }
+  if (event.key === "Enter") {
+    if (typed.value) commitTyped();
+    else commitTwixt();
+    return;
+  }
+  if (event.key === "Escape") {
+    typed.value = "";
     showSetup.value = false;
     showRules.value = false;
     lift.value = null;
@@ -1027,13 +1170,58 @@ function onKey(event) {
   }
 }
 
+function nameHit(raw) {
+  const name = raw.toLowerCase();
+  let pool = [];
+  if (board.value.family === "cell") {
+    pool = (board.value.cells || []).map((cell) => ({ name: cell.name, play: () => playCell(cell.id) }));
+  } else if (board.value.family === "gale") {
+    pool = board.value.bridges
+      .filter((bridge) => bridge.color === shown.value.turn)
+      .map((bridge) => ({ name: bridge.name, play: () => push({ t: "bridge", id: bridge.id }) }));
+  } else if (board.value.family === "twixt") {
+    pool = board.value.holes.map((hole) => ({ name: hole.name, play: () => playHole(hole.id) }));
+  }
+  const exact = pool.find((item) => item.name === name);
+  const longer = pool.some((item) => item.name.startsWith(name) && item.name !== name);
+  return { exact, longer };
+}
+
+function commitTyped() {
+  const rawName = typed.value;
+  typed.value = "";
+  window.clearTimeout(typeTimer);
+  const found = nameHit(rawName);
+  if (found.exact && canAct.value) found.exact.play();
+}
+
+function copyScore() {
+  const lines = log.value.map((line, index) => {
+    const who = line.color ? `${line.color} ` : "";
+    return `${index + 1}. ${who}${line.label}${line.time ? `  ${line.time}` : ""}`;
+  });
+  if (atEnd.value && (shown.value.result || flag.value)) lines.push(statusText.value);
+  const text = lines.join("\n");
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    scoreCopied.value = true;
+    window.setTimeout(() => {
+      scoreCopied.value = false;
+    }, 1200);
+  });
+}
+
 let botTimer = 0;
+let clockTimer = 0;
+let lastTick = 0;
+let typeTimer = 0;
 function scheduleBot() {
   window.clearTimeout(botTimer);
-  if (!atEnd.value || !botToMove(shown.value)) return;
+  if (flag.value || !atEnd.value || !botToMove(shown.value)) return;
   const options = { ...setup.value };
   const history = moves.value.slice();
   botTimer = window.setTimeout(() => {
+    if (flag.value) return;
     const state = replay(options, history).state;
     if (!botToMove(state)) return;
     const move = chooseMove(state);
@@ -1062,10 +1250,31 @@ watch(log, () => {
   list.scrollTop = list.scrollHeight;
 });
 
-onMounted(() => window.addEventListener("keydown", onKey));
+function tickClock() {
+  const now = performance.now();
+  const dt = lastTick ? now - lastTick : 0;
+  lastTick = now;
+  if (!clock.value || !clockRunning.value || !atEnd.value || flag.value || shown.value.result) return;
+  const side = shown.value.turn;
+  const next = Math.max(0, clock.value[side] - dt);
+  clock.value = { ...clock.value, [side]: next };
+  if (next <= 0) {
+    window.clearTimeout(botTimer);
+    flag.value = side === "red" ? "blue" : "red";
+    clockRunning.value = false;
+  }
+}
+
+onMounted(() => {
+  lastTick = performance.now();
+  clockTimer = window.setInterval(tickClock, 200);
+  window.addEventListener("keydown", onKey);
+});
 onUnmounted(() => {
   window.removeEventListener("keydown", onKey);
   window.clearTimeout(botTimer);
+  window.clearTimeout(typeTimer);
+  window.clearInterval(clockTimer);
 });
 
 const RULES = {
@@ -1223,6 +1432,25 @@ h1 {
 .plate.live {
   border-color: #fff;
   color: #fff;
+}
+
+.plate.low.live {
+  animation: clock-pulse 1s ease-in-out infinite;
+}
+
+.plate-figures {
+  display: grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.plate-figures small {
+  color: #666;
+  font-size: 11px;
+}
+
+.plate.live .plate-figures small {
+  color: #bbb;
 }
 
 .side {
@@ -1393,10 +1621,19 @@ button[aria-pressed="true"],
 }
 
 .moves button {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   width: 100%;
   text-align: left;
   border-color: transparent;
   color: #ccc;
+}
+
+.moves .time {
+  margin-left: auto;
+  color: #555;
+  font-variant-numeric: tabular-nums;
 }
 
 .moves li.on button,
@@ -1435,6 +1672,38 @@ button[aria-pressed="true"],
   height: 100%;
   display: block;
   user-select: none;
+}
+
+.board.flipped {
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.board.flipped .coords text {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(180deg);
+}
+
+.coords {
+  pointer-events: none;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  fill: #8a8a8a;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+@keyframes clock-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate.low.live {
+    animation: none;
+  }
 }
 
 .cell {
@@ -1600,7 +1869,7 @@ button[aria-pressed="true"],
 
 .zoom {
   position: absolute;
-  right: 12px;
+  left: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
   gap: 6px;
