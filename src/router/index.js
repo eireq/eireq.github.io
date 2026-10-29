@@ -65,6 +65,12 @@ const router = createRouter({
       meta: { title: "flag database - eire" },
     },
     {
+      path: "/flagdb/weeks",
+      name: "flag-weeks",
+      component: () => import("../views/FlagWeeksView.vue"),
+      meta: { title: "flag of the week - eire" },
+    },
+    {
       path: "/flagdb/detail/:flagId",
       name: "flag-detail",
       component: () => import("../views/FlagDetailView.vue"),

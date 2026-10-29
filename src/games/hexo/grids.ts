@@ -839,20 +839,21 @@ function namePentagon(cells: GameCell[], n: number) {
   }
   cx /= cells.length;
   cy /= cells.length;
-  const labels: Drawn[] = [];
-  for (const cell of cells) {
-    if (cell.r + cell.s !== n - 1) continue;
+  const outer = cells.filter((cell) => cell.r + cell.s === n - 1);
+  outer.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+  const labels: Drawn[] = outer.map((cell, index) => {
     const dx = cell.x - cx;
     const dy = cell.y - cy;
     const len = Math.hypot(dx, dy) || 1;
-    labels.push({
+    const reach = 28 + (index % 3) * 26;
+    return {
       text: cell.key,
-      x: cell.x + (dx / len) * 22,
-      y: cell.y + (dy / len) * 22,
+      x: cell.x + (dx / len) * reach,
+      y: cell.y + (dy / len) * reach,
       ux: dx / len,
       uy: dy / len,
-    });
-  }
+    };
+  });
   return settle(labels, cells, cx, cy);
 }
 
@@ -910,7 +911,7 @@ function settle(labels: Drawn[], cells: GameCell[], cx: number, cy: number) {
   const polys = cells.map((cell) =>
     cell.points.split(" ").map((part) => part.split(",").map(Number) as [number, number]),
   );
-  const box = (text: string) => ({ w: Math.max(5, text.length * 3.8), h: 7 });
+  const box = (text: string) => ({ w: Math.max(7, text.length * 4.4), h: 8 });
   const onBoard = (label: Drawn) => {
     const pad = Math.max(box(label.text).w, box(label.text).h) + 6;
     for (const poly of polys) {
