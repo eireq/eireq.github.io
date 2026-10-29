@@ -230,40 +230,51 @@ function labelAxial(cells, scale, blockers = []) {
   for (const cell of cells) circles.push({ x: cell.x, y: cell.y, r: scale });
 
   const labels = build(choice.fileEnd, choice.rankEnd, 0.92);
+  let cx = 0;
+  let cy = 0;
+  for (const cell of cells) {
+    cx += cell.x;
+    cy += cell.y;
+  }
+  cx /= cells.length;
+  cy /= cells.length;
   const half = (text) => Math.max(6, text.length * 3.8);
-  const hitsCell = (label) => {
+  const gapTo = (label, circle) => {
     const hw = half(label.text);
-    for (const circle of circles) {
-      const dx = Math.max(Math.abs(label.x - circle.x) - hw, 0);
-      const dy = Math.max(Math.abs(label.y - circle.y) - 7, 0);
-      if (Math.hypot(dx, dy) < circle.r + 4) return true;
-    }
-    return false;
+    const dx = Math.max(Math.abs(label.x - circle.x) - hw, 0);
+    const dy = Math.max(Math.abs(label.y - circle.y) - 7, 0);
+    return Math.hypot(dx, dy) - circle.r;
   };
-  const crowded = (a, b) => {
-    if (Math.abs(a.ux * b.ux + a.uy * b.uy) > 0.8) return false;
-    return Math.abs(a.x - b.x) < half(a.text) + half(b.text) + 4 && Math.abs(a.y - b.y) < 16;
+  const blocked = (label) => circles.some((circle) => gapTo(label, circle) < 4);
+  const pushOut = (label, step) => {
+    const dx = label.x - cx;
+    const dy = label.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    label.x += (dx / len) * step;
+    label.y += (dy / len) * step;
   };
-  for (let pass = 0; pass < 36; pass += 1) {
-    let moved = false;
-    for (const label of labels) {
-      if (!hitsCell(label)) continue;
-      label.x += label.ux * 4;
-      label.y += label.uy * 4;
-      moved = true;
-    }
-    for (let i = 0; i < labels.length; i += 1) {
-      for (let j = i + 1; j < labels.length; j += 1) {
-        if (!crowded(labels[i], labels[j])) continue;
-        labels[i].x += labels[i].ux * 5;
-        labels[i].y += labels[i].uy * 5;
-        labels[j].x += labels[j].ux * 5;
-        labels[j].y += labels[j].uy * 5;
+  const clearBoard = () => {
+    for (let pass = 0; pass < 24; pass += 1) {
+      let moved = false;
+      for (const label of labels) {
+        if (!blocked(label)) continue;
+        pushOut(label, 4);
         moved = true;
       }
+      if (!moved) break;
     }
-    if (!moved) break;
+  };
+  clearBoard();
+  // Where a letter and a number share a corner, park the number one step further out.
+  const onTop = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 28;
+  for (let pass = 0; pass < 4; pass += 1) {
+    for (const label of labels) {
+      if (!/^\d/.test(label.text)) continue;
+      const hit = labels.some((other) => /[a-z]/.test(other.text) && onTop(label, other));
+      if (hit) pushOut(label, 10);
+    }
   }
+  clearBoard();
   return labels.map(({ text, x, y }) => ({ text, x, y }));
 }
 
