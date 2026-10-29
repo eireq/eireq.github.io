@@ -4,7 +4,7 @@ Personal site: games, a large flag corpus, a political-values quiz, and a privat
 
 **Live:** https://eireq.github.io/
 
-Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `hayastan` branch.
+Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `zapadoslavia` branch.
 
 ## Pages
 
@@ -249,7 +249,7 @@ Magic links return to the URL that requested them. A link minted on localhost on
 
 ## Deploy
 
-`.github/workflows/deploy.yml` builds on every push to `hayastan` and publishes `dist` to GitHub Pages. Repository secrets:
+`.github/workflows/deploy.yml` builds on every push to `zapadoslavia` and publishes `dist` to GitHub Pages. Repository secrets:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`

@@ -3,7 +3,7 @@ name: deploy vue site
 on:
   push:
     branches:
-      - hayastan
+      - zapadoslavia
 
 permissions:
   contents: read
