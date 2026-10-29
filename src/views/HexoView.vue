@@ -89,7 +89,17 @@
         <button v-if="mode === 'together' && resultLine" type="button" @click="rematch">
           rematch
         </button>
-        <button type="button" @click="copyLink">
+        <template v-if="mode === 'together' && rules.players > 2">
+          <button
+            v-for="side in inviteSeats"
+            :key="side"
+            type="button"
+            @click="copyInvite(side)"
+          >
+            {{ copiedSeat === side ? "copied" : "invite " + side }}
+          </button>
+        </template>
+        <button v-else type="button" @click="copyLink">
           {{ copied ? "copied" : mode === "together" ? "invite" : "copy link" }}
         </button>
         <button type="button" :disabled="!scorePlain()" @click="copyScore">
@@ -505,8 +515,9 @@
             <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
             <p>
               Together: pick a room name. It keeps the game, and the board size.
-              You start as X. Send the invite. They are O. Rematch swaps sides.
-              The box under the moves is chat. For 3 or 4, change the invite to s=Y or s=Z.
+              You start as X. Send the invite. With two players they are O, and rematch swaps sides.
+              With three or four, invite O, Y, and Z on their own buttons.
+              The box under the moves is chat.
             </p>
             <p>
               Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
@@ -775,6 +786,7 @@ const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
 const dragging = ref(false);
 const copied = ref(false);
+const copiedSeat = ref("");
 const scoreCopied = ref(false);
 const linkUp = ref(false);
 const peerKnown = ref(false);
@@ -1173,6 +1185,7 @@ const resultLine = computed(() => {
 });
 
 const otherSeat = computed(() => (seat.value === "O" ? "X" : "O"));
+const inviteSeats = computed(() => sides.value.filter((side) => side !== seat.value));
 const opponentHere = computed(
   () => peerKnown.value && nowMs.value - peerAt.value < 9000,
 );
@@ -1814,11 +1827,12 @@ function syncUrl() {
   window.history.replaceState(window.history.state, "", url);
 }
 
-function inviteUrl() {
+function inviteUrl(forSeat) {
   const url = new URL(window.location.href);
   if (room.value && seat.value) {
     url.searchParams.set("p", room.value);
-    url.searchParams.set("s", seat.value === "X" ? "O" : "X");
+    const next = forSeat || (seat.value === "X" ? "O" : "X");
+    url.searchParams.set("s", next);
     writeRules(url);
     if (clockBudget.value) url.searchParams.set("min", String(clockBudget.value));
     else url.searchParams.delete("min");
@@ -1841,6 +1855,19 @@ async function copyText(text, which) {
     }, 1400);
   } catch {
     window.prompt("copy this", text);
+  }
+}
+
+async function copyInvite(forSeat) {
+  syncUrl();
+  try {
+    await navigator.clipboard.writeText(inviteUrl(forSeat));
+    copiedSeat.value = forSeat;
+    window.setTimeout(() => {
+      if (copiedSeat.value === forSeat) copiedSeat.value = "";
+    }, 1400);
+  } catch {
+    window.prompt("copy this", inviteUrl(forSeat));
   }
 }
 
@@ -2468,10 +2495,9 @@ function tickClock() {
   const dt = lastTick ? now - lastTick : 0;
   lastTick = now;
   nowMs.value = Date.now();
-  if (!clock.value || !clockRunning.value || outcome.value) return;
-  if (view.value !== history.value.length) return;
+  if (!clock.value || !clockRunning.value || resultLine.value) return;
   if (mode.value === "together" && (!linkUp.value || !opponentHere.value)) return;
-  const side = turn.value;
+  const side = fullGame.value.turn;
   const next = Math.max(0, clock.value[side] - dt);
   clock.value = { ...clock.value, [side]: next };
   if (next <= 0) {

@@ -287,17 +287,10 @@ export function botPick(table: Table, board: GameBoard, rules: Rules): Act | nul
     return spots[0] ?? null;
   }
   const places = acts.filter((act) => act.kind === "place");
+  const aimed = aimStone(table, board, rules, places, acts);
+  if (aimed) return aimed;
   const pool = places.length ? places : acts.filter((act) => act.kind === "slide");
   const using = pool.length ? pool : acts;
-  const legal = new Set(using.filter((act) => act.kind === "place").map((act) => act.key));
-  const frost = new Set(rules.frost ? table.placedThisTurn : []);
-  const win = holeFor(table, board, table.turn, legal, frost);
-  if (win) return using.find((act) => act.kind === "place" && act.key === win) ?? using[0];
-  const order = ORDER.slice(0, rules.players).filter((side) => side !== table.turn);
-  for (const side of order) {
-    const block = holeFor(table, board, side, legal, frost);
-    if (block) return using.find((act) => act.kind === "place" && act.key === block) ?? using[0];
-  }
   let best = using[0];
   let bestScore = -Infinity;
   for (const act of using) {
@@ -315,6 +308,151 @@ export function botPick(table: Table, board: GameBoard, rules: Rules): Act | nul
   return best;
 }
 
+function aimStone(
+  table: Table,
+  board: GameBoard,
+  rules: Rules,
+  places: Act[],
+  acts: Act[],
+): Act | null {
+  const blocked = breakSet(table);
+  const placeKeys = new Set(places.map((act) => act.key));
+  const rank = (act: Act) => {
+    let score = ((board.radius || 0) - (board.ring[act.key] ?? 0)) * 6;
+    for (const near of board.touch[act.key] ?? []) {
+      if (table.stones[near] === table.turn) score += 8;
+      else if (table.stones[near]) score += 3;
+    }
+    return score;
+  };
+  const best = (list: Act[], cover?: Map<string, number>) =>
+    list.reduce((top, act) => {
+      const count = cover?.get(act.key) ?? 0;
+      const topCount = cover?.get(top.key) ?? 0;
+      if (count !== topCount) return count > topCount ? act : top;
+      return rank(act) > rank(top) ? act : top;
+    });
+
+  const placeWins = places.filter((act) => hasRun({ ...table.stones, [act.key]: table.turn }, table.turn, board, blocked));
+  if (placeWins.length) return best(placeWins);
+
+  const slideWins = acts.filter((act) => {
+    if (act.kind !== "slide" || !act.from) return false;
+    const stones = { ...table.stones };
+    delete stones[act.from];
+    stones[act.key] = table.turn;
+    return hasRun(stones, table.turn, board, blocked);
+  });
+  if (slideWins.length) return best(slideWins);
+
+  if (table.stonesLeft >= 2) {
+    const pairs = holePairs(table.stones, table.turn, board, blocked);
+    const starts = places.filter((act) =>
+      pairs.some(([a, b]) => {
+        const other = act.key === a ? b : act.key === b ? a : "";
+        return Boolean(other && placeKeys.has(other) && canFollow(board, rules, act.key, other));
+      }),
+    );
+    if (starts.length) return best(starts);
+  }
+
+  const next = playerAt(table.placedTotal + table.stonesLeft, rules.players);
+  const blockNow = holeCoverage(table.stones, next, 1, board, blocked);
+  const blockNowActs = places.filter((act) => blockNow.has(act.key));
+  if (blockNowActs.length) return best(blockNowActs, blockNow);
+  const blockPair = holeCoverage(table.stones, next, 2, board, blocked);
+  const blockPairActs = places.filter((act) => blockPair.has(act.key));
+  if (blockPairActs.length) return best(blockPairActs, blockPair);
+  return null;
+}
+
+function breakSet(table: Table): Set<string> {
+  const blocked = new Set<string>(table.panic);
+  if (table.duck) blocked.add(table.duck);
+  for (const ghost of table.ghosts) blocked.add(ghost.key);
+  for (const mine of table.mines) blocked.add(mine);
+  return blocked;
+}
+
+function canFollow(board: GameBoard, rules: Rules, first: string, second: string): boolean {
+  const touch = (board.touch[first] ?? []).includes(second);
+  if (rules.pair && !touch) return false;
+  if (rules.scatter && touch) return false;
+  return true;
+}
+
+function hasRun(
+  stones: Record<string, Side | undefined>,
+  owner: Side,
+  board: GameBoard,
+  blocked: Set<string>,
+): boolean {
+  for (const line of board.lines) {
+    for (const keys of scans(line, board)) {
+      let run = 0;
+      for (const key of keys) {
+        if (blocked.has(key) || stones[key] !== owner) {
+          if (run >= 6) return true;
+          run = 0;
+          continue;
+        }
+        run += 1;
+      }
+      if (run >= 6) return true;
+    }
+  }
+  return false;
+}
+
+function holeCoverage(
+  stones: Record<string, Side | undefined>,
+  owner: Side,
+  want: number,
+  board: GameBoard,
+  blocked: Set<string>,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  const seen = new Set<string>();
+  for (const empties of holePairs(stones, owner, board, blocked, want)) {
+    const id = [...empties].sort().join(".");
+    if (seen.has(id)) continue;
+    seen.add(id);
+    for (const key of empties) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function holePairs(
+  stones: Record<string, Side | undefined>,
+  owner: Side,
+  board: GameBoard,
+  blocked: Set<string>,
+  want = 2,
+): Array<string[]> {
+  const pairs: Array<string[]> = [];
+  for (const line of board.lines) {
+    for (const keys of scans(line, board)) {
+      for (let start = 0; start < keys.length; start += 1) {
+        const empties: string[] = [];
+        let own = 0;
+        for (let end = start; end < keys.length; end += 1) {
+          const key = keys[end];
+          if (blocked.has(key)) break;
+          const stone = stones[key];
+          if (stone && stone !== owner) break;
+          if (stone === owner) own += 1;
+          else empties.push(key);
+          if (empties.length > want) break;
+          if (end - start + 1 >= 6 && empties.length === want && own >= 6 - want) {
+            pairs.push([...empties]);
+          }
+        }
+      }
+    }
+  }
+  return pairs;
+}
+
 function stealRank(table: Table, board: GameBoard, key: string): number {
   const owner = table.stones[key];
   let score = 0;
@@ -323,56 +461,6 @@ function stealRank(table: Table, board: GameBoard, key: string): number {
     if (table.stones[near] === table.turn) score += 2;
   }
   return score + ((board.radius || 0) - (board.ring[key] ?? 0));
-}
-
-function holeFor(table: Table, board: GameBoard, owner: Side, legal: Set<string>, frost: Set<string>): string | null {
-  const blocked = new Set([...table.panic, ...table.ghosts.map((ghost) => ghost.key), ...frost]);
-  if (table.duck) blocked.add(table.duck);
-  for (const line of board.lines) {
-    for (const keys of scans(line, board)) {
-    let empty = "";
-    let own = 0;
-    let run = 0;
-    const flush = () => {
-      if (run >= 6 && own === run - 1 && empty && legal.has(empty)) return empty;
-      return "";
-    };
-    for (const key of keys) {
-      if (blocked.has(key)) {
-        const hit = flush();
-        if (hit) return hit;
-        empty = "";
-        own = 0;
-        run = 0;
-        continue;
-      }
-      const stone = table.stones[key];
-      if (stone && stone !== owner) {
-        const hit = flush();
-        if (hit) return hit;
-        empty = "";
-        own = 0;
-        run = 0;
-        continue;
-      }
-      if (!stone) {
-        if (empty) {
-          const hit = flush();
-          if (hit) return hit;
-          empty = key;
-          own = 0;
-          run = 1;
-          continue;
-        }
-        empty = key;
-      } else own += 1;
-      run += 1;
-    }
-    const hit = flush();
-    if (hit) return hit;
-    }
-  }
-  return null;
 }
 
 function fresh(board: GameBoard, rules: Rules): Raw {
@@ -471,7 +559,10 @@ function slid(raw: Raw, act: Act, board: GameBoard, rules: Rules): Raw {
 
 function continueTurn(raw: Raw, board: GameBoard, rules: Rules, opening: boolean): Raw {
   if (raw.spent < (opening ? 1 : 2)) {
-    if (!choices(raw, board, rules).length) raw.winner = "draw";
+    // The second action has nowhere to go. Raid, lift, or move the duck if
+    // those are still open; otherwise hand the turn over. A draw waits until
+    // the next seat has no move either.
+    if (!choices(raw, board, rules).length) return afterStones(raw, board, rules);
     return raw;
   }
   return afterStones(raw, board, rules);
@@ -550,6 +641,9 @@ function finishTurn(raw: Raw, board: GameBoard, rules: Rules): Raw {
   if (!raw.winner && rules.frost) raw.winner = winnerOf(raw, board, rules);
   raw.turnCount += 1;
   raw.phase = "place";
+  // A skipped second action leaves an even count. Turn order counts in pairs,
+  // so step over the stone that could not be played.
+  if (raw.placedTotal > 0 && raw.placedTotal % 2 === 0) raw.placedTotal += 1;
   raw.actor = playerAt(raw.placedTotal, rules.players);
   raw.spent = 0;
   raw.removesLeft = 0;

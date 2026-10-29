@@ -450,16 +450,6 @@ function countDirection(
   return total;
 }
 
-function winsIf(
-  stones: Record<string, Player>,
-  cell: Cell,
-  player: Player,
-  size: BoardSize,
-): boolean {
-  const draft = { ...stones, [cell.key]: player };
-  return winningLines(draft, cell.letter, cell.number, size).length > 0;
-}
-
 function scoreMove(
   stones: Record<string, Player>,
   cell: Cell,
@@ -494,6 +484,86 @@ function scoreMove(
   return score;
 }
 
+/**
+ * Empty cells in a run the player can finish with exactly `want` more stones.
+ * `want` 1 is a single move. `want` 2 is a pair played on the same turn.
+ */
+function holeCoverage(
+  stones: Record<string, Player>,
+  player: Player,
+  want: number,
+  size: BoardSize,
+): Map<string, number> {
+  const spec = metrics(asSize(size));
+  const counts = new Map<string, number>();
+  const seen = new Set<string>();
+
+  for (const [dL, dN] of AXES) {
+    for (const cell of boardFor(spec.size).cells) {
+      const index = letterIndex(cell.letter, spec.size);
+      if (at(index - dL, cell.number - dN, spec.size)) continue;
+
+      const line: string[] = [];
+      for (let step = 0; ; step += 1) {
+        const next = at(index + dL * step, cell.number + dN * step, spec.size);
+        if (!next) break;
+        line.push(keyOf(next.letter, next.number));
+      }
+
+      for (let start = 0; start < line.length; start += 1) {
+        const empties: string[] = [];
+        let own = 0;
+        for (let end = start; end < line.length; end += 1) {
+          const owner = stones[line[end]];
+          if (owner && owner !== player) break;
+          if (owner === player) own += 1;
+          else empties.push(line[end]);
+          if (empties.length > want) break;
+          if (end - start + 1 >= 6 && empties.length === want && own >= 6 - want) {
+            const id = `${dL},${dN}:${[...empties].sort().join(".")}`;
+            if (!seen.has(id)) {
+              seen.add(id);
+              for (const hole of empties) counts.set(hole, (counts.get(hole) ?? 0) + 1);
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return counts;
+}
+
+function bestCovered(
+  counts: Map<string, number>,
+  stones: Record<string, Player>,
+  player: Player,
+  opponent: Player,
+  size: BoardSize,
+): Cell | null {
+  const board = boardFor(size);
+  let best: Cell | null = null;
+  let bestCount = 0;
+  let bestScore = -Infinity;
+  for (const [key, count] of counts) {
+    const cell = board.byKey[key];
+    if (!cell) continue;
+    const score = scoreMove(stones, cell, player, opponent, size);
+    const closer = best ? radiusOf(cell) < radiusOf(best) : false;
+    if (
+      !best ||
+      count > bestCount ||
+      (count === bestCount && (score > bestScore || (score === bestScore && closer)))
+    ) {
+      best = cell;
+      bestCount = count;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 /** Practice opponent. Takes a win, blocks a loss, otherwise builds toward the center. */
 export function chooseBotMove(
   stones: Record<string, Player>,
@@ -510,19 +580,27 @@ export function chooseBotMove(
   }
 
   const opponent: Player = player === "X" ? "O" : "X";
+  const left = stonesLeft(Object.keys(stones).length);
+  const pick = (counts: Map<string, number>) => {
+    const cell = bestCovered(counts, stones, player, opponent, spec.size);
+    return cell ? { letter: cell.letter, number: cell.number } : null;
+  };
 
-  for (const cell of empties) {
-    if (winsIf(stones, cell, player, spec.size)) {
-      return { letter: cell.letter, number: cell.number };
-    }
+  const ownNow = holeCoverage(stones, player, 1, spec.size);
+  if (ownNow.size) return pick(ownNow);
+  if (left >= 2) {
+    const ownPair = holeCoverage(stones, player, 2, spec.size);
+    if (ownPair.size) return pick(ownPair);
   }
 
-  const blocks = empties.filter((cell) => winsIf(stones, cell, opponent, spec.size));
-  const pool = blocks.length ? blocks : empties;
-  let best = pool[0];
-  let bestScore = -Infinity;
+  const blockNow = holeCoverage(stones, opponent, 1, spec.size);
+  if (blockNow.size) return pick(blockNow);
+  const blockPair = holeCoverage(stones, opponent, 2, spec.size);
+  if (blockPair.size) return pick(blockPair);
 
-  for (const cell of pool) {
+  let best = empties[0];
+  let bestScore = -Infinity;
+  for (const cell of empties) {
     const score = scoreMove(stones, cell, player, opponent, spec.size);
     const closer = radiusOf(cell) < radiusOf(best);
     if (score > bestScore || (score === bestScore && closer)) {
