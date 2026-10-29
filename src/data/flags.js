@@ -21,6 +21,7 @@ export const SUBDIVISION_CATEGORIES = new Set([
 ]);
 
 let flagsPromise = null;
+let indexPromise = null;
 
 export function loadFlags() {
   if (!flagsPromise) {
@@ -30,6 +31,16 @@ export function loadFlags() {
   }
 
   return flagsPromise;
+}
+
+export function loadFlagIndex() {
+  if (!indexPromise) {
+    indexPromise = import("../assets/flag_index.json").then(
+      (module) => module.default,
+    );
+  }
+
+  return indexPromise;
 }
 
 export function shortName(flag) {

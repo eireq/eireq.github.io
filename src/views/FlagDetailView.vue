@@ -51,8 +51,13 @@
         <p v-if="metaLoading" class="muted">{{ t("flagDetail.readingPalette") }}</p>
         <ul v-else-if="palette.length">
           <li v-for="hex in palette" :key="hex">
-            <span class="swatch" :style="{ background: hex }"></span>
-            <code>{{ hex }}</code>
+            <RouterLink
+              class="swatch-link"
+              :to="{ name: 'flag-database', query: { color: hex } }"
+            >
+              <span class="swatch" :style="{ background: hex }"></span>
+              <code>{{ hex }}</code>
+            </RouterLink>
           </li>
         </ul>
         <p v-else class="muted">{{ t("flagDetail.noColors") }}</p>
@@ -450,12 +455,21 @@ function formatDate(value) {
 }
 
 .color-palette li {
+  min-width: 132px;
+}
+
+.swatch-link {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 132px;
   padding: 8px 10px;
   border: 1px solid #292824;
+  color: inherit;
+  text-decoration: none;
+}
+
+.swatch-link:hover {
+  border-color: #f4f1e8;
 }
 
 .swatch {
@@ -510,7 +524,7 @@ function formatDate(value) {
 
 .article-kicker {
   margin: 18px 0 0;
-  color: #f5cf3d;
+  color: #fff1b8;
   font-size: 15px;
 }
 

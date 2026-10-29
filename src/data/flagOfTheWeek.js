@@ -45,6 +45,16 @@ function editorialFlag(flags, name) {
   return flags.find((flag) => aliases.includes(shortName(flag).toLowerCase())) || null;
 }
 
+export function editorialEntries(flags) {
+  return Object.keys(EDITORIALS)
+    .map((name) => {
+      const flag = editorialFlag(flags, name);
+      if (!flag) return null;
+      return { name: shortName(flag), flag, blurb: EDITORIALS[name] };
+    })
+    .filter(Boolean);
+}
+
 export function pickFlagOfTheWeek(flags, weekKey = utcWeekKey()) {
   const pool = filterFlagsByMode(flags, "countries");
   if (!pool.length && !flags.length) return null;

@@ -54,6 +54,9 @@
         <button type="button" class="ghost" @click="shareResult">
           {{ shareLabel }}
         </button>
+        <button type="button" class="ghost" @click="shareCard">
+          {{ cardLabel }}
+        </button>
       </div>
 
       <ol v-if="progress.guesses.length" class="guess-list">
@@ -87,6 +90,7 @@ import {
   utcDateKey,
 } from "@/data/flags.js";
 import { cachedFlagImageUrl } from "@/data/flagImageCache.js";
+import { copyShareCard } from "@/data/shareCard.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
@@ -100,6 +104,7 @@ const flagSrc = ref("");
 const progress = ref(loadDailyProgress(dateKey.value));
 const guess = ref("");
 const shareLabel = ref("");
+const cardLabel = ref("");
 let dayTimer = 0;
 
 const done = computed(
@@ -128,6 +133,7 @@ onMounted(async () => {
   await syncDay();
   ready.value = true;
   shareLabel.value = t("dailyFlag.share");
+  cardLabel.value = t("dailyFlag.card");
   dayTimer = window.setInterval(() => {
     void syncDay();
   }, 30000);
@@ -154,6 +160,22 @@ async function submitGuess() {
     maxGuesses,
   });
   guess.value = "";
+}
+
+async function shareCard() {
+  const result = await copyShareCard({
+    title: "daily flag",
+    lines: [
+      dateKey.value,
+      `${t("dailyFlag.streak")} ${progress.value.streak}`,
+      progress.value.solved ? t("dailyFlag.solved") : t("dailyFlag.failed"),
+      dailyFlag.value ? shortName(dailyFlag.value) : "",
+    ],
+  });
+  cardLabel.value = result === "saved" ? t("dailyFlag.cardSaved") : t("dailyFlag.copied");
+  window.setTimeout(() => {
+    cardLabel.value = t("dailyFlag.card");
+  }, 1400);
 }
 
 async function shareResult() {

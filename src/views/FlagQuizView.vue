@@ -47,6 +47,9 @@
           </option>
         </select>
 
+        <button type="button" class="ghost" :disabled="!ready" @click="copyChallenge">
+          {{ challengeCopied ? t("flagQuiz.challengeCopied") : t("flagQuiz.challenge") }}
+        </button>
         <button :disabled="starting || !ready" @click="startQuiz">
           {{
             !ready
@@ -179,6 +182,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import { createDevtoolsGuard } from "@/data/devtoolsGuard.js";
 import {
   filterFlagsByMode,
@@ -197,6 +201,8 @@ import { ensureGameDb } from "@/games/ensureDb.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
+const route = useRoute();
+const challengeCopied = ref(false);
 
 /** Answers live outside Vue state so Element/Vue panels don't casually leak them. */
 const answerVault = new Map();
@@ -271,7 +277,11 @@ const guard = createDevtoolsGuard(() => {
 onMounted(async () => {
   ensureGameDb();
   flags.value = await loadFlags();
+  const mode = route.query.mode;
+  if (typeof mode === "string" && QUIZ_MODE_VALUES.includes(mode)) quizMode.value = mode;
   ready.value = true;
+  const count = Number(route.query.n);
+  if (amountOptions.value.includes(count)) flagCount.value = count;
 });
 
 onUnmounted(() => {
@@ -285,6 +295,21 @@ watch(quizMode, () => {
     flagCount.value = options[options.length - 1] || 5;
   }
 });
+
+async function copyChallenge() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("mode", quizMode.value);
+  url.searchParams.set("n", String(flagCount.value));
+  try {
+    await navigator.clipboard.writeText(url.toString());
+    challengeCopied.value = true;
+    window.setTimeout(() => {
+      challengeCopied.value = false;
+    }, 1400);
+  } catch {
+    window.prompt("copy this", url.toString());
+  }
+}
 
 function persistName() {
   playerName.value = setPlayerName(playerName.value);

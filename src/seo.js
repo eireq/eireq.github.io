@@ -152,6 +152,12 @@ export const pages = [
     fallback: `<h1>daily pi.</h1><p>one lesson per utc day. study a few new digits, then take the quiz.</p>`,
   },
   {
+    path: "/flagdb/weeks",
+    title: "flag of the week — eire",
+    description: "The editorial flags that rotate through the home-page flag of the week.",
+    fallback: `<h1>flag of the week</h1><p>the editorial set behind the home-page flag.</p>`,
+  },
+  {
     path: "/flagdb",
     title: "flag database — eire",
     description:
@@ -259,7 +265,9 @@ export function headTags(page) {
     `<meta property="og:description" content="${escapeHtml(page.description)}">`,
     `<meta property="og:url" content="${escapeHtml(url)}">`,
     `<meta property="og:type" content="${page.ogType || "website"}">`,
-    `<meta name="twitter:card" content="summary">`,
+    `<meta property="og:image" content="${SITE}/og.png">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:image" content="${SITE}/og.png">`,
     `<meta name="google-site-verification" content="ePz_bVG4jiZArH9rrItRNk8IY7gURIRRspbTQ5GZCCQ">`,
   ];
 

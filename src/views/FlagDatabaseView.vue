@@ -57,6 +57,48 @@
         </label>
       </div>
 
+      <div class="controls extra-filters">
+        <label class="select-control">
+          <span>{{ t("flagDb.colors") }}</span>
+          <select v-model="colorCount">
+            <option value="any">{{ t("flagDb.any") }}</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">{{ t("flagDb.colorsFour") }}</option>
+          </select>
+        </label>
+        <label class="select-control">
+          <span>{{ t("flagDb.ratio") }}</span>
+          <select v-model="selectedRatio">
+            <option value="any">{{ t("flagDb.any") }}</option>
+            <option v-for="ratio in ratios" :key="ratio" :value="ratio">{{ ratio }}</option>
+          </select>
+        </label>
+        <label class="search-control">
+          <span>{{ t("flagDb.year") }}</span>
+          <input
+            v-model="yearFilter"
+            inputmode="numeric"
+            :placeholder="t('flagDb.yearPlaceholder')"
+            autocomplete="off"
+          />
+        </label>
+        <label class="select-control">
+          <span>{{ t("flagDb.designer") }}</span>
+          <select v-model="designerFilter">
+            <option value="any">{{ t("flagDb.any") }}</option>
+            <option value="yes">{{ t("flagDb.hasDesigner") }}</option>
+          </select>
+        </label>
+      </div>
+
+      <p v-if="colorQuery" class="color-chip">
+        <span class="swatch" :style="{ background: colorQuery }"></span>
+        <button type="button" @click="clearColor">
+          {{ colorQuery }} · {{ t("flagDb.clearColor") }}
+        </button>
+      </p>
+
       <div class="collection-bar" :aria-label="t('flagDb.ariaCollections')">
         <span class="collection-label">{{ t("flagDb.collections") }}</span>
         <div class="collection-list">
@@ -109,13 +151,29 @@
         <span v-if="filteredFlags.length"
           >{{ t("flagDb.showing") }} {{ pageStart }}–{{ pageEnd }}</span
         >
+        <span class="view-toggle" role="group" :aria-label="t('flagDb.view')">
+          <button
+            type="button"
+            :aria-pressed="viewMode === 'list'"
+            @click="setView('list')"
+          >
+            {{ t("flagDb.viewList") }}
+          </button>
+          <button
+            type="button"
+            :aria-pressed="viewMode === 'cards'"
+            @click="setView('cards')"
+          >
+            {{ t("flagDb.viewCards") }}
+          </button>
+        </span>
       </div>
 
       <p v-if="!filteredFlags.length" class="empty-state">
         {{ t("flagDb.empty") }}
       </p>
 
-      <ol v-else class="flag-list">
+      <ol v-else class="flag-list" :class="{ cards: viewMode === 'cards' }">
         <li
           v-for="flag in visibleFlags"
           :key="`${flag.name}-${flag.svgUrl}`"
@@ -129,7 +187,7 @@
             <img
               class="flag-thumbnail"
               :src="imageUrl(flag.svgUrl)"
-              :alt="''"
+              alt=""
               loading="lazy"
               @error="hideBrokenImage($event, flag.name)"
             />
@@ -173,10 +231,13 @@
 
 <script setup>
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
-import { flagSlug, loadFlags } from "../data/flags.js";
+import { useRoute, useRouter } from "vue-router";
+import { flagSlug, loadFlagIndex, loadFlags } from "../data/flags.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 const pageSize = 48;
 const flags = shallowRef([]);
@@ -186,6 +247,11 @@ const selectedCategory = ref("all");
 const selectedCollection = ref("all");
 const selectedSubdivisionCountry = ref("all");
 const sortOrder = ref("name-asc");
+const colorCount = ref("any");
+const selectedRatio = ref("any");
+const yearFilter = ref("");
+const designerFilter = ref("any");
+const viewMode = ref(window.localStorage.getItem("flagdb-view") === "cards" ? "cards" : "list");
 const currentPage = ref(1);
 const subdivisionCategories = new Set([
   "Autonomous community",
@@ -209,8 +275,13 @@ const territoryNames = new Set([
 ]);
 
 onMounted(async () => {
-  flags.value = await loadFlags();
+  flags.value = await loadFlagIndex();
   flagsReady.value = true;
+});
+
+watch(searchTerm, async (term) => {
+  if (!term.trim()) return;
+  flags.value = await loadFlags();
 });
 
 const categories = computed(() =>
@@ -235,6 +306,18 @@ const collections = [
   { id: "revolutionary", label: "Revolutionary flags" },
   { id: "arab", label: "Pan-Arab / Arab flags" },
 ];
+
+const colorQuery = computed(() => {
+  const raw = route.query.color;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== "string") return "";
+  const hex = value.trim().replace(/^#/, "").toUpperCase();
+  return /^[0-9A-F]{6}$/.test(hex) ? `#${hex}` : "";
+});
+
+const ratios = computed(() =>
+  [...new Set(flags.value.map((flag) => flag.proportions).filter(Boolean))].sort(),
+);
 
 const subdivisionCountries = computed(() =>
   [
@@ -271,6 +354,22 @@ const filteredFlags = computed(() => {
       flag.category !== selectedCategory.value
     ) {
       return false;
+    }
+    if (colorCount.value !== "any") {
+      const count = Array.isArray(flag.colors) ? flag.colors.length : 0;
+      if (colorCount.value === "4" ? count < 4 : count !== Number(colorCount.value)) return false;
+    }
+    if (selectedRatio.value !== "any" && flag.proportions !== selectedRatio.value) return false;
+    if (yearFilter.value.trim() && !String(flag.adoptionDate || "").startsWith(yearFilter.value.trim())) {
+      return false;
+    }
+    if (designerFilter.value === "yes" && !String(flag.designer || "").trim()) return false;
+    if (colorQuery.value) {
+      const want = colorQuery.value.slice(1);
+      const colors = Array.isArray(flag.colors)
+        ? flag.colors.map((color) => String(colorText(color)).replace(/^#/, "").toUpperCase())
+        : [];
+      if (!colors.includes(want)) return false;
     }
     if (!query) return true;
 
@@ -340,6 +439,11 @@ watch(
     selectedCollection,
     selectedSubdivisionCountry,
     sortOrder,
+    colorCount,
+    selectedRatio,
+    yearFilter,
+    designerFilter,
+    colorQuery,
   ],
   () => {
     currentPage.value = 1;
@@ -349,6 +453,21 @@ watch(
 watch(pageCount, (count) => {
   if (currentPage.value > count) currentPage.value = count;
 });
+
+function setView(mode) {
+  viewMode.value = mode;
+  try {
+    window.localStorage.setItem("flagdb-view", mode);
+  } catch {
+    /* private mode */
+  }
+}
+
+function clearColor() {
+  const query = { ...route.query };
+  delete query.color;
+  router.replace({ query });
+}
 
 function flagRoute(flag) {
   return {
@@ -622,7 +741,7 @@ h1 {
 }
 
 .total-count {
-  color: #f5cf3d;
+  color: #fff1b8;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -771,6 +890,75 @@ h1 {
   cursor: pointer;
 }
 
+.flag-list.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  border-top: 0;
+}
+
+.flag-list.cards .flag-record {
+  border: 1px solid #292824;
+}
+
+.flag-list.cards .flag-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+  gap: 8px;
+}
+
+.flag-list.cards .flag-thumbnail {
+  width: 100%;
+  height: 110px;
+}
+
+.flag-list.cards .flag-row__date,
+.flag-list.cards .flag-row__action {
+  display: none;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.view-toggle button,
+.color-chip button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #45443d;
+  background: #10100e;
+  color: #f4f1e8;
+  font: inherit;
+  font-size: 12px;
+}
+
+.view-toggle button[aria-pressed="true"] {
+  border-color: #f5cf3d;
+}
+
+.color-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 0;
+}
+
+.color-chip .swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #393832;
+}
+
+.extra-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .flag-row:hover {
   background: #11110e;
 }
@@ -805,7 +993,7 @@ h1 {
 }
 
 .flag-row__action {
-  color: #f5cf3d;
+  color: #fff1b8;
   font-size: 11px;
   text-align: right;
   text-transform: uppercase;
@@ -880,7 +1068,7 @@ h1 {
 
 .pagination button:hover:not(:disabled) {
   border-color: #f5cf3d;
-  color: #f5cf3d;
+  color: #fff1b8;
 }
 
 .pagination button:disabled {
@@ -893,8 +1081,14 @@ h1 {
     padding: 48px 18px 72px;
   }
 
-  .controls {
+  .controls,
+  .extra-filters {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .flag-list.cards .flag-thumbnail {
+    width: 100%;
+    height: 110px;
   }
 
   .search-control {

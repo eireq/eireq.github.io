@@ -6,6 +6,10 @@
       {{ t("games.intro") }}
     </p>
 
+    <button type="button" class="random" @click="playRandom">
+      {{ t("games.random") }}
+    </button>
+
     <section class="games">
       <router-link class="game" to="/games/go">
         <h2>{{ t("games.go") }}</h2>
@@ -56,9 +60,26 @@
 </template>
 
 <script setup>
+import { useRouter } from "vue-router";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
+const router = useRouter();
+const picks = [
+  "/games/go",
+  "/games/otrio",
+  "/games/hexo",
+  "/games/connect",
+  "/games/hexchess",
+  "/games/racing",
+  "/games/flagquiz",
+  "/games/daily",
+  "/kht",
+];
+
+function playRandom() {
+  router.push(picks[Math.floor(Math.random() * picks.length)]);
+}
 </script>
 
 <style scoped>
@@ -83,8 +104,19 @@ h1 {
   color: #888;
   font-size: 18px;
   line-height: 1.6;
-  margin-bottom: 55px;
+  margin-bottom: 24px;
   max-width: 650px;
+}
+
+.random {
+  min-height: 44px;
+  margin: 0 0 40px;
+  padding: 0 18px;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  cursor: pointer;
 }
 
 .games {

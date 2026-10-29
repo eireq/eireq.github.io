@@ -1,5 +1,5 @@
 <template>
-  <div ref="shell" class="connect" :class="{ screen: full.active }">
+  <div ref="shell" class="connect" :class="{ screen: full.active, folded }">
     <aside class="panel">
       <header class="top">
         <div>
@@ -39,6 +39,15 @@
           </span>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="fold"
+        :aria-expanded="!folded"
+        @click="folded = !folded"
+      >
+        {{ folded ? "moves" : "hide" }}
+      </button>
 
       <div class="actions">
         <button type="button" @click="toggleSetup">
@@ -418,9 +427,22 @@ function queryString(value) {
 }
 
 function readLaunch() {
-  const id = knownGame(queryString(route.query.g)) ? queryString(route.query.g) : "hex";
+  const urlOwns = Boolean(
+    queryString(route.query.g) || queryString(route.query.n) || queryString(route.query.m),
+  );
+  let saved = null;
+  if (!urlOwns) {
+    try {
+      const raw = JSON.parse(window.localStorage.getItem("connect-setup") || "null");
+      if (raw && typeof raw === "object") saved = raw;
+    } catch {
+      saved = null;
+    }
+  }
+  const asked = queryString(route.query.g);
+  const id = knownGame(asked) ? asked : !urlOwns && knownGame(saved?.game) ? saved.game : "hex";
   const info = gameInfo(id);
-  const n = Number(queryString(route.query.n));
+  const n = Number(queryString(route.query.n) || (!urlOwns ? saved?.size : ""));
   const options = {
     game: id,
     size: info.sizes.includes(n) ? n : info.sizeDefault,
@@ -447,6 +469,7 @@ const form = ref({ ...launch.options });
 const moves = ref(launch.moves);
 const cursor = ref(launch.moves.length);
 const badLink = ref(launch.bad);
+const folded = ref(true);
 const showSetup = ref(false);
 const showRules = ref(false);
 
@@ -831,6 +854,10 @@ function start() {
   badLink.value = false;
   cam.value = { x: 0, y: 0, z: 1 };
   showSetup.value = false;
+  window.localStorage.setItem(
+    "connect-setup",
+    JSON.stringify({ game: setup.value.game, size: setup.value.size }),
+  );
   maybeIntro(setup.value.game);
   punctKind.value = "se";
   punctOrient.value = 0;
@@ -1356,6 +1383,10 @@ const RULES = {
 </script>
 
 <style scoped>
+.fold {
+  display: none;
+}
+
 .connect {
   height: 100dvh;
   display: grid;
@@ -1944,6 +1975,42 @@ button[aria-pressed="true"],
 
   h1 {
     font-size: 28px;
+  }
+
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin: 0 0 10px;
+    padding: 0 14px;
+    border: 1px solid #333;
+    background: #000;
+    color: #fff;
+    font: inherit;
+  }
+
+  .connect.folded {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .connect.folded .actions,
+  .connect.folded .tray,
+  .connect.folded .moves-head,
+  .connect.folded .moves,
+  .connect.folded .empty,
+  .connect.folded .warn {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .actions button,
+  .zoom button,
+  .moves-head button,
+  .fold,
+  .tray button {
+    min-height: 44px;
   }
 }
 </style>

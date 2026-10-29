@@ -1,5 +1,5 @@
 <template>
-  <div ref="shell" class="hexchess" :class="{ screen: full.active }">
+  <div ref="shell" class="hexchess" :class="{ screen: full.active, folded }">
     <aside class="panel">
       <header class="top">
         <div>
@@ -30,6 +30,15 @@
           </span>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="fold"
+        :aria-expanded="!folded"
+        @click="folded = !folded"
+      >
+        {{ folded ? "moves" : "hide" }}
+      </button>
 
       <div class="actions">
         <button type="button" @click="openSetup">new</button>
@@ -337,6 +346,7 @@ const mode = ref("hotseat");
 const human = ref("w");
 const flipped = ref(false);
 const showSetup = ref(false);
+const folded = ref(true);
 const showRules = ref(false);
 const selected = ref(null);
 const promo = ref(null);
@@ -991,6 +1001,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.fold {
+  display: none;
+}
+
 .hexchess {
   height: 100dvh;
   display: grid;
@@ -1509,6 +1523,40 @@ button:focus-visible {
   .readout {
     margin-top: 10px;
     font-size: 22px;
+  }
+
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin: 0 0 10px;
+    padding: 0 14px;
+    border: 1px solid #333;
+    background: #000;
+    color: #fff;
+    font: inherit;
+  }
+
+  .hexchess.folded {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .hexchess.folded .actions,
+  .hexchess.folded .rules,
+  .hexchess.folded .moves-head,
+  .hexchess.folded .moves,
+  .hexchess.folded .empty {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .actions button,
+  .zoom button,
+  .moves-head button,
+  .fold {
+    min-height: 44px;
   }
 }
 </style>

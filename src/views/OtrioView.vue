@@ -1,5 +1,5 @@
 <template>
-  <main ref="shell" class="otrio" :class="{ screen: full.active }">
+  <main ref="shell" class="otrio" :class="{ screen: full.active, folded }">
     <p class="back"><router-link to="/games">← games</router-link></p>
     <h1>Otrio</h1>
     <p class="intro">
@@ -7,6 +7,14 @@
     </p>
 
     <div class="column">
+      <button
+        type="button"
+        class="fold"
+        :aria-expanded="!folded"
+        @click="folded = !folded"
+      >
+        {{ folded ? "setup" : "hide" }}
+      </button>
       <ol class="ways">
         <li>
           <svg class="way" viewBox="0 0 156 52" aria-hidden="true">
@@ -276,6 +284,8 @@ import {
   undo,
   winSummary,
 } from "@/games/otrio/logic.js";
+
+const folded = ref(true);
 
 const PALETTE = {
   tan: { ink: "#c99545", edge: "#6e4a22" },
@@ -581,6 +591,10 @@ h1 {
 .fine {
   margin-top: -10px;
   font-size: 14px;
+}
+
+.fold {
+  display: none;
 }
 
 .column {
@@ -959,6 +973,35 @@ h1 {
     padding: 36px 16px 64px;
   }
 
+  .column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slab {
+    order: -1;
+  }
+
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    min-height: 44px;
+    margin: 0 0 12px;
+    padding: 0 14px;
+    border: 1px solid #333;
+    background: #000;
+    color: #fff;
+    font: inherit;
+  }
+
+  .otrio.folded .ways,
+  .otrio.folded .fine,
+  .otrio.folded .controls {
+    display: none;
+  }
+
   .ways {
     grid-template-columns: 1fr;
   }
@@ -981,6 +1024,14 @@ h1 {
   .bay.black {
     justify-self: stretch;
     align-self: stretch;
+  }
+}
+
+@media (pointer: coarse) {
+  .choice button,
+  .pile,
+  .fold {
+    min-height: 44px;
   }
 }
 </style>

@@ -24,6 +24,15 @@
       <p>{{ t("about.jazz") }}</p>
 
       <h2>{{ t("about.coding") }}</h2>
+      <p>{{ t("about.proud") }}</p>
+      <ul>
+        <li><RouterLink to="/games/go">{{ t("about.go") }}</RouterLink></li>
+        <li><RouterLink to="/games/hexo">{{ t("about.hexo") }}</RouterLink></li>
+        <li><RouterLink to="/games/hexchess">{{ t("about.hexchess") }}</RouterLink></li>
+        <li><RouterLink to="/games/otrio">{{ t("about.otrio") }}</RouterLink></li>
+        <li><RouterLink to="/tools/pi">{{ t("about.pi") }}</RouterLink></li>
+        <li><RouterLink to="/jworld">{{ t("about.jworld") }}</RouterLink></li>
+      </ul>
       <p>{{ t("about.codingText") }}</p>
       <p>{{ t("about.projectsText") }}</p>
       <p>

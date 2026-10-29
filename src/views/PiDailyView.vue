@@ -89,6 +89,9 @@
         <button type="button" class="ghost" @click="shareResult">
           {{ shareLabel }}
         </button>
+        <button type="button" class="ghost" @click="shareCard">
+          {{ cardLabel }}
+        </button>
       </div>
     </template>
 
@@ -137,6 +140,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { utcDateKey } from "@/data/flags.js";
+import { copyShareCard } from "@/data/shareCard.js";
 import { PI_DECIMALS } from "@/data/piDigits.js";
 import {
   ATTEMPTS,
@@ -165,6 +169,7 @@ const frozenLesson = ref(null);
 const slotRefs = ref([]);
 const countdown = ref("");
 const shareLabel = ref("");
+const cardLabel = ref("");
 let dayTimer = 0;
 let clockTimer = 0;
 let holdTimer = 0;
@@ -325,6 +330,7 @@ function syncDay() {
   dateKey.value = nextKey;
   progress.value = loadPiProgress(nextKey);
   shareLabel.value = t("pi.share");
+  cardLabel.value = t("pi.card");
 }
 
 function tickClock() {
@@ -438,6 +444,22 @@ function submit() {
   }, 520);
 }
 
+async function shareCard() {
+  const result = await copyShareCard({
+    title: "daily pi",
+    lines: [
+      dateKey.value,
+      `${t("pi.streak")} ${streak.value}`,
+      progress.value.status === "done" ? t("pi.doneTitle") : t("pi.failedTitle"),
+      `${progress.value.mastered} ${t("pi.known")}`,
+    ],
+  });
+  cardLabel.value = result === "saved" ? t("pi.cardSaved") : t("pi.copied");
+  window.setTimeout(() => {
+    cardLabel.value = t("pi.card");
+  }, 1400);
+}
+
 async function shareResult() {
   const text = sharePiText({
     dateKey: dateKey.value,
@@ -478,6 +500,7 @@ watch(
 
 onMounted(() => {
   shareLabel.value = t("pi.share");
+  cardLabel.value = t("pi.card");
   tickClock();
   dayTimer = window.setInterval(syncDay, 30000);
   clockTimer = window.setInterval(tickClock, 1000);

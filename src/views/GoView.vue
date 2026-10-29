@@ -1,10 +1,18 @@
 <template>
-  <main ref="shell" class="go" :class="{ screen: full.active }">
+  <main ref="shell" class="go" :class="{ screen: full.active, folded }">
     <p class="back"><router-link to="/games">← games</router-link></p>
     <h1>go</h1>
     <p class="intro">baduk. two players, one screen. click a crossing to play.</p>
 
     <div class="column">
+      <button
+        type="button"
+        class="fold"
+        :aria-expanded="!folded"
+        @click="folded = !folded"
+      >
+        {{ folded ? "controls" : "hide" }}
+      </button>
       <div class="controls">
         <div class="group">
           <span>board</span>
@@ -185,14 +193,14 @@
         no liberties, and the group comes off. suicide is illegal, and a move can't
         restore an earlier board. pass twice, click groups you both count as dead,
         then score stones plus empty points. white gets 7.5 komi. arrows and enter
-        work on the board.
+        work on the board, and a coordinate such as d4 plays that point.
       </p>
     </div>
   </main>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useFullscreen } from "@/games/fullscreen.js";
 import FullscreenButton from "@/games/FullscreenButton.vue";
 import {
@@ -218,6 +226,7 @@ const NOTES = {
   occupied: "there's already a stone there.",
 };
 
+const folded = ref(true);
 const shell = ref(null);
 const full = useFullscreen(shell);
 const game = ref(createGame());
@@ -225,6 +234,7 @@ const hover = ref(null);
 const note = ref("");
 const resignArmed = ref(false);
 const boardEl = ref(null);
+const typedPoint = ref("");
 
 const swatch = computed(() => {
   const current = game.value;
@@ -397,6 +407,42 @@ function onLeave() {
   hover.value = null;
 }
 
+function colOf(letter, size) {
+  const want = letter.toUpperCase();
+  for (let col = 0; col < size; col += 1) {
+    if (columnLabel(col) === want) return col;
+  }
+  return -1;
+}
+
+function playTyped(event) {
+  const tag = event.target?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  const size = game.value.size;
+  if (/^[a-z]$/i.test(event.key)) {
+    if (colOf(event.key, size) < 0) return;
+    event.preventDefault();
+    typedPoint.value = event.key.toUpperCase();
+    return;
+  }
+  if (!/^\d$/.test(event.key) || !/^[A-Z]$/.test(typedPoint.value[0] || "")) return;
+  event.preventDefault();
+  const next = `${typedPoint.value[0]}${(typedPoint.value.slice(1) + event.key).slice(0, 2)}`;
+  typedPoint.value = next;
+  const rank = Number(next.slice(1));
+  const col = colOf(next[0], size);
+  if (col < 0 || rank < 1 || rank > size) {
+    typedPoint.value = "";
+    return;
+  }
+  if (rank < 10 && rank * 10 <= size) return;
+  typedPoint.value = "";
+  onPoint({ row: size - rank, col });
+}
+
+onMounted(() => window.addEventListener("keydown", playTyped));
+onUnmounted(() => window.removeEventListener("keydown", playTyped));
+
 function onKey(event) {
   const key = event.key;
   if (
@@ -537,6 +583,10 @@ h1 {
   margin-top: 18px;
   margin-bottom: 0;
   font-size: 14px;
+}
+
+.fold {
+  display: none;
 }
 
 .column {
@@ -782,6 +832,41 @@ h1 {
 
   h1 {
     letter-spacing: -2px;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .frame {
+    order: -1;
+    touch-action: none;
+  }
+
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    min-height: 44px;
+    margin: 0 0 12px;
+    padding: 0 14px;
+    border: 1px solid #333;
+    background: #000;
+    color: #fff;
+    font: inherit;
+  }
+
+  .go.folded .controls {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .choice button,
+  .fold {
+    min-height: 44px;
   }
 }
 </style>

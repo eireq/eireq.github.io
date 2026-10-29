@@ -1,5 +1,5 @@
 <template>
-  <div ref="shell" class="hexo" :class="{ screen: full.active }">
+  <div ref="shell" class="hexo" :class="{ screen: full.active, folded }">
     <aside class="panel">
       <header class="top">
         <div>
@@ -49,6 +49,15 @@
           <strong v-if="clock">{{ formatClock(clock[side]) }}</strong>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="fold"
+        :aria-expanded="!folded"
+        @click="folded = !folded"
+      >
+        {{ folded ? "moves" : "hide" }}
+      </button>
 
       <div class="actions">
         <button type="button" @click="toggleSetup">
@@ -709,13 +718,31 @@ function playerId() {
 const selfId = playerId();
 const joined = readRoom();
 const remembered = joined ? loadRoom(joined.room) : null;
-const openedSize = remembered ? asSize(remembered.size) : joined ? joined.size : querySize();
+function savedSetup() {
+  const urlOwns = Boolean(route.query.b || route.query.alt || route.query.r || route.query.p);
+  if (urlOwns) return null;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem("hexo-setup") || "null");
+    if (!raw || typeof raw !== "object") return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+const saved = savedSetup();
+const openedSize = remembered
+  ? asSize(remembered.size)
+  : joined
+    ? joined.size
+    : saved?.size
+      ? asSize(saved.size)
+      : querySize();
 const loaded = readReplay(openedSize);
 const replayFromRoom = Boolean(
   remembered && (!loaded.moves || remembered.moves.length >= loaded.moves.length),
 );
 const openedMoves = replayFromRoom ? remembered.moves : (loaded.moves ?? []);
-const openedAlt = remembered?.alt || (!remembered ? queryAlt() : "");
+const openedAlt = remembered?.alt || (!remembered ? queryAlt() || saved?.alt || "" : "");
 const openedRules = decodeAlt(openedAlt);
 const openedSeat =
   remembered?.white === selfId
@@ -783,6 +810,7 @@ const clockRunning = ref(
 );
 const showSetup = ref(false);
 const showSettings = ref(false);
+const folded = ref(true);
 const rulesBrief = ref(false);
 const showRules = ref(false);
 try {
@@ -1788,6 +1816,12 @@ function startGame() {
   particles.value = [];
   hoverKey.value = null;
   rules.value = rulesFromDraft();
+  if (draft.mode !== "together") {
+    window.localStorage.setItem(
+      "hexo-setup",
+      JSON.stringify({ size: size.value, alt: encodeAlt(rules.value) }),
+    );
+  }
   clockBudget.value = draft.minutes;
   if (draft.minutes > 0) {
     clock.value = freshClock(draft.minutes * 60 * 1000);
@@ -2583,6 +2617,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.fold {
+  display: none;
+}
+
 .hexo {
   height: 100dvh;
   display: grid;
@@ -3375,6 +3413,42 @@ button:focus-visible {
 
   .chat-log {
     max-height: 84px;
+  }
+
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin: 0 0 10px;
+    padding: 0 14px;
+    border: 1px solid #333;
+    background: #000;
+    color: #fff;
+    font: inherit;
+  }
+
+  .hexo.folded {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .hexo.folded .actions,
+  .hexo.folded .setup,
+  .hexo.folded .moves-head,
+  .hexo.folded .moves,
+  .hexo.folded .empty,
+  .hexo.folded .warn,
+  .hexo.folded .chat {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .actions button,
+  .zoom button,
+  .moves-head button,
+  .fold {
+    min-height: 44px;
   }
 }
 </style>

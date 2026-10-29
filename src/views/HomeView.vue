@@ -28,6 +28,7 @@
             class="feature"
             :to="item.to"
           >
+            <span v-if="fresh.has(item.to)" class="mark">new</span>
             <h3>{{ t(item.title) }}</h3>
             <p>{{ t(item.text) }}</p>
           </RouterLink>
@@ -50,6 +51,9 @@
             :to="{ path: '/compare', query: { a: weekly.name } }"
             >{{ t("home.weekCompare") }}</RouterLink
           >
+          <RouterLink class="button button--ghost" to="/flagdb/weeks">{{
+            t("flagDb.weeksTitle")
+          }}</RouterLink>
         </div>
       </div>
       <RouterLink class="flag-week__art" :to="flagRoute(weekly.flag)">
@@ -75,6 +79,8 @@ const { t } = useI18n();
 const flags = ref([]);
 const weekly = ref(null);
 const weekImage = ref("");
+
+const fresh = new Set(["/games/daily", "/games/connect", "/compare"]);
 
 const groups = [
   {
@@ -216,6 +222,7 @@ h1 {
 }
 
 .feature {
+  position: relative;
   display: block;
   padding: 24px;
   border: 1px solid #222;
@@ -228,6 +235,16 @@ h1 {
 .feature:hover {
   border-color: #fff;
   transform: translateY(-2px);
+}
+
+.mark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #fff1b8;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .feature h3 {
