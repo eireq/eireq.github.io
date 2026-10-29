@@ -153,9 +153,21 @@ for (let q = -5; q <= 5; q += 1) {
 export const cells = built;
 export const cellByKey = byKey;
 
+function westEdge(y) {
+  const halfH = (SIZE * Math.sqrt(3)) / 2;
+  let left = Infinity;
+  for (const cell of cells) {
+    const dy = Math.abs(y - cell.y);
+    if (dy > halfH + 0.5) continue;
+    const inset = (SIZE / 2) * Math.min(1, dy / halfH);
+    left = Math.min(left, cell.x - SIZE + inset);
+  }
+  return left;
+}
+
 export const fileLabels = FILES.split("").map((file) => {
   const cell = byKey[`${file}1`];
-  return { text: file, x: cell.x, y: cell.y + SIZE + 16 };
+  return { text: file, x: cell.x, y: cell.y + SIZE + 18 };
 });
 
 export const rankLabels = [];
@@ -164,9 +176,10 @@ for (let rank = 1; rank <= 11; rank += 1) {
   for (const cell of cells) {
     if (cell.rank === rank && (!west || cell.q < west.q)) west = cell;
   }
+  const text = String(rank);
   rankLabels.push({
-    text: String(rank),
-    x: west.x - SIZE - 14,
+    text,
+    x: westEdge(west.y) - (text.length > 1 ? 20 : 16),
     y: west.y,
   });
 }

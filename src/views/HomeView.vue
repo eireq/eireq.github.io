@@ -19,16 +19,19 @@
     <section class="what-to-do" aria-labelledby="what-to-do-title">
       <h2 id="what-to-do-title">{{ t("home.whatTitle") }}</h2>
       <p class="section-intro">{{ t("home.whatIntro") }}</p>
-      <div class="feature-grid">
-        <RouterLink
-          v-for="item in features"
-          :key="item.to"
-          class="feature"
-          :to="item.to"
-        >
-          <h3>{{ t(item.title) }}</h3>
-          <p>{{ t(item.text) }}</p>
-        </RouterLink>
+      <div v-for="group in groups" :key="group.title" class="feature-group">
+        <h3 class="group-title">{{ t(group.title) }}</h3>
+        <div class="feature-grid">
+          <RouterLink
+            v-for="item in group.items"
+            :key="item.to"
+            class="feature"
+            :to="item.to"
+          >
+            <h3>{{ t(item.title) }}</h3>
+            <p>{{ t(item.text) }}</p>
+          </RouterLink>
+        </div>
       </div>
     </section>
 
@@ -73,41 +76,35 @@ const flags = ref([]);
 const weekly = ref(null);
 const weekImage = ref("");
 
-const features = [
+const groups = [
   {
-    to: "/flagdb",
-    title: "home.featDb",
-    text: "home.featDbText",
+    title: "home.groupQuick",
+    items: [
+      { to: "/games/daily", title: "games.dailyFlag", text: "games.dailyFlagText" },
+      { to: "/tools/pi", title: "tools.pi", text: "tools.piText" },
+      { to: "/games/flagquiz", title: "games.flagQuiz", text: "games.flagQuizText" },
+    ],
   },
   {
-    to: "/games/go",
-    title: "home.featGo",
-    text: "home.featGoText",
+    title: "home.groupDeep",
+    items: [
+      { to: "/games/hexo", title: "games.hexo", text: "games.hexoText" },
+      { to: "/games/connect", title: "games.connect", text: "games.connectText" },
+      { to: "/games/go", title: "games.go", text: "games.goText" },
+      { to: "/games/hexchess", title: "games.hexchess", text: "games.hexchessText" },
+      { to: "/games/otrio", title: "games.otrio", text: "games.otrioText" },
+      { to: "/games/racing", title: "games.racing", text: "games.racingText" },
+      { to: "/kht", title: "games.kht", text: "games.khtText" },
+    ],
   },
   {
-    to: "/games/otrio",
-    title: "home.featOtrio",
-    text: "home.featOtrioText",
-  },
-  {
-    to: "/games/hexo",
-    title: "home.featHexo",
-    text: "home.featHexoText",
-  },
-  {
-    to: "/games/hexchess",
-    title: "home.featHexchess",
-    text: "home.featHexchessText",
-  },
-  {
-    to: "/tools/pi",
-    title: "home.featPi",
-    text: "home.featPiText",
-  },
-  {
-    to: "/jworld",
-    title: "home.featJworld",
-    text: "home.featJworldText",
+    title: "home.groupExplore",
+    items: [
+      { to: "/flagdb", title: "tools.flagDatabase", text: "tools.flagDatabaseText" },
+      { to: "/compare", title: "tools.compare", text: "tools.compareText" },
+      { to: "/jworld", title: "home.featJworld", text: "home.featJworldText" },
+      { to: "/jpol", title: "misc.jpol", text: "misc.jpolText" },
+    ],
   },
 ];
 
@@ -198,6 +195,18 @@ h1 {
 .section-intro {
   margin: 0 0 28px;
   max-width: 640px;
+}
+
+.feature-group + .feature-group {
+  margin-top: 36px;
+}
+
+.group-title {
+  margin: 0 0 14px;
+  color: #888;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .feature-grid {

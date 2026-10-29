@@ -31,7 +31,7 @@ function pick(pool) {
 export function chooseMove(state) {
   if (!state || state.result) return null;
   if (state.pieOpen && state.turn === "blue" && shouldSwap(state)) return { t: "swap" };
-  if (state.game === "gale") return chooseGale(state);
+  if (state.game === "bluding") return chooseBluding(state);
   if (state.game === "twixt") return chooseTwixt(state);
   if (state.game === "punct") return choosePunct(state);
   if (state.game === "star" || state.game === "sstar") return chooseScore(state);
@@ -54,7 +54,7 @@ function shouldSwap(state) {
     const n = state.size;
     return cell.q > n / 6 && cell.r > n / 6 && cell.q + cell.r < n * 0.72;
   }
-  if (state.game === "gale") {
+  if (state.game === "bluding") {
     const id = state.taken.findIndex(Boolean);
     const bridge = board.bridges[id];
     return Boolean(bridge && bridge.cross != null);
@@ -154,7 +154,7 @@ function chooseScore(state) {
   return pick(pool);
 }
 
-function galeDist(board, taken, color) {
+function bludingDist(board, taken, color) {
   const dots = color === "red" ? board.red : board.blue;
   const dist = Array(dots.length).fill(1e9);
   const dq = [];
@@ -184,8 +184,8 @@ function galeDist(board, taken, color) {
   return best;
 }
 
-function chooseGale(state) {
-  const board = boardOf("gale", state.size);
+function chooseBluding(state) {
+  const board = boardOf("bluding", state.size);
   const me = state.turn;
   const opp = me === "red" ? "blue" : "red";
   let pool = [];
@@ -194,9 +194,9 @@ function chooseGale(state) {
     if (bridge.cross != null && state.taken[bridge.cross]) continue;
     const taken = state.taken.slice();
     taken[bridge.id] = code(me);
-    const mine = galeDist(board, taken, me);
+    const mine = bludingDist(board, taken, me);
     if (mine === 0) return { t: "bridge", id: bridge.id };
-    const score = mine * 100 - galeDist(board, taken, opp);
+    const score = mine * 100 - bludingDist(board, taken, opp);
     const move = { t: "bridge", id: bridge.id };
     if (!pool.length || score < pool[0].score) pool = [{ move, score }];
     else if (score === pool[0].score) pool.push({ move, score });

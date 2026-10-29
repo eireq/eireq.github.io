@@ -495,11 +495,11 @@
     </Teleport>
 
     <Teleport v-if="shell" :to="shell">
-      <div v-if="showRules" class="setup-shade" @click.self="showRules = false">
+      <div v-if="showRules" class="setup-shade" @click.self="closeRules">
         <div class="setup-pop">
           <div class="pop-bar">
             <span>rules</span>
-            <button type="button" @click="showRules = false">close</button>
+            <button type="button" @click="closeRules">close</button>
           </div>
           <div class="rules">
             <p>
@@ -519,6 +519,7 @@
               With three or four, invite O, Y, and Z on their own buttons.
               The box under the moves is chat.
             </p>
+            <template v-if="!rulesBrief">
             <p>
               Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
               Radial is rings and spokes. Six around a ring, or six outward on a spoke.
@@ -551,6 +552,7 @@
               Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
               It becomes a stone if two of your stones touch it before it fades.
             </p>
+            </template>
           </div>
         </div>
       </div>
@@ -781,7 +783,16 @@ const clockRunning = ref(
 );
 const showSetup = ref(false);
 const showSettings = ref(false);
+const rulesBrief = ref(false);
 const showRules = ref(false);
+try {
+  if (window.localStorage.getItem("hexo-intro") !== "1" && !joined && !openedMoves.length) {
+    showRules.value = true;
+    rulesBrief.value = true;
+  }
+} catch {
+  /* private mode keeps the board clear */
+}
 const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
 const dragging = ref(false);
@@ -1483,24 +1494,41 @@ function toggleSetup() {
     draft.pendulum = rules.value.pendulum;
     draft.mine = rules.value.mine;
     showSettings.value = false;
-    showRules.value = false;
+    closeRules();
   }
+}
+
+function rememberIntro() {
+  try {
+    window.localStorage.setItem("hexo-intro", "1");
+  } catch {
+    /* private mode */
+  }
+}
+
+function closeRules() {
+  if (showRules.value) rememberIntro();
+  showRules.value = false;
+  rulesBrief.value = false;
 }
 
 function toggleSettings() {
   showSettings.value = !showSettings.value;
   if (showSettings.value) {
     showSetup.value = false;
-    showRules.value = false;
+    closeRules();
   }
 }
 
 function toggleRules() {
-  showRules.value = !showRules.value;
   if (showRules.value) {
-    showSetup.value = false;
-    showSettings.value = false;
+    closeRules();
+    return;
   }
+  rulesBrief.value = false;
+  showRules.value = true;
+  showSetup.value = false;
+  showSettings.value = false;
 }
 
 function xMark(cell) {
@@ -2112,7 +2140,7 @@ function onKey(event) {
     typed.value = "";
     showSetup.value = false;
     showSettings.value = false;
-    showRules.value = false;
+    closeRules();
   }
 }
 

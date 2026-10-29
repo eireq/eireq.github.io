@@ -122,7 +122,7 @@ function squareBoard(size: BoardSize): GameBoard {
     }
   }
   const labels = [];
-  const edge = (mid + 0.78) * step;
+  const edge = mid * step + step * 0.46 + 22;
   for (let col = 0; col < span; col += 1) {
     labels.push({ text: letters[col], x: (col - mid) * step, y: edge });
   }
@@ -158,18 +158,18 @@ function triangleBoard(size: BoardSize): GameBoard {
       }
     }
   }
-  nameCells(cells);
+  const labels = nameTriangle(cells);
   const touch = nearestTouch(cells, 1.35);
   return finish(
     "tri",
     size,
     closestKey(cells),
     "abcdefghijklmnopqrstuvwxyz",
-    40,
+    60,
     bound,
     unit,
     cells,
-    [],
+    labels,
     triangleLines(cells),
     touch,
     60,
@@ -333,14 +333,14 @@ function pentagonBoard(size: BoardSize): GameBoard {
     }
   }
   const heart = inn[0][1][0];
-  nameCells(cells);
+  const labels = namePentagon(cells, n);
   const touch: Record<string, string[]> = {};
   for (const cell of cells) touch[cell.key] = [];
   for (const [a, b] of links) {
     touch[a.key].push(b.key);
     touch[b.key].push(a.key);
   }
-  const board = finish("pen", size, heart.key, "abcdefghijklmnopqrstuvwxyz", n, n, step, cells, [], pentagonLines(cells), touch, 72, { x: 0, y: 0 });
+  const board = finish("pen", size, heart.key, "abcdefghij", n * n, n, step, cells, labels, pentagonLines(cells), touch, 72, { x: 0, y: 0 });
   const spacing = spacingOf(cells);
   for (const cell of cells) board.mirror[cell.key] = snap(cells, -cell.x, cell.y, spacing) ?? cell.key;
   return board;
@@ -405,7 +405,7 @@ function radialBoard(size: BoardSize): GameBoard {
       });
     }
   }
-  nameCells(cells);
+  const labels = nameRadial(cells, spokes, rings, hole, band);
   const touch = radialTouch(cells, spokes);
   const lines = radialLines(cells, spokes);
   const center = closestKey(cells.filter((cell) => cell.r === 0));
@@ -418,7 +418,7 @@ function radialBoard(size: BoardSize): GameBoard {
     rings,
     band,
     cells,
-    [],
+    labels,
     lines,
     touch,
     30,
@@ -517,9 +517,9 @@ function octagonBoard(size: BoardSize): GameBoard {
       cells.push(cornerDiamond((a.x + b.x) / 2, (a.y + b.y) / 2, reach, col, row));
     }
   }
-  nameCells(cells);
+  const labels = nameOctagon(cells, n, step);
   const touch = octagonTouch(cells, step);
-  return finish("oct", size, closestKey(cells.filter((cell) => cell.s === 0)), "abcdefghijklmnopqrstuvwxyz", 40, n, step, cells, [], walkLines(cells, touch), touch, 90);
+  return finish("oct", size, closestKey(cells.filter((cell) => cell.s === 0)), "abcdefghijklmnopqrstuvwxyz", n * 2, n, step, cells, labels, walkLines(cells, touch), touch, 90);
 }
 
 function cornerDiamond(x: number, y: number, reach: number, col: number, row: number): GameCell {
@@ -741,16 +741,235 @@ function nearestTouch(cells: GameCell[], factor: number): Record<string, string[
   return touch;
 }
 
-function nameCells(cells: GameCell[]) {
+function nameTriangle(cells: GameCell[]) {
   const letters = "abcdefghijklmnopqrstuvwxyz";
-  const ordered = cells.slice().sort((a, b) => a.y - b.y || a.x - b.x);
-  ordered.forEach((cell, index) => {
-    const letter = letters[index % letters.length];
-    const number = Math.floor(index / letters.length) + 1;
-    cell.letter = letter;
+  let qmin = Infinity;
+  let rmin = Infinity;
+  for (const cell of cells) {
+    qmin = Math.min(qmin, cell.q);
+    rmin = Math.min(rmin, cell.r);
+  }
+  for (const cell of cells) {
+    cell.letter = letters[cell.q - qmin];
+    cell.number = (cell.r - rmin) * 2 + cell.s + 1;
+    cell.key = `${cell.letter}${cell.number}`;
+  }
+  return axisLabels(
+    cells,
+    (cell) => cell.letter,
+    (cell) => String(cell.number),
+  );
+}
+
+function nameOctagon(cells: GameCell[], n: number, step: number) {
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  const mid = (n - 1) / 2;
+  for (const cell of cells) {
+    const letterIndex = cell.s === 0 ? cell.q * 2 : cell.q * 2 + 1;
+    const number = cell.s === 0 ? cell.r * 2 + 1 : cell.r * 2 + 2;
+    cell.letter = letters[letterIndex];
     cell.number = number;
-    cell.key = `${letter}${number}`;
-  });
+    cell.key = `${cell.letter}${cell.number}`;
+  }
+  const reach = step / 2 / Math.cos(Math.PI / 8);
+  const margin = 20;
+  const cols = n * 2 - 1;
+  const labels: { text: string; x: number; y: number }[] = [];
+  for (let col = 0; col < cols; col += 1) {
+    labels.push({
+      text: letters[col],
+      x: (col / 2 - mid) * step,
+      y: mid * step + reach + margin,
+    });
+  }
+  for (let row = 0; row < cols; row += 1) {
+    labels.push({
+      text: String(row + 1),
+      x: -mid * step - reach - margin,
+      y: (mid - row / 2) * step,
+    });
+  }
+  return labels;
+}
+
+function nameRadial(cells: GameCell[], spokes: number, rings: number, hole: number, band: number) {
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  for (const cell of cells) {
+    if (cell.r === 0) {
+      cell.letter = "z";
+      cell.number = 0;
+      cell.key = "z0";
+      continue;
+    }
+    cell.letter = letters[cell.q];
+    cell.number = cell.r;
+    cell.key = `${cell.letter}${cell.number}`;
+  }
+  const outer = hole + rings * band;
+  const labels: { text: string; x: number; y: number }[] = [];
+  for (let spoke = 0; spoke < spokes; spoke += 1) {
+    const midA = -Math.PI / 2 + ((spoke + 0.5) / spokes) * Math.PI * 2;
+    const rad = outer + 22;
+    labels.push({ text: letters[spoke], x: Math.cos(midA) * rad, y: Math.sin(midA) * rad });
+  }
+  for (let ring = 1; ring <= rings; ring += 1) {
+    const midR = hole + (ring - 0.5) * band;
+    labels.push({ text: String(ring), x: -(outer + 56), y: -midR });
+  }
+  return labels;
+}
+
+function namePentagon(cells: GameCell[], n: number) {
+  const letters = "abcdefghij";
+  const groups: GameCell[][] = Array.from({ length: 10 }, () => []);
+  for (const cell of cells) groups[cell.q].push(cell);
+  for (const group of groups) {
+    group.sort((a, b) => a.r + a.s - (b.r + b.s) || Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x));
+    group.forEach((cell, index) => {
+      cell.letter = letters[cell.q];
+      cell.number = index + 1;
+      cell.key = `${cell.letter}${cell.number}`;
+    });
+  }
+  let cx = 0;
+  let cy = 0;
+  for (const cell of cells) {
+    cx += cell.x;
+    cy += cell.y;
+  }
+  cx /= cells.length;
+  cy /= cells.length;
+  const labels: Drawn[] = [];
+  for (const cell of cells) {
+    if (cell.r + cell.s !== n - 1) continue;
+    const dx = cell.x - cx;
+    const dy = cell.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    labels.push({
+      text: cell.key,
+      x: cell.x + (dx / len) * 22,
+      y: cell.y + (dy / len) * 22,
+      ux: dx / len,
+      uy: dy / len,
+    });
+  }
+  return settle(labels, cells, cx, cy);
+}
+
+type Drawn = { text: string; x: number; y: number; ux: number; uy: number };
+
+function axisLabels(
+  cells: GameCell[],
+  fileOf: (cell: GameCell) => string,
+  rankOf: (cell: GameCell) => string,
+) {
+  let cx = 0;
+  let cy = 0;
+  for (const cell of cells) {
+    cx += cell.x;
+    cy += cell.y;
+  }
+  cx /= cells.length;
+  cy /= cells.length;
+  const groups = new Map<string, GameCell[]>();
+  const add = (key: string, cell: GameCell) => {
+    const list = groups.get(key);
+    if (list) list.push(cell);
+    else groups.set(key, [cell]);
+  };
+  for (const cell of cells) {
+    add(`f:${fileOf(cell)}`, cell);
+    add(`r:${rankOf(cell)}`, cell);
+  }
+  const labels: Drawn[] = [];
+  for (const [key, list] of groups) {
+    let edge = list[0];
+    let best = -1;
+    for (const cell of list) {
+      const dist = (cell.x - cx) ** 2 + (cell.y - cy) ** 2;
+      if (dist > best) {
+        best = dist;
+        edge = cell;
+      }
+    }
+    const dx = edge.x - cx;
+    const dy = edge.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    labels.push({
+      text: key.slice(2),
+      x: edge.x + (dx / len) * 14,
+      y: edge.y + (dy / len) * 14,
+      ux: dx / len,
+      uy: dy / len,
+    });
+  }
+  return settle(labels, cells, cx, cy);
+}
+
+function settle(labels: Drawn[], cells: GameCell[], cx: number, cy: number) {
+  const polys = cells.map((cell) =>
+    cell.points.split(" ").map((part) => part.split(",").map(Number) as [number, number]),
+  );
+  const box = (text: string) => ({ w: Math.max(5, text.length * 3.8), h: 7 });
+  const onBoard = (label: Drawn) => {
+    const pad = Math.max(box(label.text).w, box(label.text).h) + 6;
+    for (const poly of polys) {
+      if (polyDistance(label.x, label.y, poly) < pad) return true;
+    }
+    return false;
+  };
+  const crowded = (a: Drawn, b: Drawn) => {
+    const ha = box(a.text);
+    const hb = box(b.text);
+    return Math.abs(a.x - b.x) < ha.w + hb.w + 4 && Math.abs(a.y - b.y) < ha.h + hb.h + 3;
+  };
+  for (let pass = 0; pass < 60; pass += 1) {
+    let moved = false;
+    for (const label of labels) {
+      let guard = 0;
+      while (onBoard(label) && guard < 36) {
+        label.x += label.ux * 4;
+        label.y += label.uy * 4;
+        guard += 1;
+        moved = true;
+      }
+    }
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        if (!crowded(labels[i], labels[j])) continue;
+        const a = labels[i];
+        const b = labels[j];
+        const ad = (a.x - cx) ** 2 + (a.y - cy) ** 2;
+        const bd = (b.x - cx) ** 2 + (b.y - cy) ** 2;
+        const further = ad >= bd ? a : b;
+        further.x += further.ux * 7;
+        further.y += further.uy * 7;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return labels.map(({ text, x, y }) => ({ text, x, y }));
+}
+
+function polyDistance(x: number, y: number, poly: Array<[number, number]>) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i += 1) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi || 1) + xi) inside = !inside;
+  }
+  if (inside) return 0;
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i += 1) {
+    const [x1, y1] = poly[i];
+    const [x2, y2] = poly[(i + 1) % poly.length];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy || 1)));
+    best = Math.min(best, Math.hypot(x - (x1 + dx * t), y - (y1 + dy * t)));
+  }
+  return best;
 }
 
 function closestKey(cells: GameCell[]): string {

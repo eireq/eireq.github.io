@@ -192,9 +192,9 @@
           </template>
         </template>
 
-        <template v-else-if="board.family === 'gale'">
+        <template v-else-if="board.family === 'bluding'">
           <line
-            v-for="bridge in galeGhosts"
+            v-for="bridge in bludingGhosts"
             :key="`gh${bridge.id}`"
             class="bridge ghost-line"
             :class="[bridge.color, { hot: hover?.kind === 'bridge' && hover.id === bridge.id }]"
@@ -204,7 +204,7 @@
             :y2="bridge.py2"
           />
           <line
-            v-for="bridge in galePlayed"
+            v-for="bridge in bludingPlayed"
             :key="`br${bridge.id}`"
             class="bridge"
             :class="[bridge.color, { win: winSet.has(bridge.id) }]"
@@ -362,11 +362,11 @@
     </Teleport>
 
     <Teleport v-if="shell" :to="shell">
-      <div v-if="showRules" class="setup-shade" @click.self="showRules = false">
+      <div v-if="showRules" class="setup-shade" @click.self="closeRules">
         <div class="setup-pop">
           <div class="pop-bar">
             <span>rules</span>
-            <button type="button" @click="showRules = false">close</button>
+            <button type="button" @click="closeRules">close</button>
           </div>
           <div class="rules">
             <p v-for="(line, index) in ruleLines" :key="index">{{ line }}</p>
@@ -449,6 +449,38 @@ const cursor = ref(launch.moves.length);
 const badLink = ref(launch.bad);
 const showSetup = ref(false);
 const showRules = ref(false);
+
+function introSeen() {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem("connect-intro") || "[]");
+    return Array.isArray(raw) ? raw.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberGame(id) {
+  const seen = new Set(introSeen());
+  seen.add(id);
+  try {
+    window.localStorage.setItem("connect-intro", JSON.stringify([...seen]));
+  } catch {
+    /* private mode */
+  }
+}
+
+function closeRules() {
+  if (showRules.value) rememberGame(setup.value.game);
+  showRules.value = false;
+}
+
+function maybeIntro(gameId) {
+  if (introSeen().includes(gameId)) return;
+  showSetup.value = false;
+  showRules.value = true;
+}
+
+if (!launch.moves.length) maybeIntro(launch.options.game);
 const copied = ref(false);
 const scoreCopied = ref(false);
 const hover = ref(null);
@@ -536,14 +568,14 @@ const ghost = computed(() => {
   return { ids: [id], ok: true, x: cell.x, y: cell.y };
 });
 
-const galePlayed = computed(() =>
-  board.value.family === "gale"
+const bludingPlayed = computed(() =>
+  board.value.family === "bluding"
     ? board.value.bridges.filter((bridge) => shown.value.taken[bridge.id])
     : [],
 );
 
-const galeGhosts = computed(() => {
-  if (board.value.family !== "gale" || !canAct.value) return [];
+const bludingGhosts = computed(() => {
+  if (board.value.family !== "bluding" || !canAct.value) return [];
   return board.value.bridges.filter((bridge) => {
     if (bridge.color !== shown.value.turn || shown.value.taken[bridge.id]) return false;
     if (bridge.cross != null && shown.value.taken[bridge.cross]) return false;
@@ -753,12 +785,16 @@ function pegFill(id) {
 
 function toggleSetup() {
   showSetup.value = !showSetup.value;
-  if (showSetup.value) showRules.value = false;
+  if (showSetup.value) closeRules();
 }
 
 function toggleRules() {
-  showRules.value = !showRules.value;
-  if (showRules.value) showSetup.value = false;
+  if (showRules.value) {
+    closeRules();
+    return;
+  }
+  showRules.value = true;
+  showSetup.value = false;
 }
 
 function pickGame(id) {
@@ -795,6 +831,7 @@ function start() {
   badLink.value = false;
   cam.value = { x: 0, y: 0, z: 1 };
   showSetup.value = false;
+  maybeIntro(setup.value.game);
   punctKind.value = "se";
   punctOrient.value = 0;
   document.title = `${next.name} - eire`;
@@ -942,10 +979,10 @@ function distToSeg(px, py, x1, y1, x2, y2) {
 }
 
 function hitAt(point) {
-  if (board.value.family === "gale") {
+  if (board.value.family === "bluding") {
     let best = null;
     let bestD = 16;
-    const pool = canAct.value ? galeGhosts.value.concat(galePlayed.value) : galePlayed.value;
+    const pool = canAct.value ? bludingGhosts.value.concat(bludingPlayed.value) : bludingPlayed.value;
     for (const bridge of pool) {
       const d = distToSeg(point.x, point.y, bridge.px1, bridge.py1, bridge.px2, bridge.py2);
       if (d < bestD) {
@@ -1164,7 +1201,7 @@ function onKey(event) {
   if (event.key === "Escape") {
     typed.value = "";
     showSetup.value = false;
-    showRules.value = false;
+    closeRules();
     lift.value = null;
     draft.value = null;
   }
@@ -1175,7 +1212,7 @@ function nameHit(raw) {
   let pool = [];
   if (board.value.family === "cell") {
     pool = (board.value.cells || []).map((cell) => ({ name: cell.name, play: () => playCell(cell.id) }));
-  } else if (board.value.family === "gale") {
+  } else if (board.value.family === "bluding") {
     pool = board.value.bridges
       .filter((bridge) => bridge.color === shown.value.turn)
       .map((bridge) => ({ name: bridge.name, play: () => push({ t: "bridge", id: bridge.id }) }));
@@ -1278,7 +1315,7 @@ onUnmounted(() => {
 });
 
 const RULES = {
-  gale: [
+  bluding: [
     "Red links the square dots and is trying to join the top row to the bottom. Blue links the round dots and is trying to join left to right.",
     "A move draws one link between two of your dots that share a side. If that link would cross the other color, it is blocked.",
     "After the first link, blue may swap seats. The link stays red. Undo and resign are in the panel.",

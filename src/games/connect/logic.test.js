@@ -56,16 +56,16 @@ test("the pie rule swaps seats and leaves the stone", () => {
   assert.equal(state.pieOpen, false);
 });
 
-test("gale's crossing bridges block, and the short board connects", () => {
-  let tiny = initialState({ game: "gale", size: 1, pie: false });
-  const small = boardOf("gale", 1);
+test("bluding's crossing bridges block, and the short board connects", () => {
+  let tiny = initialState({ game: "bluding", size: 1, pie: false });
+  const small = boardOf("bluding", 1);
   const red = small.bridges.find((bridge) => bridge.color === "red");
   tiny = must(tiny, { t: "bridge", id: red.id });
   assert.equal(tiny.result.winner, "red");
 
-  const board = boardOf("gale", 2);
+  const board = boardOf("bluding", 2);
   const bridge = board.bridges.find((item) => item.color === "red" && item.cross != null);
-  let state = initialState({ game: "gale", size: 2, pie: false });
+  let state = initialState({ game: "bluding", size: 2, pie: false });
   state = must(state, { t: "bridge", id: bridge.id });
   const blocked = apply(state, { t: "bridge", id: bridge.cross });
   assert.equal(blocked.ok, false);
@@ -195,14 +195,59 @@ test("a link round-trips through the move text", () => {
   assert.equal(played.state.seats.red, "B");
 });
 
-test("squares read like h3 and gale links name both ends", () => {
+test("coordinates stay off the stones and off each other", () => {
+  const room = (labels) => {
+    let best = Infinity;
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        const a = labels[i];
+        const b = labels[j];
+        const dx = Math.abs(a.x - b.x);
+        const dy = Math.abs(a.y - b.y);
+        const needX = (a.text.length + b.text.length) * 3.4 + 2;
+        if (dx < needX && dy < 12) best = Math.min(best, Math.hypot(dx, dy));
+      }
+    }
+    return best;
+  };
+  for (const [game, size] of [
+    ["hex", 11],
+    ["y", 8],
+    ["star", 4],
+    ["punct", 0],
+    ["sstar", 6],
+    ["twixt", 24],
+    ["bluding", 7],
+  ]) {
+    const board = boardOf(game, size);
+    assert.ok(board.labels.length > 0, game);
+    const apart = room(board.labels);
+    assert.ok(apart > 14, `${game} labels collide (${apart.toFixed(1)})`);
+    const scale = board.scale;
+    for (const label of board.labels) {
+      const half = Math.max(6, label.text.length * 4);
+      for (const cell of board.cells || []) {
+        const dx = Math.max(Math.abs(label.x - cell.x) - half, 0);
+        const dy = Math.max(Math.abs(label.y - cell.y) - 7, 0);
+        assert.ok(Math.hypot(dx, dy) > scale * 0.9, `${game} ${label.text} covers a cell`);
+      }
+      for (const partial of board.partials || []) {
+        const dx = Math.max(Math.abs(label.x - partial.x) - half, 0);
+        const dy = Math.max(Math.abs(label.y - partial.y) - 7, 0);
+        assert.ok(Math.hypot(dx, dy) > scale * 0.9, `${game} ${label.text} covers a partial`);
+      }
+    }
+  }
+});
+
+test("squares read like h3 and bluding links name both ends", () => {
   const hex = boardOf("hex", 11);
   const cell = hex.cells.find((item) => item.name === "h3");
   assert.equal(cell.q, 7);
   assert.equal(cell.r, 2);
   assert.ok(hex.labels.some((label) => label.text === "h"));
   assert.ok(hex.labels.some((label) => label.text === "3"));
-  const gale = boardOf("gale", 5);
-  assert.equal(gale.bridges[0].name, "a1a2");
-  assert.ok(gale.labels.some((label) => label.text === "a"));
+  const bluding = boardOf("bluding", 5);
+  assert.equal(bluding.bridges[0].name, "a1a2");
+  assert.ok(bluding.labels.some((label) => label.text === "a"));
 });

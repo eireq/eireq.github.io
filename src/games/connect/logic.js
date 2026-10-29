@@ -1,5 +1,5 @@
 /**
- * Edge-connection games: Gale, Hex, TwixT, PÜNCT, Star, *Star, and Y.
+ * Edge-connection games: bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y.
  * Stones are 0 empty, 1 red, 2 blue. Red moves first.
  */
 
@@ -25,8 +25,8 @@ const KNIGHT = [
 
 export const GAMES = [
   {
-    id: "gale",
-    name: "Gale",
+    id: "bluding",
+    name: "bluD!NG",
     aka: "bridg-it",
     sizes: [3, 5, 7],
     sizeDefault: 5,
@@ -93,7 +93,7 @@ export function sizeLabel(id, size) {
   if (id === "star") return { 3: "3–6", 4: "4–7", 5: "5–8" }[size] || String(size);
   if (id === "sstar") return `${size} rings`;
   if (id === "punct") return "211";
-  if (id === "gale") return `${size}`;
+  if (id === "bluding") return `${size}`;
   return `${size}`;
 }
 
@@ -114,7 +114,7 @@ function buildBoard(game, size) {
   if (game === "y") return buildY(size);
   if (game === "star") return buildStar(size);
   if (game === "sstar") return buildSStar(size);
-  if (game === "gale") return buildGale(size);
+  if (game === "bluding") return buildBluding(size);
   if (game === "twixt") return buildTwixt(size);
   if (game === "punct") return buildPunct();
   return buildHex(11);
@@ -148,7 +148,7 @@ function fileAfter(a, b) {
   return a.length !== b.length ? a.length > b.length : a > b;
 }
 
-function labelAxial(cells, scale) {
+function labelAxial(cells, scale, blockers = []) {
   if (!cells.some((cell) => cell.file)) return [];
   const files = new Map();
   const ranks = new Map();
@@ -156,30 +156,115 @@ function labelAxial(cells, scale) {
     if (!cell.file) continue;
     if (!files.has(cell.file)) files.set(cell.file, []);
     files.get(cell.file).push(cell);
-    if (!ranks.has(cell.rank)) ranks.set(cell.rank, []);
-    ranks.get(cell.rank).push(cell);
+    const rank = String(cell.rank);
+    if (!ranks.has(rank)) ranks.set(rank, []);
+    ranks.get(rank).push(cell);
   }
   const stepFile = { x: scale * Math.sqrt(3), y: 0 };
   const stepRank = { x: (scale * Math.sqrt(3)) / 2, y: scale * 1.5 };
-  const out = 0.92;
-  const labels = [];
-  for (const [file, list] of files) {
-    const edge = list.reduce((best, cell) => (cell.rank > best.rank ? cell : best));
-    labels.push({
-      text: file,
-      x: edge.x + stepRank.x * out,
-      y: edge.y + stepRank.y * out,
+
+  function extreme(list, end, byRank) {
+    return list.reduce((best, cell) => {
+      if (byRank) {
+        if (end === "max") return cell.rank > best.rank ? cell : best;
+        return cell.rank < best.rank ? cell : best;
+      }
+      const after = fileAfter(cell.file, best.file);
+      if (end === "max") return after ? cell : best;
+      return after ? best : cell;
     });
   }
-  for (const [rank, list] of ranks) {
-    const edge = list.reduce((best, cell) => (fileAfter(cell.file, best.file) ? cell : best));
-    labels.push({
-      text: String(rank),
-      x: edge.x + stepFile.x * out,
-      y: edge.y + stepFile.y * out,
-    });
+
+  function build(fileEnd, rankEnd, out) {
+    const labels = [];
+    const fileDir = fileEnd === "max" ? 1 : -1;
+    const rankDir = rankEnd === "max" ? 1 : -1;
+    for (const [file, list] of files) {
+      const edge = extreme(list, fileEnd, true);
+      labels.push({
+        text: file,
+        x: edge.x + stepRank.x * fileDir * out,
+        y: edge.y + stepRank.y * fileDir * out,
+        ux: stepRank.x * fileDir,
+        uy: stepRank.y * fileDir,
+      });
+    }
+    for (const [rank, list] of ranks) {
+      const edge = extreme(list, rankEnd, false);
+      labels.push({
+        text: rank,
+        x: edge.x + stepFile.x * rankDir * out,
+        y: edge.y + stepFile.y * rankDir * out,
+        ux: stepFile.x * rankDir,
+        uy: stepFile.y * rankDir,
+      });
+    }
+    for (const label of labels) {
+      const len = Math.hypot(label.ux, label.uy) || 1;
+      label.ux /= len;
+      label.uy /= len;
+    }
+    return labels;
   }
-  return labels;
+
+  // A triangle and a clipped hex put the max-file edge and the max-rank edge
+  // on the same side, so the two alphabets land on top of each other.
+  // Keep the usual far edges when they are actually apart.
+  let choice = null;
+  for (const fileEnd of ["max", "min"]) {
+    for (const rankEnd of ["max", "min"]) {
+      const labels = build(fileEnd, rankEnd, 1);
+      let gap = Infinity;
+      const letters = labels.filter((label) => /[a-z]/.test(label.text));
+      const numbers = labels.filter((label) => /^\d/.test(label.text));
+      for (const letter of letters) {
+        for (const number of numbers) {
+          gap = Math.min(gap, Math.hypot(letter.x - number.x, letter.y - number.y));
+        }
+      }
+      if (!choice || gap > choice.gap + 6) choice = { fileEnd, rankEnd, gap };
+    }
+  }
+
+  const circles = blockers.map((item) => ({ x: item.x, y: item.y, r: item.r }));
+  for (const cell of cells) circles.push({ x: cell.x, y: cell.y, r: scale });
+
+  const labels = build(choice.fileEnd, choice.rankEnd, 0.92);
+  const half = (text) => Math.max(6, text.length * 3.8);
+  const hitsCell = (label) => {
+    const hw = half(label.text);
+    for (const circle of circles) {
+      const dx = Math.max(Math.abs(label.x - circle.x) - hw, 0);
+      const dy = Math.max(Math.abs(label.y - circle.y) - 7, 0);
+      if (Math.hypot(dx, dy) < circle.r + 4) return true;
+    }
+    return false;
+  };
+  const crowded = (a, b) => {
+    if (Math.abs(a.ux * b.ux + a.uy * b.uy) > 0.8) return false;
+    return Math.abs(a.x - b.x) < half(a.text) + half(b.text) + 4 && Math.abs(a.y - b.y) < 16;
+  };
+  for (let pass = 0; pass < 36; pass += 1) {
+    let moved = false;
+    for (const label of labels) {
+      if (!hitsCell(label)) continue;
+      label.x += label.ux * 4;
+      label.y += label.uy * 4;
+      moved = true;
+    }
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        if (!crowded(labels[i], labels[j])) continue;
+        labels[i].x += labels[i].ux * 5;
+        labels[i].y += labels[i].uy * 5;
+        labels[j].x += labels[j].ux * 5;
+        labels[j].y += labels[j].uy * 5;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return labels.map(({ text, x, y }) => ({ text, x, y }));
 }
 
 function finishCells(family, cells, scale, extra = {}) {
@@ -353,17 +438,31 @@ function buildStar(size) {
   }
   board.partials = partials;
   board.cellPartials = cellPartials;
-  let minX = board.bounds.x;
-  let minY = board.bounds.y;
-  let maxX = board.bounds.x + board.bounds.w;
-  let maxY = board.bounds.y + board.bounds.h;
-  for (const partial of partials) {
-    minX = Math.min(minX, partial.x - board.scale);
-    minY = Math.min(minY, partial.y - board.scale);
-    maxX = Math.max(maxX, partial.x + board.scale);
-    maxY = Math.max(maxY, partial.y + board.scale);
-  }
-  board.bounds = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  board.labels = labelAxial(
+    cells,
+    board.scale,
+    partials.map((partial) => ({ x: partial.x, y: partial.y, r: board.scale })),
+  );
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const grow = (x, y, extra) => {
+    minX = Math.min(minX, x - extra);
+    minY = Math.min(minY, y - extra);
+    maxX = Math.max(maxX, x + extra);
+    maxY = Math.max(maxY, y + extra);
+  };
+  for (const cell of cells) grow(cell.x, cell.y, board.scale);
+  for (const partial of partials) grow(partial.x, partial.y, board.scale);
+  for (const label of board.labels) grow(label.x, label.y, 12);
+  const pad = board.scale * 0.35;
+  board.bounds = {
+    x: minX - pad,
+    y: minY - pad,
+    w: maxX - minX + pad * 2,
+    h: maxY - minY + pad * 2,
+  };
   return board;
 }
 
@@ -452,16 +551,32 @@ function buildSStar(rings) {
       cell.name = `${"abcde"[cell.s]}${cell.ring}${columnName(cell.a)}`;
     });
   }
+  const reach = scale * 0.7;
   const labels = [];
   for (const cell of cells) {
+    if (cell.ring !== R) continue;
+    const ang = Math.atan2(cell.y, cell.x);
+    const column = columnName(cell.a);
+    labels.push({
+      text: column,
+      x: cell.x + Math.cos(ang) * (reach + 14),
+      y: cell.y + Math.sin(ang) * (reach + 14),
+    });
     if (cell.corner) {
-      const ang = Math.atan2(cell.y, cell.x);
       labels.push({
         text: "abcde"[cell.s],
-        x: cell.x + Math.cos(ang) * scale * 1.2,
-        y: cell.y + Math.sin(ang) * scale * 1.2,
+        x: cell.x + Math.cos(ang) * (reach + 36),
+        y: cell.y + Math.sin(ang) * (reach + 36),
       });
     }
+  }
+  const outer = R * scale * 1.28;
+  for (let ring = 1; ring <= R; ring += 1) {
+    labels.push({
+      text: String(ring),
+      x: -(outer + reach + 46),
+      y: -ring * scale * 1.28,
+    });
   }
   let minX = Infinity;
   let minY = Infinity;
@@ -510,7 +625,7 @@ function paintEdges(board) {
   }
 }
 
-function buildGale(n) {
+function buildBluding(n) {
   const red = [];
   for (let y = 0; y <= n; y += 1) {
     for (let x = 0; x < n; x += 1) {
@@ -646,8 +761,8 @@ function buildGale(n) {
   }
   const pad = scale * 0.55;
   return {
-    family: "gale",
-    game: "gale",
+    family: "bluding",
+    game: "bluding",
     n,
     red,
     blue,
@@ -690,9 +805,20 @@ function buildTwixt(n) {
     hole.y = hole.r * scale;
   }
   const labels = [];
-  for (let c = 0; c < n; c += 1) labels.push({ text: columnName(c), x: c * scale, y: -scale * 0.72 });
-  for (let r = 0; r < n; r += 1) labels.push({ text: String(r + 1), x: -scale * 0.78, y: r * scale });
-  const pad = scale * 1.35;
+  for (let c = 0; c < n; c += 1) labels.push({ text: columnName(c), x: c * scale, y: -scale * 0.95 });
+  for (let r = 0; r < n; r += 1) labels.push({ text: String(r + 1), x: -scale * 1.2, y: r * scale });
+  let minX = 0;
+  let minY = 0;
+  let maxX = (n - 1) * scale;
+  let maxY = (n - 1) * scale;
+  for (const label of labels) {
+    const half = Math.max(8, label.text.length * 5);
+    minX = Math.min(minX, label.x - half);
+    minY = Math.min(minY, label.y - 9);
+    maxX = Math.max(maxX, label.x + half);
+    maxY = Math.max(maxY, label.y + 9);
+  }
+  const pad = scale * 0.45;
   return {
     family: "twixt",
     game: "twixt",
@@ -702,10 +828,10 @@ function buildTwixt(n) {
     scale,
     labels,
     bounds: {
-      x: -pad,
-      y: -pad,
-      w: (n - 1) * scale + pad * 2,
-      h: (n - 1) * scale + pad * 2,
+      x: minX - pad,
+      y: minY - pad,
+      w: maxX - minX + pad * 2,
+      h: maxY - minY + pad * 2,
     },
   };
 }
@@ -878,7 +1004,7 @@ export function initialState(options) {
     seats: { red: "A", blue: "B" },
     turn: "red",
     stones: board.family === "cell" && game !== "punct" ? Array(board.cells.length).fill(0) : null,
-    taken: game === "gale" ? Array(board.bridges.length).fill(0) : null,
+    taken: game === "bluding" ? Array(board.bridges.length).fill(0) : null,
     pegs: game === "twixt" ? Array(board.holes.length).fill(0) : null,
     links: [],
     pieces: [],
@@ -920,7 +1046,7 @@ export function apply(state, move) {
   if (move.t === "swap") return swap(state);
   if (move.t === "pass") return pass(state);
   if (move.t === "count") return countNow(state);
-  if (state.game === "gale") return playGale(state, move);
+  if (state.game === "bluding") return playBluding(state, move);
   if (state.game === "twixt") return playTwixt(state, move);
   if (state.game === "punct") return playPunct(state, move);
   return playCell(state, move);
@@ -1040,16 +1166,16 @@ function playCell(state, move) {
   return done;
 }
 
-function playGale(state, move) {
+function playBluding(state, move) {
   if (move.t !== "bridge") return fail("bad", state);
-  const board = boardOf("gale", state.size);
+  const board = boardOf("bluding", state.size);
   const bridge = board.bridges[move.id];
   if (!bridge || bridge.color !== state.turn) return fail("color", state);
   if (state.taken[bridge.id]) return fail("taken", state);
   if (bridge.cross != null && state.taken[bridge.cross]) return fail("cross", state);
   const next = clone(state);
   next.taken[bridge.id] = codeOf(state.turn);
-  const won = galeWins(board, next.taken, state.turn);
+  const won = bludingWins(board, next.taken, state.turn);
   if (won) {
     next.winIds = won;
     next.result = { winner: state.turn, reason: "connect", red: null, blue: null };
@@ -1410,7 +1536,7 @@ function componentTouching(board, stones, code, sides) {
   return null;
 }
 
-function galeWins(board, taken, color) {
+function bludingWins(board, taken, color) {
   const dots = color === "red" ? board.red : board.blue;
   const parent = Array.from({ length: dots.length + 2 }, (_, i) => i);
   const start = dots.length;

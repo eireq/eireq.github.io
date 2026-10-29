@@ -10,14 +10,14 @@ Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `ha
 
 | Path | What it is |
 | --- | --- |
-| `/` | Home. Daily flag and flag database up front, a short tour, and flag of the week. |
+| `/` | Home. Three tours (quick and daily, deep games, explore), plus flag of the week. |
 | `/me` | About. |
 | `/games` | Game index. |
 | `/games/racing` | Lane Runner. |
 | `/games/flagquiz` | Flag quiz. |
 | `/games/daily` | Daily flag. |
 | `/games/hexo` | HeXO. |
-| `/games/connect` | Connect. Gale, Hex, TwixT, PÜNCT, Star, *Star, and Y. |
+| `/games/connect` | Connect. bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y. |
 | `/games/otrio` | Otrio. Ring tic-tac-toe for 2–4 players. |
 | `/games/go` | Go. Baduk for two players on one screen. |
 | `/games/hexchess` | Hex chess. Gliński's board, 91 cells. |
@@ -109,11 +109,11 @@ The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a gam
 
 ### Connect — `/games/connect`
 
-Gale, Hex, TwixT, PÜNCT, Star, *Star, and Y. The win is a connection, or a score taken from one, instead of a row of stones.
+bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y. The win is a connection, or a score taken from one, instead of a row of stones.
 
 Red moves first. Hotseat or practice. Where the game uses it, blue may swap seats after the first move. The board pans and zooms. A link can carry the game.
 
-- **Gale** (Bridg-it). Red joins top to bottom, blue joins the sides. A link that would cross is blocked.
+- **bluD!NG** (Bridg-it). Red joins top to bottom, blue joins the sides. A link that would cross is blocked.
 - **Hex.** Red joins left to right, blue joins top to bottom.
 - **TwixT.** Place a peg, then knight's-move links. Links cannot cross. Corners are out, and a peg cannot sit in the opponent's border.
 - **PÜNCT.** Three-dot pieces, placed or slid along the punct. Stacking and bridges are in the standard rules. Either player may join any opposite pair. The center is entered only by a move.
@@ -272,7 +272,7 @@ src/
   games/go/               board, captures, Chinese scoring
   games/otrio/            ring tic-tac-toe rules
   games/hexo/             rules and the together-mode link
-  games/connect/          Gale, Hex, TwixT, PÜNCT, Star, *Star, Y
+  games/connect/          bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, Y
   games/hexchess/         Gliński board and moves
   games/kht/              bracket client
   jworld/                 map, geometry, country fields, Supabase
