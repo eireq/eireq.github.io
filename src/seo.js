@@ -132,12 +132,13 @@ export const pages = [
     path: "/tools",
     title: "tools — eire",
     description:
-      "Tools on eire's site: flag database, random country, daily flag, daily pi, and flag compare.",
+      "Tools on eire's site: flag database, country tier list, random country, daily flag, daily pi, and flag compare.",
     fallback: `
       <h1>tools.</h1>
       <p>browse flags, pick random places, and poke around the data.</p>
       <nav>
         <a href="/flagdb">flag database</a>
+        <a href="/tiers">country tier list</a>
         <a href="/rc">random country</a>
         <a href="/games/daily">daily flag</a>
         <a href="/tools/pi">daily pi</a>
@@ -170,6 +171,13 @@ export const pages = [
     description:
       "Put two flags from eire's database side by side. Colors, proportions, dates, and a similarity score.",
     fallback: `<h1>compare flags.</h1><p>pick two flags and compare colors, proportions, and dates.</p>`,
+  },
+  {
+    path: "/tiers",
+    title: "country tier list — eire",
+    description:
+      "Rank country flags into tiers. Drag flags, keep the list in this browser, copy a link, or download an image.",
+    fallback: `<h1>country tier list.</h1><p>rank country flags into tiers. the list stays in this browser.</p>`,
   },
   {
     path: "/rc",

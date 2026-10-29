@@ -32,6 +32,11 @@
         <p>{{ t("tools.compareText") }}</p>
       </router-link>
 
+      <router-link class="tool" to="/tiers">
+        <h2>{{ t("tools.tierList") }}</h2>
+        <p>{{ t("tools.tierListText") }}</p>
+      </router-link>
+
       <router-link class="tool" to="/games/flagquiz">
         <h2>{{ t("tools.flagQuiz") }}</h2>
         <p>{{ t("tools.flagQuizText") }}</p>

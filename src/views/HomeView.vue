@@ -80,7 +80,7 @@ const flags = ref([]);
 const weekly = ref(null);
 const weekImage = ref("");
 
-const fresh = new Set(["/games/daily", "/games/connect", "/compare"]);
+const fresh = new Set(["/games/daily", "/games/connect", "/compare", "/tiers"]);
 
 const groups = [
   {
@@ -108,6 +108,7 @@ const groups = [
     items: [
       { to: "/flagdb", title: "tools.flagDatabase", text: "tools.flagDatabaseText" },
       { to: "/compare", title: "tools.compare", text: "tools.compareText" },
+      { to: "/tiers", title: "tools.tierList", text: "tools.tierListText" },
       { to: "/jworld", title: "home.featJworld", text: "home.featJworldText" },
       { to: "/jpol", title: "misc.jpol", text: "misc.jpolText" },
     ],

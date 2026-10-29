@@ -83,6 +83,12 @@ const router = createRouter({
       meta: { title: "compare flags - eire" },
     },
     {
+      path: "/tiers",
+      name: "tier-list",
+      component: () => import("../views/TierListView.vue"),
+      meta: { title: "country tier list - eire" },
+    },
+    {
       path: "/politics",
       redirect: "/misc",
     },
