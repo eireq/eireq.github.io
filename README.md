@@ -85,7 +85,7 @@ Optional rules can be combined:
 
 - **Duck.** After your stones, move the duck. No one plays on it.
 - **King duck.** The ring around the duck is closed, and stones there do not count.
-- **Egyptian.** A soft cap, 12 by default and adjustable up to 40. Over it, lift up to two of your older stones, or leave them. An echo never lifts a stone.
+- **Egyptian.** A soft cap (move cap), 12 by default and adjustable up to 40. Over it (when it's your 12th move), lift up to two of your older stones, or leave them. An echo never lifts a stone.
 - **Echo.** Copies a stone onto its mirror after two full turns. A duck echo moves the duck only if it is still on that cell.
 - **Orbit.** Every stone turns one step around the center. The duck stays.
 - **Meteor.** Every third turn, the farthest ring is cleared. A copy born that turn stays.
@@ -105,7 +105,7 @@ Ways to play:
 - **Practice** against a bot, as any side.
 - **Together** shares one game between browsers. The room name in the invite link is the only secret, and it keeps the board size. You start as X. Chat sits under the move list. Rematch swaps sides. A third or fourth player joins with `s=Y` or `s=Z` on the invite.
 
-The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a game undone (except in together). The move list can be stepped through. A replay is written into the URL, and the score line can be copied.
+The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a game undone (except in together). The move list can be stepped through (you can display your previous moves). A replay is written into the URL, and the score line can be copied.
 
 ### Connect — `/games/connect`
 
@@ -118,6 +118,7 @@ Red moves first. Hotseat or practice. Where the game uses it, blue may swap seat
 - **TwixT.** Place a peg, then knight's-move links. Links cannot cross. Corners are out, and a peg cannot sit in the opponent's border.
 - **PÜNCT.** Three-dot pieces, placed or slid along the punct. Stacking and bridges are in the standard rules. Either player may join any opposite pair. The center is entered only by a move.
 - **Y.** Both players join all three sides of a triangle. Corners count for both edges.
+### !!!!!!BETA!!!!!!
 - **Star.** A group touching three or more border cells scores two less than it touches.
 - **\*Star.** Own edge cells with as few stars as you can. The empty center joins both colors.
 
@@ -284,6 +285,6 @@ public/404.html           GitHub Pages fallback into the SPA
 - Email: eireball@proton.me
 - GitHub: https://github.com/eireq
 - Discord: https://dsc.gg/pissedoff
-- YouTube: https://www.youtube.com/@いぃ八
+- YouTube: https://www.youtube.com/@eireq also another link will change later
 
 © 2026 eire
