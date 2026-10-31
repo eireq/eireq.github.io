@@ -125,6 +125,13 @@ export const siteDeu = {
     downloaded: "bild gespeichert",
     downloadPartial: "bild gespeichert. einige flaggen sind nur initialen.",
     downloadFail: "bild konnte nicht gebaut werden.",
+    import: "PNG importieren",
+    importHelp:
+      "Importiert PNGs, die mit dieser Tierliste gespeichert wurden. Ältere Bilder ohne eingebettete Listendaten können nicht wiederhergestellt werden.",
+    imported: "Tierliste importiert",
+    importUnsupported:
+      "Dieses PNG enthält keine Tierlistendaten. Ältere Bilder können nicht importiert werden; wähle ein PNG aus diesem Tool.",
+    importFail: "bild konnte nicht importiert werden.",
     reset: "zurücksetzen",
     resetPrompt: "alle stufen leeren? die kopie in diesem browser geht auch weg.",
     resetConfirm: "leeren",

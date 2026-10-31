@@ -31,6 +31,17 @@
           <button type="button" :disabled="rendering" @click="downloadImage">
             {{ rendering ? t("tiers.rendering") : t("tiers.download") }}
           </button>
+          <button type="button" @click="importInput?.click()" :title="t('tiers.importHelp')">
+            {{ t("tiers.import") }}
+          </button>
+          <input
+            ref="importInput"
+            class="file-input"
+            type="file"
+            accept="image/png,.png"
+            :aria-label="t('tiers.import')"
+            @change="importImage"
+          />
           <button type="button" @click="confirm = { kind: 'reset' }">
             {{ t("tiers.reset") }}
           </button>
@@ -298,10 +309,12 @@ import { imageUrl } from "../data/flags.js";
 import { cachedFlagImageUrl } from "../data/flagImageCache.js";
 import {
   TIER_PALETTE,
+  addTierPngMetadata,
   countryInitials,
   defaultTiers,
   labelInk,
   loadCountryRecords,
+  readTierPngMetadata,
   readShareHash,
   readTierStorage,
   renderTierListCanvas,
@@ -333,6 +346,7 @@ const confirm = ref(null);
 const rendering = ref(false);
 const poolOpen = ref(false);
 const broken = ref(new Set());
+const importInput = ref(null);
 
 const byId = computed(
   () => new Map(countries.value.map((country) => [country.id, country])),
@@ -857,6 +871,15 @@ async function downloadImage() {
       images.set(country.id, image);
       if (!image) failed += 1;
     });
+    const exportState = {
+      title: title.value,
+      tiers: tiers.value.map(({ id, label, color, ids }) => ({
+        id,
+        label,
+        color,
+        ids: [...ids],
+      })),
+    };
     const paint = (imageMap) =>
       renderTierListCanvas({
         title: title.value.trim() || t("tiers.defaultName"),
@@ -875,7 +898,11 @@ async function downloadImage() {
       canvas = paint(new Map());
       blob = await canvasBlob(canvas);
     }
-    const url = URL.createObjectURL(blob);
+    const png = addTierPngMetadata(
+      new Uint8Array(await blob.arrayBuffer()),
+      exportState,
+    );
+    const url = URL.createObjectURL(new Blob([png], { type: "image/png" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = `${fileSlug(title.value)}.png`;
@@ -886,6 +913,33 @@ async function downloadImage() {
     flash(t("tiers.downloadFail"));
   } finally {
     rendering.value = false;
+  }
+}
+
+async function importImage(event) {
+  const input = event.target;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    flash(t("tiers.importFail"));
+    return;
+  }
+  try {
+    const state = readTierPngMetadata(new Uint8Array(await file.arrayBuffer()));
+    if (!state) {
+      flash(t("tiers.importUnsupported"));
+      return;
+    }
+    remember();
+    applyState(sanitizeTierState(state, validIds.value));
+    selectedId.value = null;
+    pendingShare.value = null;
+    shareUrl.value = "";
+    persistNow();
+    flash(t("tiers.imported"));
+  } catch {
+    flash(t("tiers.importFail"));
   }
 }
 
@@ -993,6 +1047,10 @@ h2 {
   font: inherit;
   font-size: 14px;
   cursor: pointer;
+}
+
+.file-input {
+  display: none;
 }
 
 .toolbar-actions button:hover,

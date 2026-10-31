@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   countryRecords,
+  addTierPngMetadata,
   decodeTierShare,
   defaultTiers,
   encodeTierShare,
+  readTierPngMetadata,
   sanitizeTierState,
   tierStatesEqual,
 } from "./tierList.js";
@@ -30,6 +32,31 @@ test("share links round-trip titles, colors, and country names", () => {
   assert.deepEqual(back.tiers[0].ids, state.tiers[0].ids);
   assert.deepEqual(back.tiers[1].ids, ["Japan"]);
   assert.equal(tierStatesEqual(state, back), true);
+});
+
+test("PNG metadata round-trips the tier list", () => {
+  const pngEnd = Uint8Array.from([
+    137, 80, 78, 71, 13, 10, 26, 10,
+    0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+  ]);
+  const state = {
+    title: "Flags of the world",
+    tiers: [
+      { id: "top", label: "Top", color: "#ff6b6b", ids: ["Japan", "Côte d'Ivoire"] },
+      { id: "later", label: "Later", color: "#74c0fc", ids: [] },
+    ],
+  };
+
+  const restored = readTierPngMetadata(addTierPngMetadata(pngEnd, state));
+  assert.equal(restored.title, state.title);
+  assert.deepEqual(
+    restored.tiers.map(({ label, color, ids }) => ({ label, color, ids })),
+    state.tiers.map(({ label, color, ids }) => ({ label, color, ids })),
+  );
+});
+
+test("PNG import ignores images without valid tier metadata", () => {
+  assert.equal(readTierPngMetadata(new Uint8Array([1, 2, 3])), null);
 });
 
 test("bad share links are ignored", () => {

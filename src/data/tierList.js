@@ -190,6 +190,92 @@ export function shareHash(state) {
   return `#t.${encodeTierShare(state)}`;
 }
 
+const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const PNG_METADATA_KEY = "eireq-tier-list-v1";
+const PNG_TEXT = new TextEncoder();
+const PNG_TEXT_DECODER = new TextDecoder();
+
+function pngCrc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const chunk = new Uint8Array(data.length + 12);
+  const view = new DataView(chunk.buffer);
+  view.setUint32(0, data.length);
+  chunk.set(PNG_TEXT.encode(type), 4);
+  chunk.set(data, 8);
+  view.setUint32(chunk.length - 4, pngCrc32(chunk.subarray(4, chunk.length - 4)));
+  return chunk;
+}
+
+function isPng(bytes) {
+  return (
+    bytes.length >= PNG_SIGNATURE.length &&
+    PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
+  );
+}
+
+export function addTierPngMetadata(input, state) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+  if (!isPng(bytes)) throw new Error("not a PNG image");
+
+  let offset = PNG_SIGNATURE.length;
+  while (offset + 12 <= bytes.length) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset + offset, 4);
+    const length = view.getUint32(0);
+    const end = offset + 12 + length;
+    if (end > bytes.length) throw new Error("invalid PNG chunk");
+    const type = PNG_TEXT_DECODER.decode(bytes.subarray(offset + 4, offset + 8));
+    if (type === "IEND") {
+      const payload = PNG_TEXT.encode(`${PNG_METADATA_KEY}\0${encodeTierShare(state)}`);
+      const metadata = pngChunk("tEXt", payload);
+      const output = new Uint8Array(bytes.length + metadata.length);
+      output.set(bytes.subarray(0, offset), 0);
+      output.set(metadata, offset);
+      output.set(bytes.subarray(offset), offset + metadata.length);
+      return output;
+    }
+    offset = end;
+  }
+  throw new Error("invalid PNG image");
+}
+
+export function readTierPngMetadata(input) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+  if (!isPng(bytes)) return null;
+
+  let offset = PNG_SIGNATURE.length;
+  while (offset + 12 <= bytes.length) {
+    const length = new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0);
+    const end = offset + 12 + length;
+    if (end > bytes.length) return null;
+    const typeBytes = bytes.subarray(offset + 4, offset + 8);
+    const type = PNG_TEXT_DECODER.decode(typeBytes);
+    if (type === "tEXt") {
+      const chunk = bytes.subarray(offset + 4, end - 4);
+      const expectedCrc = new DataView(bytes.buffer, bytes.byteOffset + end - 4, 4).getUint32(0);
+      if (pngCrc32(chunk) === expectedCrc) {
+        const text = PNG_TEXT_DECODER.decode(bytes.subarray(offset + 8, end - 4));
+        const separator = text.indexOf("\0");
+        if (separator > -1 && text.slice(0, separator) === PNG_METADATA_KEY) {
+          return decodeTierShare(text.slice(separator + 1));
+        }
+      }
+    }
+    if (type === "IEND") return null;
+    offset = end;
+  }
+  return null;
+}
+
 export function readShareHash(hash = "") {
   const value = String(hash || "");
   if (!value.startsWith("#t.")) return null;
