@@ -163,10 +163,10 @@ export function createGame() {
     state.waveRemaining = Math.max(0, state.waveRemaining - dt);
     state.waveAnnouncement = Math.max(0, state.waveAnnouncement - dt);
 
-    const nextWave = Math.floor(state.elapsed / 60);
+    const nextWave = Math.floor(state.elapsed / 45);
     if (nextWave > state.trafficWave) {
       state.trafficWave = nextWave;
-      state.waveRemaining = 25;
+      state.waveRemaining = 20;
       state.waveAnnouncement = 3.5;
     }
 
@@ -186,14 +186,13 @@ export function createGame() {
     state.spawnEvery = Math.max(
       0.34,
       1.05 -
-        state.difficulty * 0.25 -
-        state.trafficWave * 0.08 -
-        (waveTraffic ? 0.22 : 0),
+        state.difficulty * 0.05 -
+        state.trafficWave * 0.01 -
+        (waveTraffic ? 0.06 : 0),
     );
     state.spawnTimer -= dt;
     if (state.spawnTimer <= 0) {
       spawnTraffic();
-      if (waveTraffic) spawnTraffic();
       state.spawnTimer = state.spawnEvery * (0.75 + Math.random() * 0.55);
     }
 
