@@ -1,0 +1,264 @@
+import { mirrorCapitalName } from "./capital.js";
+
+export function emptyCountryPayload() {
+  return {
+    official_name: "",
+    common_names: "",
+    motto: "",
+    short_description: "",
+    lore: "",
+    leader: "",
+    memberships: "",
+    capital: "",
+    population: "",
+    languages: "",
+    religion: { summary: "" },
+    currency: "",
+    land_area: "",
+    cctlds: "",
+    timezones: "",
+    driving_side: "",
+    phone_codes: "",
+    politics: {
+      government_type: "",
+      head_of_state: "",
+      head_of_government: "",
+      political_orientation: "",
+      army_size: "",
+      military_doctrine: "",
+    },
+    government: {
+      legislature: "",
+      legal_system: "",
+      languages: "",
+      national_day: "",
+      admin_divisions: "",
+    },
+    geography: {
+      location: "",
+      area: "",
+      terrain: "",
+      climate: "",
+      maritime_zones: "",
+    },
+    symbols: {
+      emblem: "",
+      colors: "",
+      anthem: "",
+      royal_house: "",
+      motto_latin: "",
+    },
+    flag_path: null,
+  };
+}
+
+export function countryToPayload(country) {
+  const base = emptyCountryPayload();
+  if (!country) return mirrorCapitalName(base);
+  return mirrorCapitalName({
+    ...base,
+    official_name: country.official_name || "",
+    common_names: country.common_names || "",
+    motto: country.motto || "",
+    short_description: country.short_description || "",
+    lore: country.lore || "",
+    leader: country.leader || "",
+    memberships: country.memberships || "",
+    capital: country.capital || "",
+    population: country.population || "",
+    languages: country.languages || "",
+    religion:
+      country.religion && typeof country.religion === "object"
+        ? { ...base.religion, ...country.religion }
+        : base.religion,
+    currency: country.currency || "",
+    land_area: country.land_area || "",
+    cctlds: country.cctlds || "",
+    timezones: country.timezones || "",
+    driving_side: country.driving_side || "",
+    phone_codes: country.phone_codes || "",
+    politics:
+      country.politics && typeof country.politics === "object"
+        ? { ...base.politics, ...country.politics }
+        : base.politics,
+    government:
+      country.government && typeof country.government === "object"
+        ? { ...base.government, ...country.government }
+        : base.government,
+    geography:
+      country.geography && typeof country.geography === "object"
+        ? { ...base.geography, ...country.geography }
+        : base.geography,
+    symbols:
+      country.symbols && typeof country.symbols === "object"
+        ? { ...base.symbols, ...country.symbols }
+        : base.symbols,
+    flag_path: country.flag_path || null,
+  });
+}
+
+export const INFOBOX_FIELDS = [
+  { key: "leader", label: "Leader" },
+  { key: "memberships", label: "Membership in International Org's" },
+  {
+    key: "capital",
+    label: "Capital",
+    hint: "This name appears beside the star when the map is zoomed in. Place the star with Set capital.",
+  },
+  { key: "population", label: "Population" },
+  { key: "languages", label: "Language(s)" },
+  { key: "currency", label: "Currency" },
+  {
+    key: "land_area",
+    label: "Land Area (km² / sq mi)",
+    computed: true,
+    hint: "Auto-calculated from borders",
+  },
+  { key: "cctlds", label: "ccTLD(s)" },
+  { key: "timezones", label: "Timezone(s)" },
+  {
+    key: "driving_side",
+    label: "Driving on what road side?",
+    options: ["Left", "Right"],
+  },
+  { key: "phone_codes", label: "Phone area code" },
+];
+
+export const SECTION_FIELDS = {
+  politics: [
+    {
+      key: "government_type",
+      label: "Government Type",
+      options: [
+        "Republic",
+        "Federal republic",
+        "Unitary republic",
+        "Parliamentary republic",
+        "Presidential republic",
+        "Semi-presidential republic",
+        "Constitutional monarchy",
+        "Absolute monarchy",
+        "Federal monarchy",
+        "Dictatorship",
+        "Military junta",
+        "Theocracy",
+        "Oligarchy",
+        "Confederation",
+        "City-state",
+        "Anarchy",
+        "Other",
+      ],
+    },
+    { key: "head_of_state", label: "Head of State" },
+    { key: "head_of_government", label: "Head of Government" },
+    {
+      key: "political_orientation",
+      label: "Political Orientation",
+      options: [
+        "Far left",
+        "Left",
+        "Centre-left",
+        "Centre",
+        "Centre-right",
+        "Right",
+        "Far right",
+        "Syncretic",
+        "Apolitical",
+        "Other",
+      ],
+    },
+    { key: "army_size", label: "Army Size" },
+    {
+      key: "military_doctrine",
+      label: "Military Doctrine",
+      options: [
+        "Defensive",
+        "Offensive",
+        "Deterrence",
+        "Neutral / non-aligned",
+        "Expeditionary",
+        "Guerrilla",
+        "Other",
+      ],
+    },
+  ],
+  government: [
+    {
+      key: "legislature",
+      label: "Legislature",
+      options: [
+        "Unicameral",
+        "Bicameral",
+        "Tricameral",
+        "None / absolute rule",
+        "Other",
+      ],
+    },
+    {
+      key: "legal_system",
+      label: "Legal System",
+      options: [
+        "Civil law",
+        "Common law",
+        "Religious law",
+        "Customary law",
+        "Mixed",
+        "Socialist law",
+        "Other",
+      ],
+    },
+    { key: "languages", label: "Languages" },
+    { key: "national_day", label: "National Day" },
+    { key: "admin_divisions", label: "Administrative Divisions", multiline: true },
+  ],
+  geography: [
+    { key: "location", label: "Location" },
+    {
+      key: "area",
+      label: "Area",
+      computed: true,
+      hint: "Auto-calculated from borders",
+    },
+    {
+      key: "terrain",
+      label: "Terrain",
+      options: [
+        "Mountains",
+        "Hills",
+        "Plains",
+        "Plateau",
+        "Coastal",
+        "Island(s)",
+        "Desert",
+        "Forest",
+        "Wetlands",
+        "Mixed",
+        "Other",
+      ],
+    },
+    {
+      key: "climate",
+      label: "Climate",
+      options: [
+        "Tropical",
+        "Dry / arid",
+        "Temperate",
+        "Continental",
+        "Polar",
+        "Mediterranean",
+        "Oceanic",
+        "Highland",
+        "Mixed",
+        "Other",
+      ],
+    },
+    { key: "maritime_zones", label: "Maritime Zones" },
+  ],
+  symbols: [
+    { key: "emblem", label: "National Emblem" },
+    { key: "colors", label: "Colors" },
+    { key: "anthem", label: "Anthem" },
+    { key: "royal_house", label: "Royal House" },
+    { key: "motto_latin", label: "Motto (Latin)" },
+  ],
+};

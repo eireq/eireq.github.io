@@ -1,0 +1,398 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+.lane-runner {
+  --ink: #11131a;
+  --sky: #42b9ff;
+  --white: #f4f4e8;
+  --yellow: #ffd84a;
+  --red: #ff4d4d;
+  --green: #66e37a;
+  --panel: rgba(10, 13, 20, 0.94);
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background: #05070b;
+  color: var(--white);
+  font-family: "Press Start 2P", monospace;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+body.lane-runner-page {
+  overflow: hidden;
+  background: #05070b;
+}
+
+.lane-runner > main {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: block;
+  line-height: normal;
+}
+
+.lane-runner button,
+.lane-runner input {
+  font: inherit;
+}
+
+.lane-runner button {
+  border: 3px solid var(--white);
+  background: var(--ink);
+  color: var(--white);
+  padding: 15px 18px;
+  cursor: pointer;
+  text-transform: lowercase;
+  box-shadow: 5px 5px 0 #000;
+}
+
+.lane-runner button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #000;
+}
+
+.lane-runner button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.lane-runner button.primary {
+  background: var(--yellow);
+  color: #111;
+  border-color: #111;
+}
+
+.lane-runner .screen {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.lane-runner .screen.active {
+  display: grid;
+}
+
+.lane-runner #menu {
+  place-items: center;
+  background: var(--sky);
+  background-image:
+    linear-gradient(#7bd2ff 0 0),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      rgba(255, 255, 255, 0.05) 32px
+    );
+}
+
+.lane-runner .cabinet {
+  width: min(650px, 92vw);
+  padding: 42px;
+  text-align: center;
+  background: var(--panel);
+  border: 6px solid #fff;
+  box-shadow: 12px 12px 0 #000;
+  position: relative;
+}
+
+.lane-runner .scanlines {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.025) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+.lane-runner h1 {
+  margin: 0;
+  font-size: clamp(35px, 9vw, 72px);
+  line-height: 1.15;
+  text-shadow: 6px 6px 0 #000;
+}
+
+.lane-runner h2 {
+  margin: 0 0 26px;
+  font-size: clamp(20px, 5vw, 32px);
+  line-height: 1.5;
+}
+
+.lane-runner .tagline {
+  font-size: 11px;
+  line-height: 2;
+  margin: 20px auto 32px;
+  max-width: 500px;
+}
+
+.lane-runner .menu-buttons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.lane-runner .mode-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 28px 0 0;
+  font-size: 10px;
+  flex-wrap: wrap;
+}
+
+.lane-runner .mode {
+  padding: 10px 12px;
+  font-size: 9px;
+}
+
+.lane-runner .mode.active {
+  background: var(--white);
+  color: #111;
+}
+
+.lane-runner .hint,
+.lane-runner .saved-name {
+  font-size: 8px;
+  line-height: 1.8;
+  opacity: 0.75;
+  margin: 26px 0 0;
+}
+
+.lane-runner .saved-name {
+  color: var(--yellow);
+}
+
+.lane-runner a {
+  color: var(--white);
+  text-decoration: none;
+}
+
+.lane-runner a:hover {
+  color: var(--yellow);
+}
+
+.lane-runner #game {
+  background: #111;
+  place-items: center;
+}
+
+.lane-runner .stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 2 / 3), 480px);
+  aspect-ratio: 2 / 3;
+  max-height: 100vh;
+}
+
+.lane-runner #gameCanvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  touch-action: pan-y;
+  user-select: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+  background: var(--sky);
+}
+
+.lane-runner .hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(450px, 94%);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  pointer-events: none;
+}
+
+.lane-runner .hud div {
+  background: rgba(0, 0, 0, 0.78);
+  border: 2px solid var(--white);
+  padding: 7px 5px;
+  text-align: center;
+}
+
+.lane-runner .hud span {
+  display: block;
+  font-size: 6px;
+  margin-bottom: 7px;
+}
+
+.lane-runner .hud strong {
+  font-size: 9px;
+}
+
+.lane-runner .quit-btn {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  padding: 10px 12px;
+  font-size: 8px;
+}
+
+.lane-runner .pause-hint {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  font-size: 7px;
+  opacity: 0.55;
+}
+
+.lane-runner .overlay-screen {
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.lane-runner .panel {
+  width: min(680px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 34px;
+  background: var(--panel);
+  border: 5px solid var(--white);
+  box-shadow: 10px 10px 0 #000;
+}
+
+.lane-runner .small-panel {
+  width: min(500px, 92vw);
+  text-align: center;
+}
+
+.lane-runner .results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 20px 0 28px;
+}
+
+.lane-runner .results div {
+  border: 2px solid #777;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.lane-runner .results span {
+  display: block;
+  font-size: 7px;
+  margin-bottom: 10px;
+  color: #aaa;
+}
+
+.lane-runner .results strong {
+  font-size: 12px;
+}
+
+.lane-runner .name-prompt {
+  border: 2px solid var(--yellow);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.lane-runner .name-prompt label {
+  display: block;
+  font-size: 8px;
+  margin-bottom: 12px;
+}
+
+.lane-runner input {
+  width: 100%;
+  border: 3px solid var(--white);
+  background: #090b10;
+  color: var(--white);
+  padding: 14px;
+  outline: none;
+  margin-bottom: 14px;
+}
+
+.lane-runner input:focus {
+  border-color: var(--yellow);
+}
+
+.lane-runner .leaderboard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.lane-runner .leaderboard-head button {
+  padding: 8px 12px;
+}
+
+.lane-runner .tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lane-runner .tabs button {
+  font-size: 8px;
+  padding: 10px 13px;
+}
+
+.lane-runner .tabs button.active {
+  background: var(--white);
+  color: #111;
+}
+
+.lane-runner .status {
+  font-size: 8px;
+  line-height: 1.8;
+  color: #aaa;
+  margin-bottom: 12px;
+}
+
+.lane-runner #scoreList {
+  margin: 0;
+  padding-left: 32px;
+}
+
+.lane-runner #scoreList li {
+  padding: 10px 6px;
+  border-bottom: 1px solid #333;
+  font-size: 8px;
+  line-height: 1.8;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lane-runner #scoreList li::marker {
+  color: var(--yellow);
+}
+
+.lane-runner .score-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lane-runner .score-number {
+  color: var(--yellow);
+  white-space: nowrap;
+}
+
+.lane-runner .hidden {
+  display: none !important;
+}
+
+@media (max-width: 560px) {
+  .lane-runner .cabinet {
+    padding: 28px 18px;
+  }
+  .lane-runner .hud strong {
+    font-size: 7px;
+  }
+  .lane-runner .hud span {
+    font-size: 5px;
+  }
+  .lane-runner .panel {
+    padding: 24px 18px;
+  }
+}

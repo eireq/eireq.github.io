@@ -3,7 +3,7 @@ name: deploy vue site
 on:
   push:
     branches:
-      - hayastan
+      - zapadoslavia
 
 permissions:
   contents: read
@@ -24,6 +24,10 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_KHT_OWNER_ID: ${{ secrets.VITE_KHT_OWNER_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
