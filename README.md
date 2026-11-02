@@ -1,199 +1,144 @@
 # eireq.github.io
 
-Personal site: games, a large flag corpus, a political-values quiz, and a private map sim.
+my website. games, a big pile of flags, a politics quiz, and a private map where my friends draw fake countries.
 
-**Live:** https://eireq.github.io/
+**live:** https://eireq.github.io/
 
-Vue 3 single-page app, built with Vite and deployed to GitHub Pages from the `zapadoslavia` branch.
+it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia` branch (yes, the branch names are countries. no, i won't explain).
 
-## Pages
+## pages
 
-| Path | What it is |
+| path | what's there |
 | --- | --- |
-| `/` | Home. Three tours (quick and daily, deep games, explore), plus flag of the week. |
-| `/me` | About. |
-| `/games` | Game index. |
-| `/games/racing` | Lane Runner. |
-| `/games/flagquiz` | Flag quiz. |
-| `/games/daily` | Daily flag. |
-| `/games/hexo` | HeXO. |
-| `/games/connect` | Connect. bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y. |
-| `/games/otrio` | Otrio. Ring tic-tac-toe for 2–4 players. |
-| `/games/go` | Go. Baduk for two players on one screen. |
-| `/games/hexchess` | Hex chess. Gliński's board, 91 cells. |
-| `/kht` | KHT bracket. Public to view, owner can edit. |
-| `/tools` | Tool index. |
-| `/tools/pi` | Daily pi. One digit lesson per UTC day. |
-| `/flagdb` | Flag database. |
-| `/flagdb/detail/:flagId` | One flag: palette, record fields, Wikipedia, similar flags. |
-| `/compare` | Two flags side by side, with a similarity score. Accepts `?a=` and `?b=`. |
-| `/rc` | Random entry from the flag corpus. |
-| `/jpol` | jPol values quiz. |
-| `/jworld` | jWorld, a private shared Earth. Full-screen, no site header. |
-| `/jworld/c/:id` | One jWorld country. |
-| `/art` | Art. |
-| `/misc` | jPol, plus links out to modes and GitHub. |
-| `/contact` | Contact, with an email draft. |
-| `/modes` | Redirects to https://eireq.github.io/modes |
+| `/` | home. three ways in (quick and daily, deep games, explore) and the flag of the week |
+| `/me` | about me |
+| `/games` | all the games, plus a random game button if you can't decide |
+| `/games/racing` | lane runner |
+| `/games/flagquiz` | flag quiz |
+| `/games/daily` | daily flag |
+| `/games/hexo` | HeXO |
+| `/games/connect` | connect: bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y |
+| `/games/otrio` | Otrio, ring tic-tac-toe for 2–4 players |
+| `/games/go` | go, two players on one screen |
+| `/games/hexchess` | hex chess on Gliński's 91-cell board |
+| `/kht` | KHT bracket. anyone can watch, only i can edit |
+| `/tools` | tools |
+| `/tools/pi` | daily pi, one digit lesson per utc day |
+| `/flagdb` | flag database |
+| `/flagdb/weeks` | every flag of the week, with the little write-ups |
+| `/flagdb/detail/:flagId` | one flag: colors, dates, wikipedia, similar flags |
+| `/compare` | two flags side by side with a similarity score. takes `?a=` and `?b=` |
+| `/tiers` | country tier list, S to F |
+| `/rc` | random flag from the pile |
+| `/jpol` | jPol, the values quiz |
+| `/jworld` | jWorld, full screen, no header |
+| `/jworld/c/:id` | one jWorld country |
+| `/art` | art |
+| `/misc` | jPol and some links out. `/politics` and `/elections` end up here too |
+| `/contact` | contact, with an email draft |
+| `/modes` | goes to https://eireq.github.io/modes |
 
-Lane Runner, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. Go, Otrio, HeXO, connect, and hex chess can fill the screen.
+lane runner, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. go, Otrio, HeXO, connect, and hex chess have a full screen button.
 
-## Flag corpus
+## flags
 
-`src/assets/master_flags.json` is the shared source for the database, quiz, daily flag, random country, compare, and flag of the week. About 1,700 records: countries, territories, subdivisions, historical flags, organizations, and a few curated collections (Soviet, revolutionary, pan-Arab, pride, and others).
+everything flag-related reads `src/assets/master_flags.json`: 1,755 records of countries, territories, subdivisions, historical flags, organizations, and a few collections (soviet, revolutionary, pan-arab, pride, and so on). the database list loads a slimmer copy, `src/assets/flag_index.json`, so it opens faster.
 
-A flag page reads colors out of the SVG, shows adoption and cancellation dates, proportions, and designer when those fields exist, pulls a Wikipedia summary, and lists similar flags. Compare puts two records next to each other and scores how close they are.
+- **flag pages** pull the colors out of the svg, show dates, ratio, and designer when the record has them, grab a wikipedia summary, and list similar flags. click a color to find it in the database.
+- **daily flag** is one country per utc day, six guesses. the streak lives in your browser, and missing a day puts it back to 0. you can copy the result as text or as a little image.
+- **flag of the week** comes from a short list i wrote (or the country pool if that runs out). it's on the home page, and the old ones are on `/flagdb/weeks`.
+- **flag quiz** has countries, territories, historical, subdivisions, organizations, and all flags. pick a length, type names, see what you missed. `USA` and `UK` count. scores go to a supabase leaderboard per mode (most correct, then percentage, one best run per name). opening devtools mid-run voids the run, nice try. "challenge a friend" copies a link with the same mode and length. your name is shared with lane runner and saved as `eirePlayerName`.
+- **random country** uses the same pools.
 
-**Daily flag** is one shared country flag per UTC day. Six guesses. The streak stays in this browser, and a missed puzzle sets it to 0. A tab left open past UTC midnight loads that day's flag. The result can be copied.
+## daily pi
 
-**Flag of the week** is picked from a short editorial list (or the country pool if that list misses) and shown on the home page, with links into the record and compare.
+`/tools/pi`. one lesson per utc day, saved as `eireDailyPi`. learn a few new digits, then take the quiz. batches start at 3 digits and grow as you go, up to the 1,000 digits stored here. every question gets three tries. burn all three and the streak resets and those digits don't count. once you know everything, it's recall only. results can be copied as text or as an image.
 
-**Flag quiz** draws its pools from the same file:
+## games
 
-- countries
-- territories
-- historical
-- subdivisions
-- organizations
-- all flags
+### lane runner
 
-You pick a length, type names, then get a breakdown of the ones you missed. `USA` and `UK` count for the United States and the United Kingdom. A blank answer is ignored. Scores go to a per-mode Supabase leaderboard ranked by correct answers, then percentage, with one best run per name. Opening devtools during a run voids that run. The player name is shared with Lane Runner and stored locally (`eirePlayerName`).
+endless 4-lane dodging on a canvas. arrows or A/D to switch lanes, `p` to pause, esc to leave. score is distance, overtakes, and top speed. global and weekly top 50. the optional audio is in `public/games/racing/assets/`, and setup notes are in [`src/games/racing/README.md`](src/games/racing/README.md).
 
-**Random country** uses the same pools and links through to the flag record.
+### Otrio
 
-## Daily pi — `/tools/pi`
+pass-and-play. each of the nine circles holds a small, medium, and large ring. you win with three of one size in a line, small-medium-large along a line, or all three sizes stacked in one circle. with two players, each takes two opposite colors. with three, one color sits out.
 
-One lesson per UTC day, stored in this browser (`eireDailyPi`). Study a few new digits, then take the quiz. Batches start at 3 digits and grow as more are mastered, up to the 1,000 digits stored here. The quiz builds today's new digits in steps, then asks for older ones. Each question has three tries. Using them all resets the streak and leaves those digits unlearned. Once every stored digit is known, the day is recall only. A finished lesson can be copied. A tab left open past UTC midnight loads the next lesson.
+### HeXO
 
-## Games
+hexagonal tic-tac-toe. X opens with one stone in the center, then every turn is two stones. six in a line wins. boards are base 8 or 13, with no clock, 5 minutes, or 10. type a square like `g7` to play it.
 
-### Lane Runner — `/games/racing`
+it goes way past that: 2 to 4 players, hex/triangle/square/octagon/radial grids, and a stack of optional rules (duck, king duck, egyptian, echo, orbit, meteor, raid, slide, frost, pair, scatter, siege, pendulum, mine, and a hidden one). the rules button in the game explains all of it.
 
-Endless 4-lane dodge game on a canvas. Left and right arrows, or A and D, change lanes. `p` pauses, and Esc or the menu button leaves a run. Score mixes distance, overtakes, and top speed. Global and weekly top-50 leaderboards. Optional menu, game, and click audio live in `public/games/racing/assets/`. Setup notes and the leaderboard caveats are in [`src/games/racing/README.md`](src/games/racing/README.md).
+you can play on one screen, against a practice bot, or **together** over a link. the room name in the link is the only secret. two players get one invite, three or four get one per seat. there's chat under the move list, and rematch swaps sides. replays live in the url.
 
-### Otrio — `/games/otrio`
+### connect
 
-Pass-and-play ring tic-tac-toe. Each of the nine circles holds a small, medium, and large ring. A color wins with three of one size in a line, with small-medium-large along a line in either direction, or with all three sizes stacked in one circle. Two players each take a pair of opposite colors (tan with black, white with blue) and swap colors as play goes around the board. Three players leave one color out.
+bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y. you win by connecting edges (or scoring off connections) instead of making a row. red goes first. hotseat or practice bot, swap rule where the game has one, pan and zoom, and links carry the game. each game's rules show up the first time you play it. Star and *Star are still beta.
 
-### HeXO — `/games/hexo`
+### go
 
-Hexagonal tic-tac-toe. X places one stone on the center (h8 on base 8, m13 on base 13). Every later turn is two stones, and O takes the first of those. Six in a line on any of the three axes wins. Check means the side to move can finish a line with the stones still left this turn. The side to move may resign. Boards are base 8 or base 13, with no clock, 5 minutes, or 10. A clock runs only on the turn. Type a square such as `g7` to play it.
+baduk on 9×9, 13×13, or 19×19. click a crossing, use the arrows and enter, or type a point like `d4`. chinese rules, area scoring, 7.5 komi, positional superko. pass twice, click the dead groups, accept.
 
-Two, three, or four players (X, O, Y, and Z) take the same kind of turn. Grids are hex, triangle, square, octagon (including the diamonds), or radial. On a radial board, six around a ring or six outward on a spoke wins.
+### hex chess
 
-Optional rules can be combined:
+Gliński's hexagonal chess. 91 cells, files a–l without j, three bishops and nine pawns each. checkmate wins, and so does stalemate for the side that delivered it. threefold repetition, fifty moves, and bare kings with one minor piece are draws. two players or a practice bot. drag, zoom, flip, type a square like `g1`, step through the moves, copy them.
 
-- **Duck.** After your stones, move the duck. No one plays on it.
-- **King duck.** The ring around the duck is closed, and stones there do not count.
-- **Egyptian.** A soft cap (move cap), 12 by default and adjustable up to 40. Over it (when it's your 12th move), lift up to two of your older stones, or leave them. An echo never lifts a stone.
-- **Echo.** Copies a stone onto its mirror after two full turns. A duck echo moves the duck only if it is still on that cell.
-- **Orbit.** Every stone turns one step around the center. The duck stays.
-- **Meteor.** Every third turn, the farthest ring is cleared. A copy born that turn stays.
-- **Raid.** After your stones, take one of theirs. It becomes yours.
-- **Slide.** The second action can move one of your stones onto an empty neighbor.
-- **Frost.** A stone placed this turn does not count in a line until the turn ends.
-- **Pair.** The two stones of a turn have to share a side. The opening stone is free.
-- **Scatter.** The two stones of a turn must not share a side. Pair and scatter exclude each other.
-- **Siege.** After the opening, every stone is placed beside an opponent's stone.
-- **Pendulum.** When everyone has taken a turn, each stone steps one ring toward the center. The center stone stays.
-- **Mine.** The second action can plant a mine. The next stone played there is lost, and the mine is gone.
-- **Rift bloom.** Hidden until the title is clicked five times. Shimmering cells move each turn. Play on one and a ghost grows on the mirror. It becomes a stone if two of your stones touch it before it fades.
+## KHT
 
-Ways to play:
+`/kht`. a 370-entry bracket. anyone can watch. i sign in with a supabase magic link and edit names and scores, and it saves as one JSON blob in `kht_bracket`. odd rounds give the last entry a bye.
 
-- **On one screen**, two to four players.
-- **Practice** against a bot, as any side.
-- **Together** shares one game between browsers. The room name in the invite link is the only secret, and it keeps the board size. You start as X. Chat sits under the move list. Rematch swaps sides. A third or fourth player joins with `s=Y` or `s=Z` on the invite.
+## tier list
 
-The board can be flipped, zoomed, and fit. Guide lines can be toggled, and a game undone (except in together). The move list can be stepped through (you can display your previous moves). A replay is written into the URL, and the score line can be copied.
+`/tiers`. drag country flags from S to F (or tap a flag, then a row). it stays in your browser. you can share a link, download it as a PNG, and import that PNG later to get the list back.
 
-### Connect — `/games/connect`
+## jPol
 
-bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y. The win is a connection, or a score taken from one, instead of a row of stones.
+a values quiz like the political compass, 8values, and sapplyvalues. full is 60 questions, express is 18. five-point answers, no right ones. you get a compass dot, six axes (equality, economy, authority, freedom, identity, progress), the topics that pulled you hardest, and a note if you answered mostly neutral or mostly extreme. download a PNG, copy a result link, keep old runs on this device, or paste a friend's code onto the same compass.
 
-Red moves first. Hotseat or practice. Where the game uses it, blue may swap seats after the first move. The board pans and zooms. A link can carry the game.
+english, german, and russian are written out properly. the other languages are english run through a filter.
 
-- **bluD!NG** (Bridg-it). Red joins top to bottom, blue joins the sides. A link that would cross is blocked.
-- **Hex.** Red joins left to right, blue joins top to bottom.
-- **TwixT.** Place a peg, then knight's-move links. Links cannot cross. Corners are out, and a peg cannot sit in the opponent's border.
-- **PÜNCT.** Three-dot pieces, placed or slid along the punct. Stacking and bridges are in the standard rules. Either player may join any opposite pair. The center is entered only by a move.
-- **Y.** Both players join all three sides of a triangle. Corners count for both edges.
-### !!!!!!BETA!!!!!!
-- **Star.** A group touching three or more border cells scores two less than it touches.
-- **\*Star.** Own edge cells with as few stars as you can. The empty center joins both colors.
+## jWorld
 
-### Go — `/games/go`
+a private earth on leaflet. you sign in with a display name and password. registering and resetting a password need the world's invite code.
 
-Baduk for two players on one screen. Boards are 9×9, 13×13, or 19×19. Click a crossing, or move with the arrows and Enter. Stones of the same color that touch share liberties; a group with none is captured. Suicide is illegal, and positional superko forbids a move that restores any earlier arrangement of stones.
+once you're in, you can:
 
-Chinese rules, area scoring. Two passes open the count: click groups both players treat as dead, then accept, or go back to playing. The score is living stones plus the empty points they enclose. White receives 7.5 komi. Either side can undo or resign.
+- draw a country, or snap to a real-world outline and fix the coast by hand
+- add territories, merge them, and redraw borders
+- place a capital
+- fill in a country page (names, motto, lore, government, flag, and the rest of `src/jworld/countryFields.js`)
+- hand the country to someone else
+- search and filter the list, and open a country at `/jworld/c/:id`
 
-### Hex chess — `/games/hexchess`
+admins can edit anyone's country. the map polls for other people's changes. it shares the supabase project with the leaderboards, with its own tables.
 
-Gliński's hexagonal chess. Ninety-one cells, files a–l with j skipped, ranks 1–11, center f6. Each side has three bishops and nine pawns. Rooks slide through edges, bishops through corners and stay on one color, queens do both. Kings step one cell in any of those twelve directions and do not castle. Knights jump two cells through edges, then one at a sixty-degree turn. Pawns step straight ahead on their file, may step two from a start cell when both cells are empty, and capture one cell forward at sixty degrees, including en passant. A pawn that reaches the far end of a file promotes.
+## languages
 
-Checkmate wins. Stalemate wins for the side that delivered it. Threefold repetition, fifty moves with no capture or pawn move, and a position where each side has at most a king and one bishop or knight are draws.
+the language menu is in the header and remembers your pick.
 
-- **Two players** on one screen. White moves first.
-- **Practice** against a bot, as white or black.
+real ones:
 
-The board can be dragged, zoomed, and flipped. Type a square such as `g1` to select it or play it. The move list can be stepped through, and the moves can be copied.
+- english (`eng`)
+- german (`deu`), jPol included
+- russian (`rus`), jPol included
+- klingon (`kgn`), roughly, enough to get around
 
-### KHT — `/kht`
+everything else is english through a filter: drunk, pirate, uwu, serious, vulgar, brainrot, Jenglish, IPA, emoji, toki-pona-ish, and shortened words. those are jokes.
 
-A 370-entry bracket. Anyone can watch it. The owner signs in with a Supabase magic link and edits names and scores; changes save as one JSON document in `kht_bracket`. Odd rounds give the last unpaired entry a bye.
+## stack
 
-## jPol — `/jpol`
+- vue 3, vue router, vite
+- leaflet and leaflet-draw for jWorld, topojson-client for the snapping
+- supabase for scores, the KHT bracket, and jWorld
+- a public MQTT broker for HeXO together games
+- github pages, with a `404.html` that sends unknown paths back into the app
 
-Political values quiz in the vein of the political compass, 8values, and sapplyvalues. Full is 60 questions, express is 18. Five-point answers, no correct ones.
+after a deploy, a tab that asks for an old chunk reloads once and keeps your page.
 
-The result is a compass dot plus six axes (equality, economy, authority, freedom, identity, progress), the topics that pulled hardest, and a short calibration note when answers were mostly neutral, mostly extreme, or mostly mild. You can download a PNG, copy a result link, keep recent runs on this device, and paste a friend's code onto the same compass.
+## running it
 
-English, German, and Russian strings are written out. The other language modes rewrite the English copy.
-
-## jWorld — `/jworld`
-
-Private Earth sim on Leaflet. Sign-in is a display name and password; registration and password reset need the world's invite code.
-
-Once in:
-
-- Draw a country, or snap a border to a simplified real-world outline and drag the handles before saving.
-- Add territories, merge them, and edit borders.
-- Place, move, or clear a capital.
-- Fill a country page: names, motto, lore, politics, government, geography, symbols, flag upload, and the rest of the record in `src/jworld/countryFields.js`.
-- Transfer ownership.
-- Filter the list (all / mine / others), search, and open a country at `/jworld/c/:id`.
-- Admins can edit countries they do not own.
-
-The map polls for other players' changes. jWorld uses the same Supabase project as the leaderboards, with its own tables.
-
-## Languages
-
-The language menu is in the header and remembered locally.
-
-Hand-written locales:
-
-- English (`eng`)
-- German (`deu`), including jPol
-- Russian (`rus`), including jPol
-- Klingon (`kgn`), an approximate overlay so the site stays navigable
-
-The rest clone English and run a filter: drunk, pirate, uwu, serious, vulgar, brainrot, Jenglish, IPA, emoji, a toki-pona-style simplification, and shortened words. Those are jokes, not translations.
-
-## Stack
-
-- Vue 3, Vue Router, Vite
-- Leaflet and leaflet-draw for jWorld
-- topojson-client for snap-to-shape
-- Supabase for Lane Runner scores, flag-quiz scores, the KHT bracket, and jWorld
-- A public MQTT broker for HeXO together-mode
-- GitHub Pages, with a `404.html` that sends unknown paths back into the SPA
-
-After a redeploy, a tab that still asks for an old hashed chunk reloads once and continues on the same path.
-
-## Run it locally
-
-Node 22 (the deploy workflow uses 22).
+node 22 (that's what the deploy uses).
 
 ```bash
 git clone https://github.com/eireq/eireq.github.io.git
@@ -202,14 +147,22 @@ npm install
 npm run dev
 ```
 
-Dev server: http://localhost:5173
+it's on http://localhost:5173.
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Copy `.env.example` to `.env` when you want leaderboards, KHT editing, or jWorld:
+tests use node's own runner:
+
+```bash
+node --test --experimental-strip-types src/**/*.test.js
+```
+
+### .env
+
+copy `.env.example` to `.env` if you want leaderboards, KHT editing, or jWorld:
 
 ```
 VITE_SUPABASE_URL=
@@ -217,74 +170,78 @@ VITE_SUPABASE_ANON_KEY=
 VITE_KHT_REDIRECT_URL=https://eireq.github.io/kht
 ```
 
-`VITE_KHT_OWNER_ID` is the Supabase Auth user id allowed to edit the bracket. Set it for production builds. Vite inlines every `VITE_*` value into the client bundle, so use the anon key only, with RLS on. Never put a service-role key in this app.
+`VITE_KHT_OWNER_ID` is the supabase auth user id that can edit the bracket. set it for production builds.
 
-The site still runs with an empty `.env`. Leaderboards, KHT saving, and jWorld sign-in stay unavailable until Supabase is configured.
+vite puts every `VITE_*` value into the bundle, so only use the anon key, with RLS on. never put a service-role key in here.
 
-### Database
+with an empty `.env` the site still runs. leaderboards, KHT saving, and jWorld just won't work.
 
-Run these in the Supabase SQL editor:
+### database
 
-| What | Script |
+run these in the supabase SQL editor:
+
+| what | script |
 | --- | --- |
-| Lane Runner and flag-quiz scores | `src/games/racing/supabase.sql` |
+| lane runner and flag quiz scores | `src/games/racing/supabase.sql` |
 | KHT bracket | `src/games/kht/supabase.sql` |
 | jWorld | `src/jworld/supabase.sql`, then `src/jworld/supabase_improve.sql` |
 
-The flag-quiz leaderboard reads `flag_quiz_best` from the racing script (best correct count, then percentage, one row per name). If the tables already exist from an older run, run the function at the bottom of that script again. Until then the page sorts the latest 1,000 rows the same way in the browser.
+the flag quiz leaderboard reads `flag_quiz_best` from the racing script. if your tables are from an older run, run the function at the bottom of that script again. until you do, the page sorts the latest 1,000 rows itself.
 
-After the jWorld base script:
+after the jWorld base script:
 
 ```sql
 update public.jworld_world set invite_code = 'your-secret' where id = 1;
 ```
 
-Other `src/jworld/supabase_*.sql` files are later upgrades (accounts, capitals, transfers, admin, flags, passwords). Read the comment at the top of a file before running it.
+the other `src/jworld/supabase_*.sql` files are later upgrades (accounts, capitals, transfers, admin, flags, passwords). read the comment at the top before running one.
 
-KHT policies need the owner's Auth user id in place of the placeholder UUID. In Supabase Authentication, allow these redirect URLs:
+KHT policies need the owner's auth user id in place of the placeholder UUID. in supabase authentication, allow these redirect urls:
 
 - `https://eireq.github.io/kht`
 - `http://localhost:5173/kht`
 
-Magic links return to the URL that requested them. A link minted on localhost only works while that dev server is running.
+magic links go back to wherever they were requested. one sent from localhost only works while that dev server is running.
 
-## Deploy
+## deploy
 
-`.github/workflows/deploy.yml` builds on every push to `zapadoslavia` and publishes `dist` to GitHub Pages. Repository secrets:
+`.github/workflows/deploy.yml` builds every push to `zapadoslavia` and puts `dist` on github pages. it needs these repo secrets:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_KHT_OWNER_ID`
 
-## Layout
+## where things are
 
 ```
 src/
-  App.vue                 header, router view, footer
-  i18n.js                 locales and joke filters
-  locales/                German and Russian overlays
+  App.vue                 header, page, footer
+  i18n.js                 languages and the joke filters
+  locales/                german and russian
   router/index.js
   views/                  one file per page
   components/             header and footer
-  data/                   flags, daily flag, flag of the week, daily pi, jPol, profile name
+  data/                   flags, daily flag, flag of the week, daily pi, tier list, jPol, share cards
   assets/master_flags.json
-  games/fullscreen.js     shared fullscreen control
-  games/racing/           canvas game, audio, leaderboard client
-  games/go/               board, captures, Chinese scoring
-  games/otrio/            ring tic-tac-toe rules
-  games/hexo/             rules and the together-mode link
-  games/connect/          bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, Y
-  games/hexchess/         Gliński board and moves
-  games/kht/              bracket client
-  jworld/                 map, geometry, country fields, Supabase
-public/404.html           GitHub Pages fallback into the SPA
+  assets/flag_index.json  the slim copy for the database list
+  games/fullscreen.js     the full screen button
+  games/racing/           lane runner, audio, leaderboard
+  games/go/               board, captures, scoring
+  games/otrio/            ring rules
+  games/hexo/             rules, grids, bot, together mode
+  games/connect/          all seven connect games and the bot
+  games/hexchess/         board and moves
+  games/kht/              bracket
+  jworld/                 map, borders, country fields, supabase
+public/404.html           sends github pages 404s back into the app
+public/og.png             the link preview image
 ```
 
-## Contact
+## contact
 
-- Email: eireball@proton.me
-- GitHub: https://github.com/eireq
-- Discord: https://dsc.gg/pissedoff
-- YouTube: https://www.youtube.com/@eireq also another link will change later
+- email: eireball@proton.me
+- github: https://github.com/eireq
+- discord: https://dsc.gg/pissedoff
+- youtube: https://www.youtube.com/@eireq
 
 © 2026 eire

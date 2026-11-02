@@ -1,8 +1,10 @@
 import { ref } from "vue";
 import { jpolDeu } from "./locales/jpol-deu.js";
 import { jpolRus } from "./locales/jpol-rus.js";
+import { jpolSlk } from "./locales/jpol-slk.js";
 import { siteDeu } from "./locales/site-deu.js";
 import { siteRus } from "./locales/site-rus.js";
+import { siteSlk } from "./locales/site-slk.js";
 
 export const languageGroups = [
   {
@@ -11,6 +13,7 @@ export const languageGroups = [
       { code: "eng", label: "english" },
       { code: "deu", label: "deutsch" },
       { code: "rus", label: "русский" },
+      { code: "slk", label: "slovenčina" },
       { code: "kgn", label: "klingon" },
     ],
   },
@@ -1031,7 +1034,7 @@ Object.assign(messages.deu, siteDeu, { jpol: jpolDeu });
  * JOKE LOCALES (ttt, jjj, ipa, emj, tkp, sew, drunk/pirate/uwu/…)
  * -------------------------------------------------------------
  * These are NOT real translations sitting "in front of" German/Russian.
- * Real locales are: eng, deu, rus (+ playful kgn).
+ * Real locales are: eng, deu, rus, slk (+ playful kgn).
  *
  * Everything in this block clones English and runs silly string transformers
  * so the language menu can offer meme modes. Skip this whole section if you
@@ -1779,6 +1782,8 @@ messages.rus = mergeMessages(messages.eng, {
       "если хотите поговорить о программировании, флагах, играх, музыке, фильмах или чём угодно, пишите мне.",
   },
 });
+
+messages.slk = mergeMessages(messages.eng, { ...siteSlk, jpol: jpolSlk });
 
 // Klingon terminology is approximate, but the complete site remains navigable in this mode.
 messages.kgn = mergeMessages(messages.eng, {
