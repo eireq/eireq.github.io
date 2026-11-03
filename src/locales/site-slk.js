@@ -26,7 +26,7 @@ export const siteSlk = {
     about: "o mne ->",
     contact: "kontakt ->",
     flagDbCta: "databáza vlajok ->",
-    goCta: "go ->",
+    hexoCta: "hexo ->",
     whatTitle: "čo sa tu dá robiť",
     whatIntro: "tri cesty dnu. niečo na každý deň, dlhá hra, alebo niečo na prechádzanie.",
     groupQuick: "rýchle a denné",

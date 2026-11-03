@@ -81,7 +81,7 @@ const messages = {
       about: "about me ->",
       contact: "contact ->",
       flagDbCta: "flag database ->",
-      goCta: "go ->",
+      hexoCta: "hexo ->",
       whatTitle: "what to do here",
       whatIntro: "three ways in. a daily, a long game, or something to wander through.",
       groupQuick: "quick and daily",
@@ -797,7 +797,7 @@ const messages = {
       lead:
         "brettspiele, tägliches pi, eine private erde und ein flaggenhaufen, der irgendwie online blieb.",
       flagDbCta: "flaggendatenbank ->",
-      goCta: "go ->",
+      hexoCta: "hexo ->",
       whatTitle: "was man hier machen kann",
       whatIntro: "drei wege. etwas für jeden tag, ein langes spiel, oder etwas zum durchstöbern.",
       groupQuick: "schnell und täglich",
@@ -1556,7 +1556,7 @@ messages.rus = mergeMessages(messages.eng, {
     lead:
       "настольные игры, пи дня, приватная земля и куча флагов, которая почему-то осталась онлайн.",
     flagDbCta: "база флагов ->",
-    goCta: "го ->",
+    hexoCta: "hexo ->",
     whatTitle: "чем тут заняться",
     whatIntro: "три входа. ежедневное, долгая игра или что-то, чтобы побродить.",
     groupQuick: "быстро и каждый день",

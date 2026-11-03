@@ -7,8 +7,8 @@
         <RouterLink class="button" to="/flagdb">{{
           t("home.flagDbCta")
         }}</RouterLink>
-        <RouterLink class="button" to="/games/go">{{
-          t("home.goCta")
+        <RouterLink class="button" to="/games/hexo">{{
+          t("home.hexoCta")
         }}</RouterLink>
         <RouterLink class="button button--ghost" to="/me">{{
           t("home.about")
