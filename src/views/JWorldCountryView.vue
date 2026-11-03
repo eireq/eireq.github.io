@@ -270,7 +270,7 @@ async function load() {
   loadError.value = "";
   session.value = loadSession();
   if (!session.value?.token) {
-    loadError.value = "Join jWorld from the map page to view countries.";
+    loadError.value = "join jWorld on the map page to see countries.";
     country.value = null;
     return;
   }
@@ -326,7 +326,7 @@ async function saveWiki(payload, geometry = null) {
     pendingFlag.value = null;
     editing.value = false;
   } catch (err) {
-    saveError.value = err.message || "Save failed.";
+    saveError.value = err.message || "saving didn't work.";
   } finally {
     saving.value = false;
   }

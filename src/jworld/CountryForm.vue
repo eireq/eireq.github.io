@@ -33,10 +33,10 @@
         <input v-model="model.common_names" type="text" />
       </label>
       <p v-if="variant === 'create'" class="jw-field-hint">
-        A name and a flag are enough here. Fill in the wiki from the country page.
+        a name and a flag are enough for now. the wiki gets filled in on the country page.
       </p>
       <p v-else-if="variant === 'borders'" class="jw-field-hint">
-        This saves the borders and the name. The rest of the wiki stays on the country page.
+        this only saves the borders and the name. the rest of the wiki lives on the country page.
       </p>
       <template v-if="variant === 'full'">
       <label>
@@ -382,7 +382,7 @@ function deleteTerritory(index) {
   const group = territoryGroups.value[index];
   const label = formatTerritoryLabel(group?.name, model.official_name);
   const islands = group?.count > 1 ? ` (${group.count} islands)` : "";
-  if (!confirm(`Delete territory “${label}”${islands} from the map?`)) return;
+  if (!confirm(`delete “${label}”${islands} from the map?`)) return;
 
   const result = removeTerritoryGroup(
     localGeometry.value,

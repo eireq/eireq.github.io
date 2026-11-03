@@ -1,10 +1,11 @@
 import { imageUrl } from "./flags.js";
 
-const memory = new Map();
 const CACHE_NAME = "eire-flag-images-v1";
-const inflight = new Map();
+const memory = new Map();
+const loading = new Map();
 
-async function resolveUploadUrl(svgUrl) {
+// a link that isn't a direct upload.wikimedia.org file gets looked up on commons
+export async function resolveUploadUrl(svgUrl) {
   const url = imageUrl(svgUrl);
   if (!url) return "";
   if (url.includes("upload.wikimedia.org/")) return url;
@@ -53,7 +54,7 @@ async function writeCache(requestUrl, response) {
     const cache = await caches.open(CACHE_NAME);
     await cache.put(requestUrl, response.clone());
   } catch {
-    // quota / private mode — ignore
+    // full storage or private mode. the image still shows, it just isn't saved
   }
 }
 
@@ -62,7 +63,7 @@ export async function cachedFlagImageUrl(svgUrl) {
   if (!original) return "";
   if (memory.has(original)) return memory.get(original);
 
-  if (inflight.has(original)) return inflight.get(original);
+  if (loading.has(original)) return loading.get(original);
 
   const task = (async () => {
     const resolved = await resolveUploadUrl(original);
@@ -89,15 +90,15 @@ export async function cachedFlagImageUrl(svgUrl) {
     }
   })();
 
-  inflight.set(original, task);
+  loading.set(original, task);
   try {
     return await task;
   } finally {
-    inflight.delete(original);
+    loading.delete(original);
   }
 }
 
-export async function prefetchFlagImages(urls = []) {
+export async function prefetchFlagImages(urls) {
   const unique = [...new Set(urls.filter(Boolean))];
   await Promise.all(unique.map((url) => cachedFlagImageUrl(url)));
 }

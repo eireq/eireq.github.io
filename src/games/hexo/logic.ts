@@ -1,11 +1,8 @@
-/**
- * HeXO board math.
- *
- * Letters run one diagonal (screen: up-right). Numbers run the other
- * (screen: down-right). Base 8 is the 169-cell hex, center h8.
- * Base 13 is the 469-cell hex, center m13.
- * Cube coords satisfy q + r + s = 0, and a straight line holds one of them fixed.
- */
+// HeXO board math.
+//
+// letters run up-right on screen, numbers run down-right.
+// base 8 is the 169-cell hex with h8 in the middle, base 13 is 469 cells around m13.
+// cube coords always add up to q + r + s = 0, and a straight line keeps one of them fixed.
 
 export type Player = "X" | "O";
 
@@ -72,7 +69,6 @@ function metrics(size: BoardSize = 8): Metrics {
   };
 }
 
-/** Letters of the base-8 board. */
 export const LETTERS = metrics(8).letters;
 
 const HEX = 20;
@@ -82,7 +78,7 @@ const SQRT3 = Math.sqrt(3);
 const STEP_LETTER = { x: HEX * (SQRT3 / 2), y: -HEX * 1.5 };
 const STEP_NUMBER = { x: HEX * (SQRT3 / 2), y: HEX * 1.5 };
 
-/** One positive step along each of the three hex axes, in (letter, number). */
+// one step along each of the three line directions, as (letter, number)
 const AXES: Array<[number, number]> = [
   [0, 1],
   [1, 0],
@@ -104,20 +100,18 @@ export function keyOf(letter: string, number: number): string {
   return `${letter.toLowerCase()}${number}`;
 }
 
-/** X opens with one stone. Every later turn is two stones, and O goes first. */
+// X opens with one stone. after that every turn is two stones, starting with O
 export function playerOf(index: number): Player {
   if (index <= 0) return "X";
   const pair = Math.floor((index - 1) / 2);
   return pair % 2 === 0 ? "O" : "X";
 }
 
-/** Stones the side to move still has to place. The opening turn is one stone. */
 export function stonesLeft(moveCount: number): number {
   if (moveCount <= 0) return 1;
   return 2 - ((moveCount - 1) % 2);
 }
 
-/** Index of the first stone in the turn that contains `index`. */
 export function turnStart(index: number): number {
   if (index <= 0) return 0;
   return 1 + Math.floor((index - 1) / 2) * 2;
@@ -324,10 +318,8 @@ export function winningLines(
   return lines;
 }
 
-/**
- * Stones already on the board that the side to move can turn into a line of
- * 6 with the stones they have left this turn. Empty winning squares are left out.
- */
+// stones already down that the side to move could finish into a six this turn.
+// this is what lights up as "check". the empty squares aren't included
 export function threatKeys(
   stones: Record<string, Player>,
   player: Player,
@@ -484,10 +476,9 @@ function scoreMove(
   return score;
 }
 
-/**
- * Empty cells in a run the player can finish with exactly `want` more stones.
- * `want` 1 is a single move. `want` 2 is a pair played on the same turn.
- */
+// for each empty cell, how many six-windows it helps finish with exactly `want`
+// more stones (1 = this move wins, 2 = a pair this turn wins).
+// a cell in more windows is the better pick, for winning and for blocking
 function holeCoverage(
   stones: Record<string, Player>,
   player: Player,
@@ -564,7 +555,7 @@ function bestCovered(
   return best;
 }
 
-/** Practice opponent. Takes a win, blocks a loss, otherwise builds toward the center. */
+// the practice bot. win if it can, block if it has to, otherwise build near the middle
 export function chooseBotMove(
   stones: Record<string, Player>,
   player: Player,

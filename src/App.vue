@@ -7,28 +7,29 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import AppHeader from './components/AppHeader.vue'
-import AppFooter from './components/AppFooter.vue'
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import AppHeader from "./components/AppHeader.vue";
+import AppFooter from "./components/AppFooter.vue";
 
-const route = useRoute()
-const hideChrome = computed(() => Boolean(route.meta.hideChrome))
+const route = useRoute();
+const hideChrome = computed(() => Boolean(route.meta.hideChrome));
+
+// once the page is up, quietly fetch today's daily flag and the pi digits
+// so the daily pages open instantly
+async function warmDailies() {
+  import("@/data/piDigits.js");
+  const [{ loadFlags, utcDateKey }, { pickDailyFlag }, { cachedFlagImageUrl }] = await Promise.all([
+    import("@/data/flags.js"),
+    import("@/data/dailyFlag.js"),
+    import("@/data/flagImageCache.js"),
+  ]);
+  const today = pickDailyFlag(await loadFlags(), utcDateKey());
+  if (today?.svgUrl) cachedFlagImageUrl(today.svgUrl);
+}
 
 onMounted(() => {
-  const warm = () => {
-    import("@/data/piDigits.js")
-    import("@/data/flags.js").then(async ({ loadFlags, utcDateKey }) => {
-      const [{ pickDailyFlag }, { cachedFlagImageUrl }] = await Promise.all([
-        import("@/data/dailyFlag.js"),
-        import("@/data/flagImageCache.js"),
-      ])
-      const flags = await loadFlags()
-      const flag = pickDailyFlag(flags, utcDateKey())
-      if (flag?.svgUrl) cachedFlagImageUrl(flag.svgUrl)
-    })
-  }
-  if (window.requestIdleCallback) window.requestIdleCallback(warm)
-  else window.setTimeout(warm, 600)
-})
+  if (window.requestIdleCallback) window.requestIdleCallback(warmDailies);
+  else window.setTimeout(warmDailies, 600);
+});
 </script>

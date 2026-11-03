@@ -7,13 +7,15 @@ const config = {
 
 export const khtOwnerId = import.meta.env.VITE_KHT_OWNER_ID || "";
 const khtRedirectUrl = import.meta.env.VITE_KHT_REDIRECT_URL || "";
+const OFFLINE = "supabase isn't set up.";
+
 export const khtDb =
   config.url && config.anonKey
     ? createClient(config.url, config.anonKey)
     : null;
 
 export async function loadBracket() {
-  if (!khtDb) return { data: null, error: "Supabase is not configured." };
+  if (!khtDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await khtDb
     .from("kht_bracket")
@@ -25,7 +27,7 @@ export async function loadBracket() {
 }
 
 export async function saveBracket(bracket) {
-  if (!khtDb) return { error: "Supabase is not configured." };
+  if (!khtDb) return { error: OFFLINE };
 
   const { error } = await khtDb
     .from("kht_bracket")
@@ -46,7 +48,7 @@ export function watchKhtAuth(callback) {
 }
 
 export async function sendKhtLogin(email) {
-  if (!khtDb) return { error: "Supabase is not configured." };
+  if (!khtDb) return { error: OFFLINE };
 
   const { error } = await khtDb.auth.signInWithOtp({
     email,

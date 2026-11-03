@@ -1,7 +1,5 @@
-/**
- * Two browsers share one game through a public MQTT broker.
- * The room id in the invite link is the only secret.
- */
+// together mode. browsers talk through a public MQTT broker, no server of my own.
+// the room name in the invite link is the only secret, so anyone with it can join
 
 export type Seat = "X" | "O" | "Y" | "Z";
 
@@ -24,7 +22,7 @@ export type MatchNote = {
   alt: string;
 };
 
-/** Room names are short words. Older hex codes still count. */
+// room names are short words now, but old links with hex codes still have to work
 export function isRoomName(room: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(room) && room.length >= 2 && room.length <= 32;
 }

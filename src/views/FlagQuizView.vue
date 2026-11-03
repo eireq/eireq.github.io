@@ -204,7 +204,7 @@ const { t } = useI18n();
 const route = useRoute();
 const challengeCopied = ref(false);
 
-/** Answers live outside Vue state so Element/Vue panels don't casually leak them. */
+// answers live outside vue state so you can't just read them off the devtools panel
 const answerVault = new Map();
 
 const flags = ref([]);

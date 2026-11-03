@@ -189,7 +189,7 @@
               :src="imageUrl(flag.svgUrl)"
               alt=""
               loading="lazy"
-              @error="hideBrokenImage($event, flag.name)"
+              @error="$event.currentTarget.hidden = true"
             />
             <span class="flag-row__name">{{ flag.name }}</span>
             <span class="flag-row__category">{{ displayCategory(flag) }}</span>
@@ -232,7 +232,14 @@
 <script setup>
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { flagSlug, loadFlagIndex, loadFlags } from "../data/flags.js";
+import {
+  flagSlug,
+  isSubdivision,
+  isTerritory,
+  loadFlagIndex,
+  loadFlags,
+  subdivisionCountry,
+} from "../data/flags.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
@@ -253,26 +260,6 @@ const yearFilter = ref("");
 const designerFilter = ref("any");
 const viewMode = ref(window.localStorage.getItem("flagdb-view") === "cards" ? "cards" : "list");
 const currentPage = ref(1);
-const subdivisionCategories = new Set([
-  "Autonomous community",
-  "Canton",
-  "County",
-  "Federal district",
-  "Federal territory",
-  "Province",
-  "Region",
-  "Republic",
-  "State",
-  "US State",
-]);
-const territoryNames = new Set([
-  "Flag of Aruba",
-  "Flag of Cook Islands",
-  "Flag of Curaçao",
-  "Flag of Greenland",
-  "Flag of Niue",
-  "Flag of Sint Maarten",
-]);
 
 onMounted(async () => {
   flags.value = await loadFlagIndex();
@@ -297,14 +284,14 @@ const categories = computed(() =>
 );
 
 const collections = [
-  { id: "all", label: "All flags" },
-  { id: "territories", label: "Territories" },
-  { id: "international", label: "International bodies" },
-  { id: "pride", label: "Pride flags" },
-  { id: "soviet", label: "Soviet flags" },
-  { id: "historical", label: "Historical states" },
-  { id: "revolutionary", label: "Revolutionary flags" },
-  { id: "arab", label: "Pan-Arab / Arab flags" },
+  { id: "all", label: "all flags" },
+  { id: "territories", label: "territories" },
+  { id: "international", label: "international bodies" },
+  { id: "pride", label: "pride flags" },
+  { id: "soviet", label: "soviet flags" },
+  { id: "historical", label: "historical states" },
+  { id: "revolutionary", label: "revolutionary flags" },
+  { id: "arab", label: "pan-arab / arab flags" },
 ];
 
 const colorQuery = computed(() => {
@@ -459,7 +446,7 @@ function setView(mode) {
   try {
     window.localStorage.setItem("flagdb-view", mode);
   } catch {
-    /* private mode */
+    // private mode, the view just resets next visit
   }
 }
 
@@ -519,143 +506,6 @@ function matchesCollection(flag) {
   return true;
 }
 
-function isSubdivision(flag) {
-  return subdivisionCategories.has(flag.category);
-}
-
-function subdivisionCountry(flag) {
-  const name = flag.name || "";
-  const subdivisionName = name.replace(/^Flag of /, "");
-
-  if (flag.category === "Autonomous community") return "Spain";
-  if (flag.category === "Canton") return "Switzerland";
-  if (flag.category === "County") return "United Kingdom";
-  if (flag.category === "Federal district") return "Brazil";
-  if (flag.category === "Federal territory") return "Malaysia";
-  if (flag.category === "Region") return "Belgium";
-  if (flag.category === "US State") return "United States";
-  if (flag.category === "Province") {
-    if (dutchProvinces.has(subdivisionName)) return "Netherlands";
-    if (canadianProvinces.has(subdivisionName)) return "Canada";
-    return "";
-  }
-  if (flag.category === "Republic") {
-    return subdivisionName === "Crimea" ? "Ukraine" : "Russia";
-  }
-  if (flag.category === "State") {
-    return stateCountryByName.get(subdivisionName) || "";
-  }
-  return "";
-}
-
-const canadianProvinces = new Set([
-  "Alberta",
-  "British Columbia",
-  "Manitoba",
-  "New Brunswick",
-  "Newfoundland and Labrador",
-  "Nova Scotia",
-  "Ontario",
-  "Prince Edward Island",
-  "Quebec",
-  "Saskatchewan",
-]);
-
-const dutchProvinces = new Set([
-  "Groningen",
-  "Friesland",
-  "Drenthe",
-  "Overijssel",
-  "Gelderland",
-  "Utrecht",
-  "North Holland",
-  "South Holland",
-  "Zeeland",
-  "North Brabant",
-  "Limburg",
-  "Flevoland",
-]);
-
-const stateCountryByName = new Map([
-  ...[
-    "Acre",
-    "Alagoas",
-    "Amapá",
-    "Amazonas",
-    "Bahia",
-    "Ceará",
-    "Espírito Santo",
-    "Goiás",
-    "Maranhão",
-    "Mato Grosso",
-    "Mato Grosso do Sul",
-    "Minas Gerais",
-    "Pará",
-    "Paraíba",
-    "Paraná",
-    "Pernambuco",
-    "Piauí",
-    "Rio de Janeiro",
-    "Rio Grande do Norte",
-    "Rio Grande do Sul",
-    "Rondônia",
-    "Roraima",
-    "Santa Catarina",
-    "São Paulo",
-    "Sergipe",
-    "Tocantins",
-  ].map((name) => [name, "Brazil"]),
-  ...[
-    "Baden-Württemberg",
-    "Bavaria",
-    "Berlin",
-    "Brandenburg",
-    "Bremen",
-    "Hamburg",
-    "Hesse",
-    "Lower Saxony",
-    "Mecklenburg-Vorpommern",
-    "North Rhine-Westphalia",
-    "Rhineland-Palatinate",
-    "Saarland",
-    "Saxony",
-    "Saxony-Anhalt",
-    "Schleswig-Holstein",
-    "Thuringia",
-  ].map((name) => [name, "Germany"]),
-  ...[
-    "Johor",
-    "Kedah",
-    "Kelantan",
-    "Melaka",
-    "Negeri Sembilan",
-    "Pahang",
-    "Penang",
-    "Perak",
-    "Perlis",
-    "Sabah",
-    "Sarawak",
-    "Selangor",
-    "Terengganu",
-  ].map((name) => [name, "Malaysia"]),
-  ...[
-    "New South Wales",
-    "Queensland",
-    "South Australia",
-    "Tasmania",
-    "Victoria",
-    "Western Australia",
-  ].map((name) => [name, "Australia"]),
-  ...["Chuuk", "Kosrae", "Pohnpei", "Yap"].map((name) => [
-    name,
-    "Federated States of Micronesia",
-  ]),
-]);
-
-function isTerritory(flag) {
-  return flag.category === "Territory" || territoryNames.has(flag.name);
-}
-
 function displayCategory(flag) {
   if (isTerritory(flag)) return "Territory / dependency";
   return isSubdivision(flag) ? "Subdivision" : flag.category;
@@ -666,7 +516,7 @@ function imageUrl(url) {
 }
 
 function formatDate(value) {
-  if (!value) return "Unknown";
+  if (!value) return "unknown";
   const parts = parseDateParts(value);
   if (parts?.year < 0) {
     const year = `${Math.abs(parts.year)} BCE`;
@@ -705,11 +555,6 @@ function colorText(color) {
   if (color && typeof color === "object")
     return color.name || color.color || JSON.stringify(color);
   return "";
-}
-
-function hideBrokenImage(event, flagName) {
-  console.log("Flag image failed to load:", flagName);
-  event.currentTarget.hidden = true;
 }
 </script>
 

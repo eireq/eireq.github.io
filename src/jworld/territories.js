@@ -1,6 +1,5 @@
 import { normalizeGeometry } from "./geometry.js";
 
-/** Polygon coordinate arrays for each territory part. */
 export function listTerritoryPolygons(geometry) {
   const geo = normalizeGeometry(geometry);
   if (!geo) return [];
@@ -19,10 +18,8 @@ function entryCount(entry) {
   return Number.isFinite(count) && count > 1 ? Math.floor(count) : 1;
 }
 
-/**
- * One row per named territory. `count` is how many polygons share that name.
- * Older saves stored one {name} per polygon and stay one island per row.
- */
+// one row per named territory. `count` is how many polygons share that name
+// older saves stored one {name} per polygon and stay one island per row
 export function territoryGroups(geometry, storedEntries, fallbackName = "") {
   const parts = listTerritoryPolygons(geometry);
   const entries = Array.isArray(storedEntries) ? storedEntries : [];
@@ -61,7 +58,6 @@ export function territoryGroups(geometry, storedEntries, fallbackName = "") {
   return groups;
 }
 
-/** Expand groups so each polygon has the territory name it belongs to. */
 export function expandGroupNames(groups, partCount) {
   const names = [];
   for (const group of groups || []) {
@@ -75,7 +71,6 @@ export function expandGroupNames(groups, partCount) {
   return names.slice(0, partCount);
 }
 
-/** Raw name strings aligned with territory polygons. */
 export function listTerritoryNames(countryOrPayload, geometry = null) {
   const geo = geometry || countryOrPayload?.geometry;
   const parts = listTerritoryPolygons(geo);
@@ -87,7 +82,7 @@ export function listTerritoryNames(countryOrPayload, geometry = null) {
   return expandGroupNames(groups, parts.length);
 }
 
-/** Display label like "Gibraltar (United Kingdom)". */
+// display label like "Gibraltar (United Kingdom)"
 export function formatTerritoryLabel(territoryName, countryName) {
   const place = String(territoryName || "").trim();
   const country = String(countryName || "").trim();
@@ -103,7 +98,7 @@ export function territoriesPayload(names) {
   }));
 }
 
-/** Rebuild geometry + name list after removing one part. */
+// rebuild geometry + name list after removing one part
 export function removeTerritoryAt(geometry, names, index) {
   const parts = listTerritoryPolygons(geometry);
   if (index < 0 || index >= parts.length) {
@@ -153,7 +148,6 @@ function groupSpans(groups) {
   });
 }
 
-/** Keep group counts aligned with the current polygons. */
 export function syncTerritoryGroups(geometry, groups, fallbackName = "") {
   const parts = listTerritoryPolygons(geometry);
   const next = [];
@@ -180,10 +174,8 @@ export function syncTerritoryGroups(geometry, groups, fallbackName = "") {
   return next;
 }
 
-/**
- * Combine the chosen groups into one name.
- * Islands stay separate polygons; they just share the name.
- */
+// combine the chosen groups into one name
+// islands stay separate polygons; they just share the name
 export function mergeTerritoryGroups(geometry, groups, indexes, name) {
   const parts = listTerritoryPolygons(geometry);
   const spans = groupSpans(groups);
@@ -231,7 +223,7 @@ export function mergeTerritoryGroups(geometry, groups, indexes, name) {
   };
 }
 
-/** Turn one multi-island territory back into one row per island. */
+// turn one multi-island territory back into one row per island
 export function splitTerritoryGroup(groups, index) {
   const group = groups?.[index];
   if (!group || (Number(group.count) || 1) <= 1) {
@@ -257,7 +249,7 @@ export function splitTerritoryGroup(groups, index) {
   ];
 }
 
-/** Drop one named territory and the polygons that belong to it. */
+// drop one named territory and the polygons that belong to it
 export function removeTerritoryGroup(geometry, groups, index) {
   const parts = listTerritoryPolygons(geometry);
   const spans = groupSpans(groups);
@@ -282,7 +274,6 @@ export function removeTerritoryGroup(geometry, groups, index) {
   };
 }
 
-/** Ensure names array length matches polygon count. */
 export function syncTerritoryNames(geometry, names, fallbackName = "") {
   const parts = listTerritoryPolygons(geometry);
   return parts.map((_, i) => {
@@ -293,7 +284,6 @@ export function syncTerritoryNames(geometry, names, fallbackName = "") {
   });
 }
 
-/** Attach territory groups onto a payload's geography. */
 export function withTerritoryGroups(payload, groups) {
   return {
     ...payload,
@@ -308,7 +298,6 @@ export function withTerritoryGroups(payload, groups) {
   };
 }
 
-/** Attach territory name list onto a payload's geography. */
 export function withTerritoryNames(payload, names) {
   return withTerritoryGroups(
     payload,

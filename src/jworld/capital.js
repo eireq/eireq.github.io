@@ -1,6 +1,6 @@
-/** Star shows once the map is zoomed into a region. */
+// star shows once the map is zoomed into a region
 export const CAPITAL_STAR_ZOOM = 5;
-/** Wiki capital name appears one zoom step closer than the star. */
+// wiki capital name appears one zoom step closer than the star
 export const CAPITAL_NAME_ZOOM = 6;
 
 function wrapLng(lng) {
@@ -11,7 +11,7 @@ function wrapLng(lng) {
   return x;
 }
 
-/** { lat, lng } when the country has a saved capital point. */
+// { lat, lng } when the country has a saved capital point
 export function capitalPointOf(country) {
   const point = country?.geography?.capital_point;
   if (!point || typeof point !== "object") return null;
@@ -22,11 +22,9 @@ export function capitalPointOf(country) {
   return { lat, lng };
 }
 
-/**
- * Name to draw next to the star.
- * Prefers the wiki Capital field. The map list does not always include that
- * column, so saves also copy it onto geography.capital_name.
- */
+// name to draw next to the star
+// prefers the wiki Capital field. the map list does not always include that
+// column, so saves also copy it onto geography.capital_name
 export function capitalLabelOf(country) {
   const fromWiki = country?.capital;
   if (typeof fromWiki === "string" && fromWiki.trim()) return fromWiki.trim();
@@ -35,7 +33,7 @@ export function capitalLabelOf(country) {
   return "";
 }
 
-/** Keep geography.capital_name aligned with the wiki Capital field. */
+// keep geography.capital_name aligned with the wiki Capital field
 export function mirrorCapitalName(payload) {
   if (!payload || typeof payload !== "object") return payload;
   const geography = {
@@ -49,7 +47,7 @@ export function mirrorCapitalName(payload) {
   return { ...payload, geography };
 }
 
-/** Copy of a country with geography.capital_point set or removed. */
+// copy of a country with geography.capital_point set or removed
 export function withCapitalPoint(country, point) {
   const geography = {
     ...(country?.geography && typeof country.geography === "object"
@@ -63,7 +61,7 @@ export function withCapitalPoint(country, point) {
   const lat = Number(point.lat);
   const lng = wrapLng(Number(point.lng));
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng)) {
-    throw new Error("That point is off the map.");
+    throw new Error("that point is off the map.");
   }
   geography.capital_point = {
     lat: Math.round(lat * 1e5) / 1e5,

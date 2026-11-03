@@ -88,7 +88,7 @@ async function start() {
   }
   members.value = data || [];
   if (!otherMembers.value.length) {
-    error.value = "No other players to transfer to.";
+    error.value = "there's nobody else to give it to.";
   }
 }
 
@@ -104,7 +104,7 @@ async function confirmTransfer() {
   const label = target?.display_name || "that player";
   if (
     !confirm(
-      `Transfer “${props.country.official_name}” to ${label}? They will become the owner.`,
+      `give “${props.country.official_name}” to ${label}? it'll be theirs from now on.`,
     )
   ) {
     return;

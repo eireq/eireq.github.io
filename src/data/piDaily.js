@@ -16,7 +16,7 @@ export function batchSize(mastered, length = PI_DECIMALS.length) {
   return Math.min(size, length - mastered);
 }
 
-/** Growing slices of today's new digits, so the quiz builds up. */
+// the quiz asks for the first 3 new digits, then a few more, then all of them
 export function prefixCuts(length) {
   if (length <= 3) return [length];
   const cuts = [3];

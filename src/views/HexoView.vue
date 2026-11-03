@@ -116,7 +116,6 @@
         </button>
       </div>
 
-
       <div v-if="showSettings" class="setup">
         <div class="choice">
           <button
@@ -489,7 +488,7 @@
           </label>
           <div v-if="draft.mode === 'practice'" class="choice">
             <button
-              v-for="side in ['X', 'O', 'Y', 'Z'].slice(0, draft.players)"
+              v-for="side in SIDES.slice(0, draft.players)"
               :key="side"
               type="button"
               :aria-pressed="draft.human === side"
@@ -510,59 +509,7 @@
             <span>rules</span>
             <button type="button" @click="closeRules">close</button>
           </div>
-          <div class="rules">
-            <p>
-              X places one stone on the center, h8 on base 8 and m13 on base 13.
-              Every later turn is two stones, and O takes the first of them.
-            </p>
-            <p>Six in a line, on any of the three axes, wins. That move ends with #.</p>
-            <p>
-              Check means the side to move can finish a line with the stones still left this turn.
-              The stones already in the run are marked.
-            </p>
-            <p>The side to move may resign. The other side wins. A clock runs only on the turn.</p>
-            <p>Type a square, such as g7, to play it. Flip turns the board around.</p>
-            <p>
-              Together: pick a room name. It keeps the game, and the board size.
-              You start as X. Send the invite. With two players they are O, and rematch swaps sides.
-              With three or four, invite O, Y, and Z on their own buttons.
-              The box under the moves is chat.
-            </p>
-            <template v-if="!rulesBrief">
-            <p>
-              Triangle, square, and octagon use the same turns. On the octagon board you also play in the diamonds.
-              Radial is rings and spokes. Six around a ring, or six outward on a spoke.
-              Pentagon fills five sides with the same triangles.
-            </p>
-            <p>
-              Duck: after your stones, move the duck. No one plays on it. King duck also quiets the ring around it.
-            </p>
-            <p>
-              Egyptian sets a soft cap. Over it, lift up to 2 of your older stones, or leave them.
-              An echo never lifts a stone.
-            </p>
-            <p>
-              Echo copies a stone onto its mirror after two full turns. A duck echo moves the duck only if it is still on that cell.
-              Orbit then turns every stone one step. The duck stays.
-              Meteor, every third turn, clears the farthest ring. A copy born on that turn stays.
-            </p>
-            <p>Raid: after your stones, take one of theirs. It becomes yours.</p>
-            <p>Slide: the second action can move one of your stones onto an empty neighbor.</p>
-            <p>Frost: a stone placed this turn does not count in a line until the turn ends.</p>
-            <p>Pair: the two stones of a turn have to share a side. The opening stone is free.</p>
-            <p>Scatter: the two stones of a turn must not share a side.</p>
-            <p>Siege: after the opening, every stone is placed beside an opponent's stone.</p>
-            <p>
-              Pendulum: when everyone has taken a turn, each stone steps one ring toward the center.
-              The center stone stays.
-            </p>
-            <p>Mine: the second action can plant a mine. The next stone played there is lost, and the mine is gone.</p>
-            <p v-if="bloom">
-              Rift bloom: the shimmering cells move each turn. Play on one and a ghost grows on the mirror.
-              It becomes a stone if two of your stones touch it before it fades.
-            </p>
-            </template>
-          </div>
+          <HexoRules :brief="rulesBrief" :bloom="bloom" />
         </div>
       </div>
     </Teleport>
@@ -587,26 +534,31 @@ import {
 } from "@/games/hexo/logic.ts";
 import { gameBoard } from "@/games/hexo/grids.ts";
 import {
-  actionCode,
   botPick,
   decodeAlt,
   decodeLog,
   encodeAlt,
   encodeLog,
   isPlain,
-  parseCode,
   playerAt,
   project,
 } from "@/games/hexo/rules.ts";
 import { connectMatch, isRoomName } from "@/games/hexo/online.ts";
 import { useFullscreen } from "@/games/fullscreen.js";
 import FullscreenButton from "@/games/FullscreenButton.vue";
+import HexoRules from "@/games/hexo/HexoRules.vue";
+import { formatClock } from "@/games/clock.js";
+import {
+  SIDES,
+  cleanRoom,
+  codeOf,
+  freshClock,
+  historyFrom,
+  isSide,
+  makeCode,
+} from "@/games/hexo/saved.ts";
 
 const route = useRoute();
-
-function isSide(value) {
-  return value === "X" || value === "O" || value === "Y" || value === "Z";
-}
 
 function querySize() {
   return asSize(route.query.b);
@@ -637,41 +589,12 @@ function readRoom() {
   const room = typeof route.query.p === "string" ? route.query.p.toLowerCase() : "";
   if (!isRoomName(room)) return null;
   const minutes = route.query.min === "5" || route.query.min === "10" ? Number(route.query.min) : 0;
-  const s = route.query.s;
   return {
     room,
-    seat: s === "O" || s === "Y" || s === "Z" ? s : "X",
+    seat: isSide(route.query.s) ? route.query.s : "X",
     minutes,
     size: querySize(),
   };
-}
-
-function parseMoveList(list, boardSize) {
-  if (!Array.isArray(list)) return null;
-  const letters = boardFor(asSize(boardSize)).letters;
-  const pattern = new RegExp(`^([${letters}])(\\d{1,2})$`);
-  const moves = [];
-  for (const part of list) {
-    const found = pattern.exec(String(part));
-    if (!found) return null;
-    moves.push({ letter: found[1], number: Number(found[2]) });
-  }
-  return applyMoves(moves, asSize(boardSize)) ? moves : null;
-}
-
-function historyFrom(list, boardSize, alt) {
-  const next = decodeAlt(alt || "");
-  if (isPlain(next)) return parseMoveList(list, boardSize);
-  if (!Array.isArray(list)) return null;
-  const table = gameBoard(next.grid, asSize(boardSize));
-  const acts = [];
-  for (const part of list) {
-    const act = parseCode(String(part));
-    if (!act) return null;
-    if (act.kind !== "pass" && !table.byKey[act.key]) return null;
-    acts.push(act);
-  }
-  return project(acts, next, table) ? acts : null;
 }
 
 function loadRoom(name) {
@@ -689,27 +612,12 @@ function loadRoom(name) {
   }
 }
 
-function cleanRoom(raw) {
-  return String(raw || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 24);
-}
-
-function makeCode() {
-  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
-}
-
+// per tab, not per browser, so two tabs on one laptop can play each other
 function playerId() {
   const key = "hexo-player";
   const existing = window.sessionStorage.getItem(key);
   if (existing) return existing;
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
   const id = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   window.sessionStorage.setItem(key, id);
   return id;
@@ -718,6 +626,8 @@ function playerId() {
 const selfId = playerId();
 const joined = readRoom();
 const remembered = joined ? loadRoom(joined.room) : null;
+
+// a link always beats whatever setup you played last time
 function savedSetup() {
   const urlOwns = Boolean(route.query.b || route.query.alt || route.query.r || route.query.p);
   if (urlOwns) return null;
@@ -755,7 +665,7 @@ const openedSeat =
 const size = ref(openedSize);
 const rules = ref(openedRules);
 const variant = computed(() => !isPlain(rules.value));
-const sides = computed(() => ["X", "O", "Y", "Z"].slice(0, rules.value.players));
+const sides = computed(() => SIDES.slice(0, rules.value.players));
 const board = computed(() =>
   variant.value ? gameBoard(rules.value.grid, size.value) : boardFor(size.value),
 );
@@ -819,7 +729,7 @@ try {
     rulesBrief.value = true;
   }
 } catch {
-  /* private mode keeps the board clear */
+  // no storage means no intro either
 }
 const guidesOn = ref(window.localStorage.getItem("hexo-guides") !== "off");
 const hoverKey = ref(null);
@@ -900,7 +810,7 @@ const ruleSwitches = computed(() => {
     {
       id: "king",
       label: "king duck",
-      note: "the ring around the duck is closed. stones there do not count.",
+      note: "the ring around the duck is closed. stones there don't count.",
       on: draft.king,
       toggle: () => setKing(!draft.king),
     },
@@ -961,7 +871,7 @@ const ruleSwitches = computed(() => {
     {
       id: "frost",
       label: "frost",
-      note: "a new stone does not count until the turn ends.",
+      note: "a new stone doesn't count until the turn ends.",
       on: draft.frost,
       toggle: () => {
         draft.frost = !draft.frost;
@@ -1420,18 +1330,8 @@ function openedClock() {
 }
 
 function nextSeat(side) {
-  const order = ["X", "O", "Y", "Z"].slice(0, rules.value.players);
-  const index = order.indexOf(side);
-  return order[(index + 1) % order.length] || "O";
-}
-
-function freshClock(ms) {
-  return { X: ms, O: ms, Y: ms, Z: ms };
-}
-
-function codeOf(move) {
-  if (move?.kind) return actionCode(move);
-  return `${move.letter}${move.number}`;
+  const order = sides.value;
+  return order[(order.indexOf(side) + 1) % order.length] || "O";
 }
 
 function rulesFromDraft() {
@@ -1466,8 +1366,7 @@ function pokeBloom() {
 
 function setPlayers(count) {
   draft.players = count;
-  const names = ["X", "O", "Y", "Z"].slice(0, count);
-  if (!names.includes(draft.human)) draft.human = "X";
+  if (!SIDES.slice(0, count).includes(draft.human)) draft.human = "X";
 }
 
 function setDuck(on) {
@@ -1502,25 +1401,12 @@ function toggleSetup() {
   variantHint.value = "";
   showSetup.value = !showSetup.value;
   if (showSetup.value) {
-    draft.size = size.value;
-    draft.grid = rules.value.grid;
-    draft.players = rules.value.players;
-    draft.duck = rules.value.duck;
-    draft.king = rules.value.king;
-    draft.cap = rules.value.cap > 0;
-    draft.capN = rules.value.cap || 12;
-    draft.echo = rules.value.echo;
-    draft.orbit = rules.value.orbit;
-    draft.meteor = rules.value.meteor;
-    draft.rift = rules.value.rift;
-    draft.raid = rules.value.raid;
-    draft.slide = rules.value.slide;
-    draft.frost = rules.value.frost;
-    draft.pair = rules.value.pair;
-    draft.scatter = rules.value.scatter;
-    draft.siege = rules.value.siege;
-    draft.pendulum = rules.value.pendulum;
-    draft.mine = rules.value.mine;
+    // the draft holds the cap as a checkbox plus a number, the rules hold one number
+    Object.assign(draft, rules.value, {
+      size: size.value,
+      cap: rules.value.cap > 0,
+      capN: rules.value.cap || 12,
+    });
     showSettings.value = false;
     closeRules();
   }
@@ -1530,7 +1416,7 @@ function rememberIntro() {
   try {
     window.localStorage.setItem("hexo-intro", "1");
   } catch {
-    /* private mode */
+    // private mode, it'll just show again next time
   }
 }
 
@@ -1581,13 +1467,6 @@ function markR(cell) {
 function duckBeak(cell) {
   const u = (cell.m || 7) * 0.55;
   return `M ${cell.x + u * 0.15} ${cell.y - u * 0.05} L ${cell.x + u * 1.35} ${cell.y - u * 0.42} L ${cell.x + u * 0.15} ${cell.y + u * 0.32} Z`;
-}
-
-function formatClock(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000 - 1e-9));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function botSide() {
@@ -2894,18 +2773,6 @@ button:focus-visible {
   color: #aaa;
   font-size: 14px;
   line-height: 1.4;
-}
-
-.rules {
-  display: grid;
-  gap: 10px;
-  color: #bbb;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.rules p {
-  margin: 0;
 }
 
 .choice button {

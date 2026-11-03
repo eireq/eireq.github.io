@@ -23,7 +23,7 @@ export function loadDailyProgress(dateKey = utcDateKey()) {
     const data = JSON.parse(raw);
     const sameDay = data.dateKey === dateKey;
     return {
-      dateKey: sameDay ? dateKey : dateKey,
+      dateKey,
       solved: Boolean(data.solved) && sameDay,
       failed: Boolean(data.failed) && sameDay,
       guesses: sameDay ? data.guesses || [] : [],

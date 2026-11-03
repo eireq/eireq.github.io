@@ -10,10 +10,10 @@ export function initRacing() {
   const ui = createUI();
 
   return () => {
-    ui?.destroy?.();
-    window.audio?.stopMenu?.();
-    window.audio?.stopGame?.();
-    window.game?.destroy?.();
+    ui.destroy();
+    window.audio.stopMenu();
+    window.audio.stopGame();
+    window.game.destroy();
     window.game = null;
     window.ui = null;
     window.audio = null;

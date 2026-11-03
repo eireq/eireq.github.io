@@ -1,7 +1,5 @@
-/**
- * Edge-connection games: bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y.
- * Stones are 0 empty, 1 red, 2 blue. Red moves first.
- */
+// the connection games: bluD!NG, Hex, TwixT, PÜNCT, Star, *Star, and Y.
+// cells hold 0 for empty, 1 for red, 2 for blue. red goes first
 
 const DIRS = [
   [1, 0],
@@ -1947,4 +1945,39 @@ export function publicOptions(state) {
 
 export function knownGame(id) {
   return GAME_IDS.has(id);
+}
+
+function firstValue(value) {
+  return Array.isArray(value) ? value[0] : value || "";
+}
+
+// turns a /connect link (or the last setup, when the link is bare) into the
+// options and moves to open with. a move list that doesn't replay cleanly
+// comes back as bad instead of a half-played board
+export function readLaunch(query, saved) {
+  const asked = firstValue(query.g);
+  const urlOwns = Boolean(asked || firstValue(query.n) || firstValue(query.m));
+  const last = urlOwns ? null : saved;
+  const id = knownGame(asked) ? asked : knownGame(last?.game) ? last.game : "hex";
+  const info = gameInfo(id);
+  const size = Number(firstValue(query.n) || (last ? last.size : ""));
+  const minutes = firstValue(query.min);
+  const options = {
+    game: id,
+    size: info.sizes.includes(size) ? size : info.sizeDefault,
+    pie: firstValue(query.pie) === "0" ? false : info.pie,
+    punctRules: firstValue(query.rules) === "basic" ? "basic" : "standard",
+    mode: firstValue(query.mode) === "practice" ? "practice" : "hotseat",
+    human: firstValue(query.as) === "blue" ? "blue" : "red",
+    minutes: minutes === "10" ? 10 : minutes === "5" ? 5 : 0,
+  };
+  const decoded = decodeMoves(firstValue(query.m));
+  const played = decoded.length ? replay(options, decoded) : null;
+  const flag = firstValue(query.flag);
+  return {
+    options,
+    moves: played && !played.error ? decoded : [],
+    bad: Boolean(played?.error),
+    flag: flag === "red" || flag === "blue" ? flag : null,
+  };
 }

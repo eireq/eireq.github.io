@@ -78,7 +78,7 @@
         </button>
         <p v-if="joinError" class="jw-error">{{ joinError }}</p>
         <p v-if="!configured" class="jw-error">
-          Supabase is not configured. Set VITE_SUPABASE_URL and
+          supabase isn't set up. set VITE_SUPABASE_URL and
           VITE_SUPABASE_ANON_KEY.
         </p>
       </form>
@@ -97,7 +97,7 @@
           v-if="session && session.hasPassword === false"
           class="jworld-password-banner"
         >
-          <p>Set a password so you can sign in on other devices.</p>
+          <p>set a password so you can sign in from your other devices too.</p>
           <input
             v-model="newPassword"
             type="password"
@@ -134,7 +134,7 @@
             }}
           </button>
           <p class="jw-beta-note">
-            Snap saves the whole country. Click inside the outline. Coastlines are simplified, so drag the handles before saving.
+            snap grabs the whole real country, so click inside its outline. the coastlines are simplified, so drag the handles around before you save.
           </p>
           <button class="jw-btn jw-btn--ghost" type="button" @click="leave">
             Sign out
@@ -336,7 +336,7 @@
         <div v-if="showSavePanel" class="jworld-create-panel">
           <h2>{{ editingCountryId ? "Save borders" : "New country" }}</h2>
           <p v-if="!editingCountryId" class="jworld-toast jw-create-hint">
-            Name the country and save. The wiki can be filled in afterward.
+            name it and save. you can fill in the wiki later.
           </p>
           <button
             v-if="editingCountryId"
@@ -374,7 +374,7 @@
     >
       <form class="jworld-modal-card" @submit.prevent="confirmMerge">
         <h2>Merge territories</h2>
-        <p>What name for the merged territory?</p>
+        <p>what should the merged territory be called?</p>
         <label>
           Territory name
           <input
@@ -411,7 +411,7 @@
       <form class="jworld-modal-card" @submit.prevent="confirmTerritoryName">
         <h2>Name this territory</h2>
         <p>
-          Shown as “Name ({{ territoryPrompt.countryName }})”.
+          it'll show up as “name ({{ territoryPrompt.countryName }})”.
         </p>
         <label>
           Territory name
@@ -505,7 +505,7 @@ const listFilter = ref("all");
 const loadError = ref("");
 const mapEl = ref(null);
 const selectedId = ref(null);
-const banner = ref("Click a country or create one with the polygon tool.");
+const banner = ref("click a country, or draw your own with the polygon tool.");
 const remoteNotice = ref("");
 const draftGeometry = ref(null);
 const editingCountryId = ref(null);
@@ -720,9 +720,9 @@ async function pollForChanges() {
   const result = await refreshCountries();
   if (result?.conflict && editingId && showSavePanel.value) {
     remoteNotice.value =
-      "Someone else saved this country. Close the panel and edit again before saving over them.";
+      "someone else just saved this country. close the panel and edit again so you don't save over them.";
   } else if (!editingId && !addingTerritory.value && !snapActive.value) {
-    remoteNotice.value = "Someone else saved a country. The map has their latest borders.";
+    remoteNotice.value = "someone else saved a country, the map has their new borders.";
   }
 }
 
@@ -772,9 +772,9 @@ async function refreshCountries() {
   );
   mapApi?.setSelected(selectedId.value);
   if (stats && stats.total > 0 && stats.rendered === 0) {
-    banner.value = `Loaded ${stats.total} countries but none had drawable borders. Re-save borders on each.`;
+    banner.value = `loaded ${stats.total} countries but none of them have borders to draw. re-save the borders on each one.`;
   } else if (stats && stats.skipped > 0) {
-    banner.value = `Showing ${stats.rendered}/${stats.total} countries (${stats.skipped} missing borders).`;
+    banner.value = `showing ${stats.rendered}/${stats.total} countries (${stats.skipped} have no borders).`;
   }
   return { conflict };
 }
@@ -805,12 +805,12 @@ async function bootMap() {
       if (!editingCountryId.value) {
         formSeed.value = emptyCountryPayload();
         showSavePanel.value = true;
-        banner.value = "Polygon drawn — name your country and save.";
+        banner.value = "nice. now name your country and save.";
       } else {
-        banner.value = "Borders updated — click Save borders.";
+        banner.value = "borders changed, hit Save borders when you're done.";
         ensureFullCountry(editingCountryId.value)
           .catch((err) => {
-            banner.value = err.message || "Could not load this country.";
+            banner.value = err.message || "couldn't load this country.";
           })
           .finally(() => {
             showSavePanel.value = true;
@@ -824,10 +824,10 @@ async function bootMap() {
         try {
           await ensureFullCountry(editingCountryId.value);
         } catch (err) {
-          banner.value = err.message || "Could not load this country.";
+          banner.value = err.message || "couldn't load this country.";
         }
       }
-      banner.value = "Borders edited — save when ready.";
+      banner.value = "borders edited, save whenever you're ready.";
       showSavePanel.value = true;
     },
   });
@@ -866,7 +866,7 @@ function cancelSnap() {
   snapLoading.value = false;
   snapActive.value = false;
   mapApi?.endSnapToShape?.();
-  banner.value = "Snap cancelled.";
+  banner.value = "snap cancelled.";
 }
 
 function cancelDrawing() {
@@ -883,7 +883,7 @@ function cancelDrawing() {
   editBaselineUpdatedAt.value = null;
   pendingFlag.value = null;
   mapApi?.clearDraw();
-  banner.value = "Cancelled. The saved country is unchanged.";
+  banner.value = "cancelled. the saved country didn't change.";
 }
 
 function startCreate() {
@@ -899,21 +899,21 @@ function startCreate() {
   showSavePanel.value = false;
   mapApi?.endSnapToShape?.();
   banner.value =
-    "Click points to draw. The yellow/red point is the start — click it again to close.";
+    "click to drop points. the yellow/red one is the start, click it again to close the shape.";
   activeDrawer = mapApi?.beginNewCountry() || null;
 }
 
 function snapGuard() {
   return {
     onMiss: () => {
-      banner.value = "No land there — click inside a yellow country outline.";
+      banner.value = "that's water. click inside one of the yellow outlines.";
     },
     onApproximate: (hit) => {
-      banner.value = `That's near ${hit.name}. Click inside the yellow fill so the wrong outline isn't saved.`;
+      banner.value = `that's close to ${hit.name}. click inside the yellow fill so you don't save the wrong outline.`;
     },
     onLowResolution: () => {
       banner.value =
-        "These outlines are too coarse to save as borders. Draw the country yourself.";
+        "these outlines are too rough to save as borders, so draw the country yourself.";
     },
   };
 }
@@ -929,7 +929,7 @@ async function startSnapCreate() {
   showSavePanel.value = false;
   snapLoading.value = true;
   snapActive.value = false;
-  banner.value = "Loading real-world outlines…";
+  banner.value = "loading real-world outlines…";
 
   try {
     await mapApi?.beginSnapToShape({
@@ -938,7 +938,7 @@ async function startSnapCreate() {
         snapLoading.value = false;
         snapActive.value = true;
         banner.value =
-          "Click inside a yellow outline. The whole country is saved, not one island.";
+          "click inside a yellow outline. you get the whole country, not just one island.";
       },
       onSelect: (hit) => {
         snapLoading.value = false;
@@ -956,7 +956,7 @@ async function startSnapCreate() {
           [placeName],
         );
         showSavePanel.value = true;
-        banner.value = `Snapped to ${hit.name}. Drag the handles if the coast is too rough, then save.`;
+        banner.value = `snapped to ${hit.name}. drag the handles if the coast looks too rough, then save.`;
         mapApi?.loadCountryIntoDraw?.({
           id: "snap-draft",
           geometry: hit.geometry,
@@ -969,7 +969,7 @@ async function startSnapCreate() {
     toolActive.value = false;
     snapLoading.value = false;
     snapActive.value = false;
-    banner.value = err.message || "Could not load world shapes.";
+    banner.value = err.message || "couldn't load the world outlines.";
   }
 }
 
@@ -980,7 +980,7 @@ async function editBorders(country) {
   try {
     full = await ensureFullCountry(country.id);
   } catch (err) {
-    banner.value = err.message || "Could not load this country.";
+    banner.value = err.message || "couldn't load this country.";
     return;
   }
   toolActive.value = true;
@@ -992,7 +992,7 @@ async function editBorders(country) {
   pendingFlag.value = null;
   showSavePanel.value = false;
   banner.value =
-    "Drag corner points to reshape. The yellow/red point is the ring start. Then Save borders.";
+    "drag the corners to reshape. the yellow/red point is where the ring starts. hit Save borders when you're done.";
   mapApi?.loadCountryIntoDraw(full);
   mapApi?.focusCountry(full);
 }
@@ -1007,7 +1007,7 @@ function revertBorders() {
       geometry: borderBaseline.value,
     });
   }
-  banner.value = "Restored the saved borders.";
+  banner.value = "back to the saved borders.";
 }
 
 function addTerritory(country) {
@@ -1024,7 +1024,7 @@ function addTerritory(country) {
   showSavePanel.value = false;
   mapApi?.endSnapToShape?.();
   banner.value =
-    "Draw the extra territory. Click the yellow/red start point to close, then it saves.";
+    "draw the extra territory. click the yellow/red start point to close it and it saves.";
   activeDrawer = mapApi?.beginAddTerritory() || null;
 }
 
@@ -1040,7 +1040,7 @@ async function snapTerritory(country) {
   showSavePanel.value = false;
   snapLoading.value = true;
   snapActive.value = false;
-  banner.value = "Loading real-world outlines…";
+  banner.value = "loading real-world outlines…";
 
   try {
     await mapApi?.beginSnapToShape({
@@ -1048,12 +1048,12 @@ async function snapTerritory(country) {
       onReady: () => {
         snapLoading.value = false;
         snapActive.value = true;
-        banner.value = `Click inside a yellow outline to add that land to ${country.official_name}.`;
+        banner.value = `click inside a yellow outline to add that land to ${country.official_name}.`;
       },
       onSelect: (hit) => {
         snapLoading.value = false;
         snapActive.value = false;
-        banner.value = `Snapping ${hit.name} onto ${country.official_name}…`;
+        banner.value = `snapping ${hit.name} onto ${country.official_name}…`;
         commitAddedTerritory(hit.partGeometry || hit.geometry, hit.name || "");
       },
     });
@@ -1063,7 +1063,7 @@ async function snapTerritory(country) {
     snapActive.value = false;
     addingTerritory.value = false;
     editingCountryId.value = null;
-    banner.value = err.message || "Could not load world shapes.";
+    banner.value = err.message || "couldn't load the world outlines.";
   }
 }
 
@@ -1102,7 +1102,7 @@ async function commitAddedTerritory(newPolygon, territoryName = "") {
     placeName = await askTerritoryName(country.official_name);
     if (placeName == null) {
       addingTerritory.value = false;
-      banner.value = "Territory cancelled.";
+      banner.value = "territory cancelled.";
       mapApi?.clearDraw();
       return;
     }
@@ -1110,12 +1110,12 @@ async function commitAddedTerritory(newPolygon, territoryName = "") {
 
   saving.value = true;
   saveError.value = "";
-  banner.value = "Saving new territory…";
+  banner.value = "saving the new territory…";
 
   try {
     const full = await ensureFullCountry(country.id);
     const merged = mergeGeometries(full.geometry, newPolygon);
-    if (!merged) throw new Error("Could not merge territory geometry.");
+    if (!merged) throw new Error("couldn't merge the territory shapes.");
     const borderError = savableGeometryError(merged);
     if (borderError) throw new Error(borderError);
 
@@ -1155,8 +1155,8 @@ async function commitAddedTerritory(newPolygon, territoryName = "") {
     await refreshCountries();
     mapApi?.focusCountry({ ...country, geometry: merged });
   } catch (err) {
-    banner.value = err.message || "Failed to add territory.";
-    saveError.value = err.message || "Failed to add territory.";
+    banner.value = err.message || "couldn't add the territory.";
+    saveError.value = err.message || "couldn't add the territory.";
   } finally {
     saving.value = false;
   }
@@ -1164,7 +1164,7 @@ async function commitAddedTerritory(newPolygon, territoryName = "") {
 
 async function openWiki(country) {
   if (!country?.id) {
-    banner.value = "Select a country first.";
+    banner.value = "pick a country first.";
     return;
   }
   try {
@@ -1176,16 +1176,16 @@ async function openWiki(country) {
 }
 
 async function onOwnershipTransferred(result) {
-  const name = result?.official_name || selected.value?.official_name || "Country";
+  const name = result?.official_name || selected.value?.official_name || "the country";
   const owner = result?.owner_display_name || "new owner";
-  banner.value = `Transferred ${name} to ${owner}.`;
+  banner.value = `${name} now belongs to ${owner}.`;
   await refreshCountries();
 }
 
 function togglePlaceCapital() {
   if (placingCapital.value) {
     stopPlacingCapital();
-    banner.value = "Capital placement cancelled.";
+    banner.value = "ok, no capital.";
     return;
   }
   const country = selected.value;
@@ -1210,7 +1210,7 @@ async function saveCapitalPoint(countryId, point) {
   banner.value = point ? "Saving capital…" : "Removing capital…";
   try {
     const full = await ensureFullCountry(countryId);
-    if (!canEdit(full)) throw new Error("You can only place a capital on your own country.");
+    if (!canEdit(full)) throw new Error("you can only put a capital in your own country.");
     const next = withCapitalPoint(full, point);
     const payload = countryToPayload(next);
     const { error } = await updateCountry(
@@ -1223,16 +1223,16 @@ async function saveCapitalPoint(countryId, point) {
     if (error) throw new Error(error);
     const label = capitalLabelOf(next);
     if (!point) {
-      banner.value = `Removed the capital of ${full.official_name}.`;
+      banner.value = `removed ${full.official_name}'s capital.`;
     } else if (label) {
-      banner.value = `${label} is marked. The star shows as you zoom in, and the name one step closer.`;
+      banner.value = `${label} is on the map. the star shows up as you zoom in, and the name one step after that.`;
     } else {
-      banner.value = `Capital placed for ${full.official_name}. Add its name in the wiki to label the star.`;
+      banner.value = `capital placed for ${full.official_name}. put its name in the wiki to label the star.`;
     }
     await refreshCountries();
     if (point) mapApi?.showCapital(point);
   } catch (err) {
-    banner.value = err.message || "Could not save the capital.";
+    banner.value = err.message || "couldn't save the capital.";
   } finally {
     saving.value = false;
   }
@@ -1266,7 +1266,7 @@ async function openSavePanel() {
         editBaselineUpdatedAt.value = full.updated_at || null;
       }
     } catch (err) {
-      saveError.value = err.message || "Could not load this country.";
+      saveError.value = err.message || "couldn't load this country.";
     }
   }
   showSavePanel.value = true;
@@ -1274,7 +1274,7 @@ async function openSavePanel() {
 
 function openMerge(country) {
   if (!canMerge(country)) {
-    banner.value = "This country is already one territory.";
+    banner.value = "this country is already one territory.";
     return;
   }
   selectedId.value = country.id;
@@ -1294,7 +1294,7 @@ async function confirmMerge() {
   if (!session.value || !country) return;
   const name = mergeNameDraft.value.trim();
   if (!name) {
-    mergeError.value = "Enter a name.";
+    mergeError.value = "it needs a name.";
     return;
   }
   mergeSaving.value = true;
@@ -1307,7 +1307,7 @@ async function confirmMerge() {
       full.official_name,
     );
     if (groups.length < 2) {
-      mergeError.value = "This country is already one territory.";
+      mergeError.value = "this country is already one territory.";
       return;
     }
     const merged = mergeTerritoryGroups(
@@ -1329,10 +1329,10 @@ async function confirmMerge() {
     );
     if (error) throw new Error(error);
     mergePrompt.value = false;
-    banner.value = `Territories merged as ${name}.`;
+    banner.value = `merged into ${name}.`;
     await refreshCountries();
   } catch (err) {
-    mergeError.value = err.message || "Could not merge territories.";
+    mergeError.value = err.message || "couldn't merge those territories.";
   } finally {
     mergeSaving.value = false;
   }
@@ -1363,7 +1363,7 @@ async function saveCountry(payload, formGeometry = null) {
       formCountry.value?.geometry;
 
     if (!editingCountryId.value && !geometry) {
-      saveError.value = "Draw a polygon on the map before saving.";
+      saveError.value = "draw a shape on the map first.";
       saving.value = false;
       return;
     }
@@ -1438,7 +1438,7 @@ async function saveCountry(payload, formGeometry = null) {
         if (up.error) {
           await refreshCountries();
           throw new Error(
-            `Country created, but the flag did not upload: ${up.error}`,
+            `the country's saved, but the flag didn't upload: ${up.error}`,
           );
         }
         const saved = await updateCountry(
@@ -1451,7 +1451,7 @@ async function saveCountry(payload, formGeometry = null) {
         if (saved.error) {
           await refreshCountries();
           throw new Error(
-            `Country created, but the flag did not save: ${saved.error}`,
+            `the country's saved, but the flag didn't stick: ${saved.error}`,
           );
         }
       }
@@ -1468,7 +1468,7 @@ async function saveCountry(payload, formGeometry = null) {
     banner.value = targetId ? "Borders / country saved." : "Country created.";
     await refreshCountries();
   } catch (err) {
-    saveError.value = err.message || "Save failed.";
+    saveError.value = err.message || "saving didn't work.";
   } finally {
     saving.value = false;
   }

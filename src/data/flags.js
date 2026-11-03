@@ -65,7 +65,8 @@ function slugHash(value) {
   return hash.toString(36);
 }
 
-/** Stable detail id. Old numeric links still resolve by index. */
+// the url id for a flag page. it has to stay the same between builds, or shared
+// links break. really old links used the array index, findFlag still takes those
 export function flagSlug(flag) {
   const file = String(flag?.svgUrl || flag?.image || "").split("/").pop();
   const name = slugPart(`${flag?.category || ""}-${flag?.name || ""}`);
@@ -121,47 +122,136 @@ export function displayCategory(flag) {
   return flag?.category || "Uncategorized";
 }
 
+const CANADIAN_PROVINCES = new Set([
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Nova Scotia",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+]);
+
+const DUTCH_PROVINCES = new Set([
+  "Groningen",
+  "Friesland",
+  "Drenthe",
+  "Overijssel",
+  "Gelderland",
+  "Utrecht",
+  "North Holland",
+  "South Holland",
+  "Zeeland",
+  "North Brabant",
+  "Limburg",
+  "Flevoland",
+]);
+
+const STATE_COUNTRY = new Map([
+  ...[
+    "Acre",
+    "Alagoas",
+    "Amapá",
+    "Amazonas",
+    "Bahia",
+    "Ceará",
+    "Espírito Santo",
+    "Goiás",
+    "Maranhão",
+    "Mato Grosso",
+    "Mato Grosso do Sul",
+    "Minas Gerais",
+    "Pará",
+    "Paraíba",
+    "Paraná",
+    "Pernambuco",
+    "Piauí",
+    "Rio de Janeiro",
+    "Rio Grande do Norte",
+    "Rio Grande do Sul",
+    "Rondônia",
+    "Roraima",
+    "Santa Catarina",
+    "São Paulo",
+    "Sergipe",
+    "Tocantins",
+  ].map((name) => [name, "Brazil"]),
+  ...[
+    "Baden-Württemberg",
+    "Bavaria",
+    "Berlin",
+    "Brandenburg",
+    "Bremen",
+    "Hamburg",
+    "Hesse",
+    "Lower Saxony",
+    "Mecklenburg-Vorpommern",
+    "North Rhine-Westphalia",
+    "Rhineland-Palatinate",
+    "Saarland",
+    "Saxony",
+    "Saxony-Anhalt",
+    "Schleswig-Holstein",
+    "Thuringia",
+  ].map((name) => [name, "Germany"]),
+  ...[
+    "Johor",
+    "Kedah",
+    "Kelantan",
+    "Melaka",
+    "Negeri Sembilan",
+    "Pahang",
+    "Penang",
+    "Perak",
+    "Perlis",
+    "Sabah",
+    "Sarawak",
+    "Selangor",
+    "Terengganu",
+  ].map((name) => [name, "Malaysia"]),
+  ...[
+    "New South Wales",
+    "Queensland",
+    "South Australia",
+    "Tasmania",
+    "Victoria",
+    "Western Australia",
+  ].map((name) => [name, "Australia"]),
+  ...["Chuuk", "Kosrae", "Pohnpei", "Yap"].map((name) => [name, "Federated States of Micronesia"]),
+]);
+
+// "" means we don't know, and the flag db leaves it out of the country picker
 export function subdivisionCountry(flag) {
-  const name = flag?.name || "";
-  const subdivisionName = name.replace(/^Flag of /i, "");
-
-  if (flag.category === "Autonomous community") return "Spain";
-  if (flag.category === "Canton") return "Switzerland";
-  if (flag.category === "County") return "United Kingdom";
-  if (flag.category === "Federal district") return "Brazil";
-  if (flag.category === "Federal territory") return "Malaysia";
-  if (flag.category === "Region") return "Belgium";
-  if (flag.category === "US State") return "United States";
-
-  if (flag.category === "Province") {
-    if (/canada|alberta|ontario|quebec|manitoba|saskatchewan|british columbia|nova scotia|new brunswick|newfoundland|prince edward|nunavut|yukon|northwest territories/i.test(name)) {
-      return "Canada";
-    }
-    if (/netherlands|holland|friesland|gelderland|limburg|utrecht|zeeland|drenthe|overijssel|flevoland|groningen/i.test(name)) {
-      return "Netherlands";
-    }
-    return "Other";
+  const name = (flag.name || "").replace(/^Flag of /, "");
+  switch (flag.category) {
+    case "Autonomous community":
+      return "Spain";
+    case "Canton":
+      return "Switzerland";
+    case "County":
+      return "United Kingdom";
+    case "Federal district":
+      return "Brazil";
+    case "Federal territory":
+      return "Malaysia";
+    case "Region":
+      return "Belgium";
+    case "US State":
+      return "United States";
+    case "Province":
+      if (DUTCH_PROVINCES.has(name)) return "Netherlands";
+      if (CANADIAN_PROVINCES.has(name)) return "Canada";
+      return "";
+    case "Republic":
+      return name === "Crimea" ? "Ukraine" : "Russia";
+    case "State":
+      return STATE_COUNTRY.get(name) || "";
+    default:
+      return "";
   }
-
-  if (flag.category === "State") {
-    if (/germany|bayer|baden|berlin|hamburg|hessen|niedersachsen|nordrhein|rheinland|saarland|sachsen|schleswig|thüringen|thuringen|bremen|brandenburg|mecklenburg/i.test(name)) {
-      return "Germany";
-    }
-    if (/brazil|brasil/i.test(name)) return "Brazil";
-    if (/india|pradesh|bengal|gujarat|rajasthan|maharashtra|kerala|punjab|tamil|karnataka/i.test(name)) {
-      return "India";
-    }
-    return "Other";
-  }
-
-  if (flag.category === "Republic") {
-    if (/russia|russian|dagestan|tatarstan|chechnya|bashkortostan|yakutia|sakha|karelia|kalmykia|buryatia|tuva|altai|adygea|ingushetia|kabardino|karachay|mordovia|udmurt|chuvash|mari el|komi|khakassia|north ossetia/i.test(name)) {
-      return "Russia";
-    }
-    return "Other";
-  }
-
-  return subdivisionName.split(",")[0] || "Other";
 }
 
 export const QUIZ_MODE_VALUES = [
@@ -173,32 +263,20 @@ export const QUIZ_MODE_VALUES = [
   "all",
 ];
 
-/** Modes that already exist in production Supabase check constraints. */
-export const LEGACY_QUIZ_MODES = [
-  "countries",
-  "territorial",
-  "historical",
-  "all",
-];
-
 export function filterFlagsByMode(flags, mode) {
-  const list = Array.isArray(flags) ? flags : [];
-
   switch (mode) {
-    case "countries":
-      return list.filter(isCountry);
     case "territorial":
-      return list.filter(isTerritory);
+      return flags.filter(isTerritory);
     case "historical":
-      return list.filter(isHistorical);
+      return flags.filter(isHistorical);
     case "subdivisions":
-      return list.filter(isSubdivision);
+      return flags.filter(isSubdivision);
     case "organizations":
-      return list.filter(isOrganization);
+      return flags.filter(isOrganization);
     case "all":
-      return list.filter((flag) => Boolean(flag?.svgUrl && flag?.name));
+      return flags.filter((flag) => flag.svgUrl && flag.name);
     default:
-      return list.filter(isCountry);
+      return flags.filter(isCountry);
   }
 }
 

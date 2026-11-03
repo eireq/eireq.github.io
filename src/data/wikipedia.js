@@ -1,3 +1,5 @@
+import { resolveUploadUrl } from "./flagImageCache.js";
+
 const summaryCache = new Map();
 const svgMetaCache = new Map();
 
@@ -95,7 +97,7 @@ export async function fetchFlagArticle(flagName) {
       const page = Object.values(data?.query?.pages || {})[0];
       if (page?.extract) fullText = page.extract;
     } catch {
-      // summary extract is enough as fallback
+      // the short summary is fine if the full article won't load
     }
 
     const article = {
@@ -147,7 +149,7 @@ function ratioFromSize(width, height) {
     [1.777, "16:9"],
     [2, "2:1"],
   ];
-  // also common flag ratios expressed height:width style as width:height
+  // flags write ratios height first (2:3, not 3:2), so those labels win
   const flagRatios = [
     [1.5, "2:3"],
     [1.666, "3:5"],
@@ -210,43 +212,13 @@ function extractMetaFromSvg(svgText) {
   };
 }
 
-async function resolveSvgUrl(svgUrl) {
-  const url = svgUrl?.replace(/^http:/, "https:");
-  if (!url) return null;
-
-  if (url.includes("upload.wikimedia.org/")) return url;
-
-  const fileName = decodeURIComponent(
-    url.split("/").pop() || "",
-  ).replace(/\+/g, " ");
-  if (!fileName) return url;
-
-  try {
-    const params = new URLSearchParams({
-      action: "query",
-      titles: `File:${fileName}`,
-      prop: "imageinfo",
-      iiprop: "url",
-      format: "json",
-      origin: "*",
-    });
-    const data = await wikiJson(
-      `https://commons.wikimedia.org/w/api.php?${params}`,
-    );
-    const page = Object.values(data?.query?.pages || {})[0];
-    return page?.imageinfo?.[0]?.url || url;
-  } catch {
-    return url;
-  }
-}
-
 export async function extractSvgMeta(svgUrl) {
   const empty = { colors: [], proportions: null };
   if (!svgUrl) return empty;
   if (svgMetaCache.has(svgUrl)) return svgMetaCache.get(svgUrl);
 
   try {
-    const resolved = await resolveSvgUrl(svgUrl);
+    const resolved = await resolveUploadUrl(svgUrl);
     const response = await fetch(resolved);
     if (!response.ok) {
       svgMetaCache.set(svgUrl, empty);
@@ -264,10 +236,4 @@ export async function extractSvgMeta(svgUrl) {
     svgMetaCache.set(svgUrl, empty);
     return empty;
   }
-}
-
-/** @deprecated use extractSvgMeta */
-export async function extractColorsFromSvg(svgUrl) {
-  const meta = await extractSvgMeta(svgUrl);
-  return meta.colors;
 }

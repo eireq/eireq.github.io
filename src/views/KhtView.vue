@@ -237,17 +237,16 @@ function scoreFor(round, match, side) {
 
 function roundName(index) {
   const remaining = rounds.value[index]?.length || 0;
-  if (remaining === 1) return "Final";
-  if (remaining === 2) return "Semi-finals";
-  if (remaining === 4) return "Quarter-finals";
-  return `Round ${index + 1}`;
+  if (remaining === 1) return "final";
+  if (remaining === 2) return "semi-finals";
+  if (remaining === 4) return "quarter-finals";
+  return `round ${index + 1}`;
 }
 
 async function requestLogin() {
   loginPending.value = true;
   const result = await sendKhtLogin(email.value.trim());
-  loginMessage.value =
-    result.error || "Check your email for the owner login link.";
+  loginMessage.value = result.error || "check your email for the login link.";
   loginPending.value = false;
 }
 

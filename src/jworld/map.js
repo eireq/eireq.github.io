@@ -38,10 +38,8 @@ L.Icon.Default.mergeOptions({
 const FLAG_FILL_OPACITY = 0.85;
 const EMPTY_FILL_OPACITY = 0.5;
 
-/**
- * Local SVG paint URL. Do NOT use the page path (e.g. /jworld#id) — on GitHub
- * Pages that 404s and returns the SPA redirect HTML, so the flag never paints.
- */
+// a bare #id, never the page path (/jworld#id). on GitHub Pages that path 404s into
+// the SPA redirect html and the flag never paints
 function svgPaintUrl(patternId) {
   return `url(#${patternId})`;
 }
@@ -63,7 +61,7 @@ function geometryToLatLngs(geometry) {
   );
 }
 
-/** One latlng-ring-list per territory (so each can get its own flag). */
+// one latlng-ring-list per territory (so each can get its own flag)
 function territoryLatLngList(geometry) {
   const geo = normalizeGeometry(geometry);
   if (!geo) return [];
@@ -82,7 +80,7 @@ export function layerToGeoJSONGeometry(layer) {
   return geo?.geometry || null;
 }
 
-/** Combine polygons into one MultiPolygon (e.g. UK + Gibraltar). */
+// combine polygons into one MultiPolygon (e.g. UK + Gibraltar)
 export function mergeGeometries(existing, addition) {
   const base = normalizeGeometry(existing);
   const add = normalizeGeometry(addition);
@@ -110,8 +108,8 @@ function ensureDefs(svg) {
 
 function paintFlag(layer, path, patternId) {
   const paint = svgPaintUrl(patternId);
-  // Leaflet's own style updates copy options.fillColor onto the path.
-  // Keep the pattern URL there so pan, zoom, and selection do not paint blue over the flag.
+  // Leaflet's own style updates copy options.fillColor onto the path
+  // keep the pattern URL there so pan, zoom, and selection do not paint blue over the flag
   layer.options.fillColor = paint;
   layer.options.fillOpacity = FLAG_FILL_OPACITY;
   path.setAttribute("fill", paint);
@@ -134,7 +132,7 @@ function updateFlagPattern(map, layer, patternKey, flagUrl) {
   if (!svg) return;
 
   const defs = ensureDefs(svg);
-  // Unique pattern per territory so each gets a full flag in its own bounds.
+  // unique pattern per territory so each gets a full flag in its own bounds
   const safeId = String(patternKey).replace(/[^a-zA-Z0-9]/g, "");
   const patternId = `jworldflag${safeId}`;
   let pattern = svg.getElementById(patternId);
@@ -165,7 +163,7 @@ function updateFlagPattern(map, layer, patternKey, flagUrl) {
     }
   }
 
-  // Size the flag to THIS territory only (not the whole MultiPolygon bbox).
+  // size the flag to THIS territory only (not the whole MultiPolygon bbox)
   const bounds = layer.getBounds?.();
   if (!bounds || !bounds.isValid()) return;
 
@@ -386,7 +384,7 @@ export function createJworldMap(container, options = {}) {
     stopLayerEditing();
     if (!activeTool) return;
     try {
-      // Commit in-progress vertex edits before disable (disable can revert).
+      // commit in-progress vertex edits before disable (disable can revert)
       if (typeof activeTool.save === "function") activeTool.save();
       activeTool.disable();
     } catch {
@@ -404,7 +402,7 @@ export function createJworldMap(container, options = {}) {
       iconAnchor: isFirst ? [7, 7] : [5, 5],
     });
 
-  /** Make the first draw/edit vertex obvious (the one you click to close). */
+  // make the first draw/edit vertex obvious (the one you click to close)
   function highlightFirstVertex() {
     const markers = activeTool?._markers;
     if (!Array.isArray(markers) || !markers.length) return;
@@ -416,8 +414,8 @@ export function createJworldMap(container, options = {}) {
         marker.setZIndexOffset?.(1000);
         const el = marker.getElement?.() || marker._icon;
         if (el) {
-          el.title = "Start point — click here to close the shape";
-          el.setAttribute("aria-label", "Start point — click here to close the shape");
+          el.title = "start point, click here to close the shape";
+          el.setAttribute("aria-label", "start point, click here to close the shape");
         }
       }
     });
@@ -461,14 +459,14 @@ export function createJworldMap(container, options = {}) {
         if (index === 0) {
           marker.setZIndexOffset?.(1000);
           const el = marker.getElement?.() || marker._icon;
-          if (el) el.title = "Start point of this ring";
+          if (el) el.title = "start point of this ring";
         }
       });
     });
   }
 
   function enableVertexEditingOnDrawLayer() {
-    // Prefer the toolbar pencil handler (same code path as clicking it).
+    // prefer the toolbar pencil handler (same code path as clicking it)
     const toolbarEdit = drawControl?._toolbars?.edit?._modes?.edit?.handler;
     if (toolbarEdit) {
       try {
@@ -481,7 +479,7 @@ export function createJworldMap(container, options = {}) {
       return true;
     }
 
-    // Fallback: enable each polygon's built-in editor.
+    // fallback: enable each polygon's built-in editor
     let enabledAny = false;
     drawLayer.eachLayer((layer) => {
       if (!layer.editing) return;
@@ -588,7 +586,7 @@ export function createJworldMap(container, options = {}) {
         Boolean(entry.__jworldEditable),
         id === selectedCountryId,
       );
-      // Stroke only. Passing fillColor would replace the flag URL Leaflet stores.
+      // stroke only. passing fillColor would replace the flag URL Leaflet stores
       eachTerritoryPart(entry, (layer) => layer.setStyle(style));
     }
   }
@@ -634,7 +632,7 @@ export function createJworldMap(container, options = {}) {
           country.official_name,
         );
 
-        // One polygon layer per territory → each gets a full flag fill.
+        // one polygon layer per territory → each gets a full flag fill
         territories.forEach((latlngs, index) => {
           const part = L.polygon(latlngs, style);
           const label = formatTerritoryLabel(
@@ -690,7 +688,7 @@ export function createJworldMap(container, options = {}) {
           drawError: {
             color: "#d96a6a",
             timeout: 2000,
-            message: "Edges can't cross",
+            message: "edges can't cross",
           },
           shapeOptions: {
             color: "#cbb98a",
@@ -726,7 +724,7 @@ export function createJworldMap(container, options = {}) {
     });
 
     map.on(L.Draw.Event.DRAWVERTEX, () => {
-      // Defer so leaflet-draw finishes adding the marker first.
+      // defer so leaflet-draw finishes adding the marker first
       requestAnimationFrame(highlightFirstVertex);
     });
   }
@@ -756,12 +754,12 @@ export function createJworldMap(container, options = {}) {
     return drawer;
   }
 
-  /** Draw an extra polygon to attach to an existing country. */
+  // draw an extra polygon to attach to an existing country
   function beginAddTerritory() {
     return beginNewCountry();
   }
 
-  /** Country paths keep pointer-events:auto even if the pane is none — disable them. */
+  // country paths keep pointer-events:auto even if the pane is none — disable them
   function setCountryHitTesting(enabled) {
     countriesLayer.eachLayer((group) => {
       const parts = group.__jworldParts || [];
@@ -775,7 +773,7 @@ export function createJworldMap(container, options = {}) {
 
   function handleSnapMapClick(event) {
     if (!snapMode || !snapCollection) return;
-    // worldCopyJump / Pacific views can yield lng outside [-180, 180].
+    // worldCopyJump / Pacific views can yield lng outside [-180, 180]
     const latlng = event.latlng?.wrap?.() || event.latlng;
     let hit = findShapeAtLatLng(snapCollection, latlng);
     if (hit && snapFine) hit = refineHit(snapFine, hit, latlng);
@@ -813,10 +811,8 @@ export function createJworldMap(container, options = {}) {
     }
   }
 
-  /**
-   * Click a real-world country/island to use its outline.
-   * Uses map-level hit testing (country layers otherwise steal clicks).
-   */
+  // click a real-world country/island to use its outline
+  // uses map-level hit testing (country layers otherwise steal clicks)
   async function beginSnapToShape({
     onSelect,
     onMiss,
@@ -856,7 +852,7 @@ export function createJworldMap(container, options = {}) {
 
     if (!snapMode) return false;
 
-    // Visual guide only — clicks go to the map, then point-in-polygon.
+    // visual guide only — clicks go to the map, then point-in-polygon
     snapLayer = L.geoJSON(snapCollection, {
       pane: "jworldSnap",
       interactive: false,
@@ -879,8 +875,8 @@ export function createJworldMap(container, options = {}) {
     stopActiveTool();
     drawLayer.clearLayers();
 
-    // Split MultiPolygon into simple polygons — leaflet-draw won't show
-    // vertex handles reliably on a single multi-polygon layer.
+    // split MultiPolygon into simple polygons — leaflet-draw won't show
+    // vertex handles reliably on a single multi-polygon layer
     const territories = territoryLatLngList(country.geometry);
     if (!territories.length) return null;
 
@@ -892,7 +888,7 @@ export function createJworldMap(container, options = {}) {
       drawLayer.addLayer(L.polygon(latlngs, style));
     });
 
-    // Same as clicking the pencil — must run after layers are in the group.
+    // same as clicking the pencil — must run after layers are in the group
     const ok = enableVertexEditingOnDrawLayer();
     if (!ok) {
       console.warn("jWorld: edit handler did not enable");
@@ -900,7 +896,7 @@ export function createJworldMap(container, options = {}) {
 
     requestAnimationFrame(() => {
       requestAnimationFrame(highlightEditFirstVertices);
-      // Second pass: toolbar enable is sometimes async for marker creation.
+      // second pass: toolbar enable is sometimes async for marker creation
       setTimeout(highlightEditFirstVertices, 50);
       setTimeout(highlightEditFirstVertices, 200);
     });
@@ -1004,7 +1000,7 @@ const BASEMAP_URL =
 const BASEMAP_ATTR =
   '&copy; <a href="https://basemap.queeniemella.cc/">queeniemella.cc</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-/** Small read-only map of one country's borders, for the wiki page. */
+// small read-only map of one country's borders, for the wiki page
 export function createCountryPreview(container, geometry, country = null) {
   const map = L.map(container, {
     zoomControl: true,

@@ -1,6 +1,6 @@
 import { filterFlagsByMode, seededIndex, shortName, utcDateKey } from "./flags.js";
 
-/** ISO-like week key: YYYY-Www */
+// iso week, like 2026-W44
 export function utcWeekKey(date = new Date()) {
   const utc = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
@@ -55,32 +55,20 @@ export function editorialEntries(flags) {
     .filter(Boolean);
 }
 
+// the written-up flags take turns. the plain country pool is only a fallback
+// in case none of them are in the corpus anymore
 export function pickFlagOfTheWeek(flags, weekKey = utcWeekKey()) {
+  const seed = `flag-of-the-week:${weekKey}`;
+  const picks = editorialEntries(flags);
+  if (picks.length) return { weekKey, ...picks[seededIndex(seed, picks.length)] };
+
   const pool = filterFlagsByMode(flags, "countries");
-  if (!pool.length && !flags.length) return null;
-
-  const preferred = Object.keys(EDITORIALS)
-    .map((name) => editorialFlag(flags, name))
-    .filter(Boolean);
-
-  const source = preferred.length ? preferred : pool;
-  if (!source.length) return null;
-  const flag = source[seededIndex(`flag-of-the-week:${weekKey}`, source.length)];
-  const name = shortName(flag);
-  const editorial = Object.keys(EDITORIALS).find((key) => {
-    const aliases = EDITORIAL_ALIASES[key] || [key.toLowerCase()];
-    return aliases.includes(name.toLowerCase());
-  });
-
+  if (!pool.length) return null;
+  const flag = pool[seededIndex(seed, pool.length)];
   return {
     weekKey,
     flag,
-    name,
-    blurb:
-      (editorial && EDITORIALS[editorial]) ||
-      EDITORIALS[name] ||
-      flag.funFact ||
-      flag.emblemMeaning ||
-      "A flag worth staring at for longer than usual.",
+    name: shortName(flag),
+    blurb: flag.funFact || flag.emblemMeaning || "A flag worth staring at for longer than usual.",
   };
 }

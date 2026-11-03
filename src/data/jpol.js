@@ -1,4 +1,4 @@
-/** jPol quiz metadata — question copy lives in i18n under jpol.q.<id> */
+// the question text itself is in i18n under jpol.q.<id>
 
 export const AXIS_KEYS = [
   "equality",
@@ -31,10 +31,8 @@ export const ISSUE_TAGS = [
   "science",
 ];
 
-/**
- * direction −1: agree → left pole; +1: agree → right pole
- * express: included in the 18-question short path (3 per axis)
- */
+// direction -1 means agreeing pulls you left on that axis, +1 pulls you right.
+// express questions are the 18 in the short quiz, 3 per axis.
 export const QUESTION_BANK = [
   // equality
   { id: "eq1", key: "equality", direction: -1, tags: ["economy", "welfare"], express: true },
@@ -234,7 +232,7 @@ function fromByte(byte) {
   return clampScore((byte / 255) * 2 - 1);
 }
 
-/** Compact shareable result token */
+// a result squeezed into a short url-safe code: version, mode, then one byte per score
 export function encodeResult(result) {
   const bytes = new Uint8Array([
     1,
@@ -290,7 +288,7 @@ export function pushHistory(entry) {
   try {
     window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
   } catch {
-    /* ignore quota */
+    // storage full. the result still shows, it just isn't kept
   }
   return next;
 }

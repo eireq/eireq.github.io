@@ -806,14 +806,18 @@ let pinch = null;
 let suppressClick = false;
 const PAN_DIST = 10;
 
+function cellKeyOf(node) {
+  return node?.closest("[data-cell]")?.getAttribute("data-cell") || null;
+}
+
+// once the viewport captures the pointer, events target the viewport itself,
+// so the cell under the finger has to be found by position
 function cellKeyAt(x, y) {
-  const hit = document.elementFromPoint(x, y);
-  return hit?.closest?.("[data-cell]")?.getAttribute("data-cell") || null;
+  return cellKeyOf(document.elementFromPoint(x, y));
 }
 
 function cellKeyFromEvent(event) {
-  const direct = event.target?.closest?.("[data-cell]")?.getAttribute("data-cell");
-  return direct || cellKeyAt(event.clientX, event.clientY);
+  return cellKeyOf(event.target) || cellKeyAt(event.clientX, event.clientY);
 }
 
 function ownPiece(key) {
@@ -830,7 +834,7 @@ function onPointerDown(event) {
   viewport.value?.focus({ preventScroll: true });
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   try {
-    viewport.value?.setPointerCapture?.(event.pointerId);
+    viewport.value?.setPointerCapture(event.pointerId);
   } catch {
     // the pointer can already be gone in some browsers
   }
@@ -965,14 +969,14 @@ function onBoardClick(event) {
     suppressClick = false;
     return;
   }
-  const key = event.target?.closest?.("[data-cell]")?.getAttribute("data-cell");
+  const key = cellKeyOf(event.target);
   const cell = key ? cellByKey[key] : null;
   if (cell) onCell(cell.index);
 }
 
 function onOver(event) {
   if (dragging.value) return;
-  const key = event.target?.closest?.("[data-cell]")?.getAttribute("data-cell");
+  const key = cellKeyOf(event.target);
   hoverIndex.value = key && cellByKey[key] ? cellByKey[key].index : null;
 }
 

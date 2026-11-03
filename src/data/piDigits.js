@@ -1,6 +1,6 @@
 const DECIMAL_PLACES = 1000;
 
-/** arctan(1/inv) * 10^places, truncated toward zero. */
+// arctan(1/inv) as a big integer scaled by 10^places
 function arctanInv(inv, places) {
   const invN = BigInt(inv);
   const invSq = invN * invN;
@@ -21,7 +21,9 @@ function arctanInv(inv, places) {
   return sum;
 }
 
-/** Decimal digits of pi after the point, via Machin's formula. */
+// machin's formula: pi = 16 arctan(1/5) - 4 arctan(1/239).
+// computed here instead of pasting 1000 digits into the file.
+// the 20 extra digits soak up rounding error at the end
 function piDecimals(decimals) {
   const guard = 20;
   const places = decimals + guard;

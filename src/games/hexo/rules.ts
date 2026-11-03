@@ -1,8 +1,6 @@
-/**
- * Extra HeXO tables. A plain two-player hex game never comes through here.
- * Placements, the duck, and lifts share one log so every browser plays the
- * same sequence.
- */
+// everything past plain HeXO: more players, other grids, and the optional rules.
+// a normal two-player hex game never touches this file.
+// stones, duck moves, and lifts all go in one log so every browser replays the same game
 
 import type { BoardSize, Coord } from "./logic.ts";
 import { gameBoard, type GameBoard, type Grid } from "./grids.ts";

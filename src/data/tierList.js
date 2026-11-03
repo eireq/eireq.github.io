@@ -60,7 +60,7 @@ export function labelInk(hex) {
 
 export function countryRecords(flags) {
   const list = filterFlagsByMode(flags, "countries")
-    .filter((flag) => flag?.svgUrl && flag?.name)
+    .filter((flag) => flag.svgUrl && flag.name)
     .map((flag) => {
       const name = shortName(flag);
       return {
@@ -71,12 +71,13 @@ export function countryRecords(flags) {
       };
     });
 
+  // a few countries have more than one flag in the corpus, so those get a slug suffix
   const counts = new Map();
   for (const country of list) {
     counts.set(country.name, (counts.get(country.name) || 0) + 1);
   }
   for (const country of list) {
-    if ((counts.get(country.name) || 0) > 1) {
+    if (counts.get(country.name) > 1) {
       country.id = `${country.name}#${country.slug.slice(-8)}`;
     }
   }
@@ -89,6 +90,7 @@ export async function loadCountryRecords() {
   return countryRecords(await loadFlags());
 }
 
+// this reads share links, imported PNGs, and old saves, so it trusts none of it
 export function sanitizeTierState(raw, validIds) {
   const allowed = validIds instanceof Set ? validIds : null;
   const title = String(raw?.title || "").slice(0, MAX_TITLE);
@@ -190,6 +192,8 @@ export function shareHash(state) {
   return `#t.${encodeTierShare(state)}`;
 }
 
+// the downloaded PNG carries the whole list in a tEXt chunk right before IEND,
+// so importing the image later brings the list back
 const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 const PNG_METADATA_KEY = "eireq-tier-list-v1";
 const PNG_TEXT = new TextEncoder();
@@ -297,7 +301,7 @@ export function writeTierStorage(state) {
     const clean = sanitizeTierState(state, null);
     localStorage.setItem(TIER_STORAGE_KEY, JSON.stringify(clean));
   } catch {
-    // private mode or a full quota — the page still works for this visit
+    // private mode or full storage. the list still works until the tab closes
   }
 }
 
@@ -348,7 +352,7 @@ function buildLayout(ctx, { title, subtitle, footer, tiers }) {
   const blocks = [];
   for (const tier of tiers) {
     const count = tier.ids.length;
-    const rows = Math.max(1, Math.ceil(count / columns) || 1);
+    const rows = Math.max(1, Math.ceil(count / columns));
     const height = BLOCK_PAD * 2 + rows * FLAG_H + (rows - 1) * GAP;
     const flags = tier.ids.map((id, index) => ({
       id,

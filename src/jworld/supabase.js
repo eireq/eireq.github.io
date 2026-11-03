@@ -10,12 +10,14 @@ export const jworldDb =
     ? createClient(config.url, config.anonKey)
     : null;
 
+const OFFLINE = "supabase isn't set up.";
+
 export function isJworldConfigured() {
   return Boolean(jworldDb);
 }
 
 function rpcError(error) {
-  return error?.message || "Request failed.";
+  return error?.message || "that didn't go through.";
 }
 
 function missingRpc(error) {
@@ -35,7 +37,7 @@ function sessionFromRpc(data) {
 }
 
 export async function joinWorld(inviteCode, displayName, password) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_join", {
     p_invite_code: inviteCode,
@@ -50,7 +52,7 @@ export async function joinWorld(inviteCode, displayName, password) {
 }
 
 export async function loginWorld(displayName, password) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_login", {
     p_display_name: displayName,
@@ -71,7 +73,7 @@ export async function logoutWorld(token) {
 }
 
 export async function resetWorldPassword(inviteCode, displayName, password) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_reset_password", {
     p_invite_code: inviteCode,
@@ -86,7 +88,7 @@ export async function resetWorldPassword(inviteCode, displayName, password) {
 }
 
 export async function setWorldPassword(token, password) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_set_password", {
     p_token: token,
@@ -100,8 +102,8 @@ export async function setWorldPassword(token, password) {
 }
 
 export async function listCountries(token) {
-  if (!jworldDb) return { data: [], error: "Supabase is not configured." };
-  if (!token) return { data: [], error: "Join jWorld to view the map." };
+  if (!jworldDb) return { data: [], error: OFFLINE };
+  if (!token) return { data: [], error: "join jWorld to see the map." };
 
   const { data, error } = await jworldDb.rpc("jworld_list_countries", {
     p_token: token,
@@ -110,8 +112,8 @@ export async function listCountries(token) {
 }
 
 export async function listMapCountries(token) {
-  if (!jworldDb) return { data: [], error: "Supabase is not configured." };
-  if (!token) return { data: [], error: "Join jWorld to view the map." };
+  if (!jworldDb) return { data: [], error: OFFLINE };
+  if (!token) return { data: [], error: "join jWorld to see the map." };
 
   const { data, error } = await jworldDb.rpc("jworld_list_map_countries", {
     p_token: token,
@@ -121,7 +123,7 @@ export async function listMapCountries(token) {
 }
 
 export async function countriesStamp(token) {
-  if (!jworldDb || !token) return { data: null, error: "Not signed in." };
+  if (!jworldDb || !token) return { data: null, error: "you're not signed in." };
   const { data, error } = await jworldDb.rpc("jworld_countries_stamp", {
     p_token: token,
   });
@@ -130,7 +132,7 @@ export async function countriesStamp(token) {
 }
 
 export async function getCountry(token, id) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
   const { data, error } = await jworldDb.rpc("jworld_get_country", {
     p_token: token,
     p_country_id: id,
@@ -141,19 +143,19 @@ export async function getCountry(token, id) {
     const country = (listed.data || []).find((c) => c.id === id) || null;
     return {
       data: country,
-      error: country ? null : "Country not found.",
+      error: country ? null : "couldn't find that country.",
     };
   }
   if (error) return { data: null, error: rpcError(error) };
   const country = (Array.isArray(data) ? data[0] : data) || null;
   return {
     data: country,
-    error: country ? null : "Country not found.",
+    error: country ? null : "couldn't find that country.",
   };
 }
 
 export async function createCountry(token, officialName, geometry, payload = {}) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_create_country", {
     p_token: token,
@@ -172,7 +174,7 @@ export async function updateCountry(
   geometry = null,
   expectedUpdatedAt = null,
 ) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const args = {
     p_token: token,
@@ -191,7 +193,7 @@ export async function updateCountry(
 }
 
 export async function deleteCountry(token, countryId) {
-  if (!jworldDb) return { error: "Supabase is not configured." };
+  if (!jworldDb) return { error: OFFLINE };
 
   const { error } = await jworldDb.rpc("jworld_delete_country", {
     p_token: token,
@@ -201,10 +203,10 @@ export async function deleteCountry(token, countryId) {
   return { error: error ? rpcError(error) : null };
 }
 
-/** Admin-only: members for ownership transfer picker. */
+// admin-only: members for ownership transfer picker
 export async function listMembers(token) {
-  if (!jworldDb) return { data: [], error: "Supabase is not configured." };
-  if (!token) return { data: [], error: "Not signed in." };
+  if (!jworldDb) return { data: [], error: OFFLINE };
+  if (!token) return { data: [], error: "you're not signed in." };
 
   const { data, error } = await jworldDb.rpc("jworld_list_members", {
     p_token: token,
@@ -212,11 +214,11 @@ export async function listMembers(token) {
   return { data: data || [], error: error ? rpcError(error) : null };
 }
 
-/** Admin-only: transfer a country to another member. */
+// admin-only: transfer a country to another member
 export async function transferCountry(token, countryId, newOwnerId) {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
-  if (!token) return { data: null, error: "Not signed in." };
-  if (!newOwnerId) return { data: null, error: "Pick a new owner." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
+  if (!token) return { data: null, error: "you're not signed in." };
+  if (!newOwnerId) return { data: null, error: "pick who gets it." };
 
   const { data, error } = await jworldDb.rpc("jworld_transfer_country", {
     p_token: token,
@@ -238,8 +240,8 @@ export function flagPublicUrl(flagPath) {
 }
 
 export async function uploadFlag(token, countryId, file, memberId = null) {
-  if (!jworldDb) return { path: null, error: "Supabase is not configured." };
-  if (!file) return { path: null, error: "No file selected." };
+  if (!jworldDb) return { path: null, error: OFFLINE };
+  if (!file) return { path: null, error: "pick a file first." };
 
   const ext = (file.name.split(".").pop() || "png").toLowerCase();
   const safeExt = ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext)
@@ -271,7 +273,7 @@ export async function uploadFlag(token, countryId, file, memberId = null) {
   return { path: error ? null : path, error: error ? rpcError(error) : null };
 }
 
-/** Remove the previous flag file after the country points at a new one. */
+// remove the previous flag file after the country points at a new one
 export async function deleteReplacedFlag(token, countryId, oldPath) {
   if (!jworldDb || !oldPath || !countryId) return;
   if (/^https?:\/\//i.test(oldPath) || oldPath.startsWith("data:")) return;
@@ -293,7 +295,7 @@ export async function deleteReplacedFlag(token, countryId, oldPath) {
 }
 
 export async function loadWorldMeta() {
-  if (!jworldDb) return { data: null, error: "Supabase is not configured." };
+  if (!jworldDb) return { data: null, error: OFFLINE };
 
   const { data, error } = await jworldDb.rpc("jworld_world_meta");
   return { data, error: error ? rpcError(error) : null };

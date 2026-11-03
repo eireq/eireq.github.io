@@ -377,10 +377,7 @@
             <span>rules</span>
             <button type="button" @click="closeRules">close</button>
           </div>
-          <div class="rules">
-            <p v-for="(line, index) in ruleLines" :key="index">{{ line }}</p>
-            <p>Type a square, such as h3, to play it. Flip turns the board around. A clock runs only on the turn.</p>
-          </div>
+          <ConnectRules :game="shown.game" />
         </div>
       </div>
     </Teleport>
@@ -392,6 +389,8 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useFullscreen } from "@/games/fullscreen.js";
 import FullscreenButton from "@/games/FullscreenButton.vue";
+import ConnectRules from "@/games/connect/ConnectRules.vue";
+import { formatClock } from "@/games/clock.js";
 import { chooseMove } from "@/games/connect/bot.js";
 import {
   GAMES,
@@ -399,16 +398,15 @@ import {
   apply,
   boardOf,
   botToMove,
-  decodeMoves,
   describeMove,
   encodeMoves,
   footprint,
   gameInfo,
   initialState,
-  knownGame,
   orientCount,
   punctView,
   rayCells,
+  readLaunch,
   replay,
   scoreState,
   sizeLabel,
@@ -422,48 +420,16 @@ const full = useFullscreen(shell);
 const svgEl = ref(null);
 const listEl = ref(null);
 
-function queryString(value) {
-  return Array.isArray(value) ? value[0] : value || "";
-}
-
-function readLaunch() {
-  const urlOwns = Boolean(
-    queryString(route.query.g) || queryString(route.query.n) || queryString(route.query.m),
-  );
-  let saved = null;
-  if (!urlOwns) {
-    try {
-      const raw = JSON.parse(window.localStorage.getItem("connect-setup") || "null");
-      if (raw && typeof raw === "object") saved = raw;
-    } catch {
-      saved = null;
-    }
+function savedSetup() {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem("connect-setup") || "null");
+    return raw && typeof raw === "object" ? raw : null;
+  } catch {
+    return null;
   }
-  const asked = queryString(route.query.g);
-  const id = knownGame(asked) ? asked : !urlOwns && knownGame(saved?.game) ? saved.game : "hex";
-  const info = gameInfo(id);
-  const n = Number(queryString(route.query.n) || (!urlOwns ? saved?.size : ""));
-  const options = {
-    game: id,
-    size: info.sizes.includes(n) ? n : info.sizeDefault,
-    pie: queryString(route.query.pie) === "0" ? false : info.pie,
-    punctRules: queryString(route.query.rules) === "basic" ? "basic" : "standard",
-    mode: queryString(route.query.mode) === "practice" ? "practice" : "hotseat",
-    human: queryString(route.query.as) === "blue" ? "blue" : "red",
-    minutes: queryString(route.query.min) === "10" ? 10 : queryString(route.query.min) === "5" ? 5 : 0,
-  };
-  const decoded = decodeMoves(queryString(route.query.m));
-  const played = decoded.length ? replay(options, decoded) : null;
-  const flag = queryString(route.query.flag);
-  return {
-    options,
-    moves: played && !played.error ? decoded : [],
-    bad: Boolean(played && played.error),
-    flag: flag === "red" || flag === "blue" ? flag : null,
-  };
 }
 
-const launch = readLaunch();
+const launch = readLaunch(route.query, savedSetup());
 const setup = ref(launch.options);
 const form = ref({ ...launch.options });
 const moves = ref(launch.moves);
@@ -488,7 +454,7 @@ function rememberGame(id) {
   try {
     window.localStorage.setItem("connect-intro", JSON.stringify([...seen]));
   } catch {
-    /* private mode */
+    // private mode, the intro just shows again next time
   }
 }
 
@@ -678,8 +644,6 @@ const statusText = computed(() => {
   return who;
 });
 
-const ruleLines = computed(() => RULES[shown.value.game] || []);
-
 const hubStar = computed(() => {
   if (board.value.game !== "sstar") return "";
   const outer = board.value.scale * 0.48;
@@ -695,13 +659,6 @@ const hubStar = computed(() => {
 
 function freshClock(minutes) {
   return minutes ? { red: minutes * 60000, blue: minutes * 60000 } : null;
-}
-
-function formatClock(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000 - 1e-9));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function shownClock(color) {
@@ -1340,46 +1297,6 @@ onUnmounted(() => {
   window.clearTimeout(typeTimer);
   window.clearInterval(clockTimer);
 });
-
-const RULES = {
-  bluding: [
-    "Red links the square dots and is trying to join the top row to the bottom. Blue links the round dots and is trying to join left to right.",
-    "A move draws one link between two of your dots that share a side. If that link would cross the other color, it is blocked.",
-    "After the first link, blue may swap seats. The link stays red. Undo and resign are in the panel.",
-  ],
-  hex: [
-    "Red joins the left edge to the right. Blue joins the top edge to the bottom. A corner counts for both edges it touches.",
-    "Take turns placing one stone on an empty hex. The first to join their two edges wins. The game cannot be drawn.",
-    "After the opening stone, blue may swap seats. Drag the board to pan, and use the wheel to zoom.",
-  ],
-  twixt: [
-    "The corners are missing. Red owns the top and bottom rows, blue the left and right, and neither may play in the other's border.",
-    "Place one peg, then add or remove your own links. A link joins two of your pegs a knight's move apart, and no link may cross another.",
-    "Pegs on your border belong to that border. Join the two borders with a chain of links. Then press done. After the first peg, blue may swap.",
-  ],
-  punct: [
-    "Each side has 18 pieces of three dots: four straight with the punct at an end, two with it in the middle, two angles of each hand, two with the punct on the corner, and six triangles. Red moves first.",
-    "Place a piece on three empty spaces, or move one you have already played. Its punct slides any distance in a straight line, over anything, and the piece may then rotate around that punct. R rotates the ghost.",
-    "To stack, land the punct on a dot of your own. Straight and angle pieces may bridge: the two ends rest on the same level and the middle dot hangs. A covered dot is blocked and drops out of the connection. Triangles cannot bridge.",
-    "Visible dots that share a side are connected, whatever their level. Either player may join any opposite pair. The three pairs are marked gold, green, and purple.",
-    "Standard: a new piece cannot touch the center nineteen, even in part. Only a move can enter it. If someone places their last piece and nobody has connected, the center majority wins. Basic lifts the center ban after the opening and draws if the pieces run out with no connection.",
-  ],
-  star: [
-    "The sides alternate, so the border has an odd count and the score cannot tie on a full board.",
-    "A connected group that touches three or more border cells scores two less than the number it touches. Groups that touch fewer score nothing.",
-    "Pass, or press score, when the rest cannot change the result. Two passes also ends it. Higher score wins. After the first stone, blue may swap.",
-  ],
-  sstar: [
-    "A pentagon of hexes. The star in the middle is empty. It joins all five cells around it, for both colors at once, so two stones of one color on that ring are connected even with the other color between them.",
-    "A star is one connected group that contains two or more edge cells. It owns those cells, and also the edge cells it surrounds and that no other star owns. Three or more corners are worth one extra point.",
-    "Count each player's stars. The player with fewer adds twice the difference; the other subtracts it. Higher score wins. A filled board cannot tie. Pass, or press score, to count early. Blue may swap after the first stone.",
-  ],
-  y: [
-    "Both players are trying to touch all three sides of the triangle. A corner belongs to both sides it sits on.",
-    "One stone on an empty hex each turn. The first to reach all three sides wins. There is no draw.",
-    "After the opening stone, blue may swap seats.",
-  ],
-};
 </script>
 
 <style scoped>
@@ -1649,15 +1566,6 @@ button[aria-pressed="true"],
   letter-spacing: 0.06em;
 }
 
-.rules {
-  display: grid;
-  gap: 10px;
-  color: #bbb;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.rules p,
 .empty {
   margin: 0 0 8px;
   color: #aaa;

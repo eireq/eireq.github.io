@@ -9,11 +9,8 @@ function cleanName(value, max = MAX_NAME) {
     .slice(0, max);
 }
 
-/**
- * Shared player name across games/tools.
- * Reads the unified key first, then migrates legacy racing name.
- * Writes both keys so existing racing score inserts keep working.
- */
+// one name for every game. lane runner used to keep its own, so that one gets
+// copied over once, and both keys are still written so racing scores keep working.
 export function getPlayerName() {
   const shared = cleanName(window.localStorage.getItem(PROFILE_KEY));
   if (shared) return shared;

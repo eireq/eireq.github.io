@@ -22,7 +22,7 @@ function textBlob(flag) {
     .join(" ");
 }
 
-export function designTags(flag) {
+function designTags(flag) {
   const text = textBlob(flag);
   return DESIGN_TAGS.filter(([, pattern]) => pattern.test(text)).map(
     ([tag]) => tag,
@@ -43,19 +43,14 @@ function paletteOf(flag, extraColors = []) {
   return [...new Set([...stored, ...extraColors])];
 }
 
+function rgb(hex) {
+  return [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
+}
+
 function colorDistance(a, b) {
-  const parse = (hex) => [
-    Number.parseInt(hex.slice(1, 3), 16),
-    Number.parseInt(hex.slice(3, 5), 16),
-    Number.parseInt(hex.slice(5, 7), 16),
-  ];
-  try {
-    const [ar, ag, ab] = parse(a);
-    const [br, bg, bb] = parse(b);
-    return Math.hypot(ar - br, ag - bg, ab - bb);
-  } catch {
-    return 999;
-  }
+  const [ar, ag, ab] = rgb(a);
+  const [br, bg, bb] = rgb(b);
+  return Math.hypot(ar - br, ag - bg, ab - bb);
 }
 
 function paletteScore(left, right) {
@@ -67,6 +62,8 @@ function paletteScore(left, right) {
   return hits * 3;
 }
 
+// a made-up points system. same category and shared design words count most,
+// close adoption years and matching colors add a bit. 0 means not related at all
 export function similarityScore(source, candidate, sourceColors = [], candidateColors = []) {
   if (!source || !candidate) return -1;
   if (source === candidate) return 0;
@@ -126,8 +123,4 @@ export function findSimilarFlags(source, flags, { limit = 6, colors = [] } = {})
     )
     .slice(0, limit)
     .map((entry) => entry.flag);
-}
-
-export function flagIndexInList(flags, flag) {
-  return flags.indexOf(flag);
 }

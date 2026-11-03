@@ -1,4 +1,4 @@
-/** Shared GeoJSON helpers for borders, area, and snap. */
+// shared GeoJSON helpers for borders, area, and snap
 
 export function normalizeGeometry(geometry) {
   if (!geometry) return null;
@@ -25,7 +25,7 @@ export function normalizeGeometry(geometry) {
   return geo;
 }
 
-/** Shift longitudes so a ring does not jump across the antimeridian. */
+// shift longitudes so a ring does not jump across the antimeridian
 export function unwrapRing(ring) {
   if (!ring?.length) return [];
   const out = [[Number(ring[0][0]), Number(ring[0][1])]];
@@ -48,7 +48,7 @@ function cross(origin, a, b) {
   return (a[0] - origin[0]) * (b[1] - origin[1]) - (a[1] - origin[1]) * (b[0] - origin[0]);
 }
 
-/** True when two segments properly cross (shared endpoints do not count). */
+// true when two segments properly cross (shared endpoints do not count)
 function segmentsCross(a, b, c, d) {
   if (samePoint(a, b) || samePoint(c, d)) return false;
   if (
@@ -112,12 +112,12 @@ export function geometrySelfIntersects(geometry) {
   return false;
 }
 
-/** Empty string when the geometry can be stored. */
+// empty string when the geometry can be stored
 export function savableGeometryError(geometry) {
   const geo = normalizeGeometry(geometry);
-  if (!geo) return "Draw a closed shape with at least 3 points.";
+  if (!geo) return "draw a closed shape with at least 3 points.";
   if (geometrySelfIntersects(geo)) {
-    return "Borders can't cross themselves. Undo the crossing edge, then save.";
+    return "borders can't cross themselves. undo the crossing edge, then save.";
   }
   return "";
 }

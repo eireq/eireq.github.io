@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { SITE, seoForPath } from "../seo.js";
+import { pageUrl, seoForPath } from "../seo.js";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -224,17 +224,17 @@ router.afterEach((to) => {
     description.setAttribute("content", seo.description);
   }
 
-  const canonicalUrl = `${SITE}${to.path === "/" ? "/" : to.path}`;
   let canonical = document.querySelector('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement("link");
     canonical.setAttribute("rel", "canonical");
     document.head.appendChild(canonical);
   }
-  canonical.setAttribute("href", canonicalUrl);
+  canonical.setAttribute("href", pageUrl(to.path));
 });
 
-/** After a redeploy, old tabs keep hashed chunk URLs that 404 — hard-reload once. */
+// after a deploy, a tab that was already open asks for old chunk files that
+// don't exist anymore. reload once to get the new ones, but not in a loop
 router.onError((error, to) => {
   const msg = error?.message || String(error);
   const staleChunk =

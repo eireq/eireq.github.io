@@ -1,8 +1,6 @@
-/**
- * Boards for the other HeXO tables.
- * Hex stays the algebraic board. Triangle, square, octagon-and-diamond,
- * radial, and pentagon are the same bases with different cells.
- */
+// the other HeXO grids. hex is still the one with real coordinates. triangle,
+// square, octagon (with the diamonds), radial, and pentagon use the same base sizes
+// with different cells
 
 import { boardFor, type BoardSize, type Cell } from "./logic.ts";
 
@@ -620,7 +618,8 @@ function finish(
   return board;
 }
 
-/** Steps from the center along touching cells. One shell, not a rounded pixel radius. */
+// rings count steps from the center through touching cells. pixel distance
+// gets weird on odd grids, so it isn't used
 function graphRings(
   center: string,
   cells: GameCell[],

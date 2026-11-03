@@ -4,24 +4,21 @@ function fullscreenElement() {
   return document.fullscreenElement || document.webkitFullscreenElement || null;
 }
 
-function requestFullscreen(node) {
+// old safari only has the webkit versions, and those don't return a promise
+async function requestFullscreen(node) {
   const request = node.requestFullscreen || node.webkitRequestFullscreen;
-  if (!request) return Promise.reject(new Error("unavailable"));
-  try {
-    const pending = request.call(node);
-    return pending && typeof pending.then === "function" ? pending : Promise.resolve();
-  } catch (error) {
-    return Promise.reject(error);
-  }
+  if (!request) throw new Error("unavailable");
+  await request.call(node);
 }
 
 function exitFullscreen(node) {
   if (fullscreenElement() !== node) return;
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
-  const pending = exit?.call(document);
-  if (pending && typeof pending.catch === "function") pending.catch(() => {});
+  Promise.resolve(exit?.call(document)).catch(() => {});
 }
 
+// real fullscreen when the browser allows it. iphones don't, so there the
+// board just fills the window with css instead (cssOnly)
 export function useFullscreen(target) {
   const active = ref(false);
   let cssOnly = false;

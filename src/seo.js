@@ -32,7 +32,7 @@ export const pages = [
     path: "/",
     title: "eire (eireq) — games, flags, and experiments",
     description:
-      "Personal site of eire (eireq), from Slovakia. Go, HeXO, hex chess, Otrio, daily pi, jWorld, and a 1,700-flag database.",
+      "Personal site of eire (eireq), from Slovakia. Go, HeXO, hex chess, Otrio, daily pi, jWorld, and a 1,755-flag database.",
     jsonLd: [website, person],
     fallback: `
       <h1>hey. im eire.</h1>
@@ -155,14 +155,14 @@ export const pages = [
   {
     path: "/flagdb/weeks",
     title: "flag of the week — eire",
-    description: "The editorial flags that rotate through the home-page flag of the week.",
-    fallback: `<h1>flag of the week</h1><p>the editorial set behind the home-page flag.</p>`,
+    description: "Every flag of the week on eire's site, with a short write-up for each.",
+    fallback: `<h1>flag of the week</h1><p>every flag that shows up on the home page, with what i think of it.</p>`,
   },
   {
     path: "/flagdb",
     title: "flag database — eire",
     description:
-      "Search about 1,700 flags: countries, territories, subdivisions, historical flags, and organizations.",
+      "Search 1,755 flags: countries, territories, subdivisions, historical flags, and organizations.",
     fallback: `<h1>flag database</h1><p>search and browse 1,700+ flags with details, categories, and collections.</p>`,
   },
   {
@@ -279,13 +279,7 @@ export function headTags(page) {
     `<meta name="google-site-verification" content="ePz_bVG4jiZArH9rrItRNk8IY7gURIRRspbTQ5GZCCQ">`,
   ];
 
-  const entries = page.jsonLd
-    ? Array.isArray(page.jsonLd)
-      ? page.jsonLd
-      : [page.jsonLd]
-    : [];
-
-  for (const entry of entries) {
+  for (const entry of [page.jsonLd ?? []].flat()) {
     lines.push(
       `<script type="application/ld+json">${JSON.stringify(entry)}</script>`,
     );

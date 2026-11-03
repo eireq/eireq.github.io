@@ -87,7 +87,7 @@ function geometriesOverlap(a, b) {
   return edgesCross(a, b);
 }
 
-/** Names of other countries this geometry covers. Does not block a save. */
+// names of other countries this geometry covers. does not block a save
 export function coveredCountryNames(geometry, countries, ignoreId = null) {
   const mine = normalizeGeometry(geometry);
   if (!mine) return [];

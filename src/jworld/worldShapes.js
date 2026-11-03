@@ -1,8 +1,6 @@
-/**
- * Real-world country outlines for "Snap to shape".
- * The map guide is 50m. A 10m outline is fetched for the clicked country only.
- * 110m is only a visual guide — too coarse to store.
- */
+// real-world country outlines for "snap to shape".
+// the guide on the map is 50m, and only the clicked country gets fetched again at 10m.
+// 110m is way too coarse to store, so it's only ever a guide
 import { feature as topoFeature } from "topojson-client";
 
 const BASE = import.meta.env.BASE_URL;
@@ -22,10 +20,8 @@ const SHAPE_SOURCES = [
   },
 ];
 
-/**
- * Clicks this close to a simplified coast are reported as "near", not saved.
- * Only a point inside the outline becomes a border.
- */
+// clicks this close to a simplified coast are reported as "near", not saved
+// only a point inside the outline becomes a border
 const NEAR_COAST_KM = 40;
 
 let cachedCollection = null;
@@ -40,7 +36,7 @@ async function fetchJson(url, timeoutMs = 20000) {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error(`Failed to load world shapes (${res.status})`);
     const text = await res.text();
-    // GitHub Pages SPA 404.html is HTML — never treat it as GeoJSON.
+    // GitHub Pages SPA 404.html is HTML — never treat it as GeoJSON
     const trimmed = text.trimStart();
     if (trimmed.startsWith("<!") || trimmed.startsWith("<html")) {
       throw new Error("Got HTML instead of GeoJSON (SPA 404 page).");
@@ -79,15 +75,15 @@ export async function loadWorldShapes() {
     loadPromise = null;
     throw new Error(
       lastErr?.name === "AbortError"
-        ? "Timed out loading world shapes. Check your connection and try again."
-        : "Could not load world shapes. Try again in a moment.",
+        ? "the world outlines took too long to load. check your connection and try again."
+        : "couldn't load the world outlines. try again in a sec.",
     );
   })();
 
   return loadPromise;
 }
 
-/** Finer outlines, used only to replace the country that was clicked. */
+// finer outlines, used only to replace the country that was clicked
 export async function loadFineOutlines() {
   if (fineCollection) return fineCollection;
   if (finePromise) return finePromise;
@@ -129,10 +125,8 @@ function namesMatch(a, b) {
   return Boolean(left) && left === right;
 }
 
-/**
- * If a finer outline contains the same click, use that coast.
- * Otherwise keep the guide hit.
- */
+// if a finer outline contains the same click, use that coast
+// otherwise keep the guide hit
 export function refineHit(fine, hit, latlng) {
   if (!fine?.features || !hit || hit.approximate || hit.lowResolution || !latlng) {
     return hit;
@@ -148,12 +142,12 @@ export function refineHit(fine, hit, latlng) {
   return hit;
 }
 
-/** Wrap longitude into [-180, 180]. */
+// wrap longitude into [-180, 180]
 export function wrapLng(lng) {
   return ((((lng + 180) % 360) + 360) % 360) - 180;
 }
 
-/** Shift lng by ±360° so it sits near a reference longitude (world copies). */
+// shift lng by ±360° so it sits near a reference longitude (world copies)
 function lngNear(lng, refLng) {
   let x = lng;
   while (x - refLng > 180) x -= 360;
@@ -161,7 +155,7 @@ function lngNear(lng, refLng) {
   return x;
 }
 
-/** Ray-cast point-in-ring (ring is [[lng,lat], ...]). */
+// ray-cast point-in-ring (ring is [[lng,lat], ...])
 function pointInRing(lng, lat, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -196,7 +190,7 @@ function featureName(props = {}) {
     props.NAME_LONG ||
     props.name ||
     props.admin ||
-    "Unknown land"
+    "unknown land"
   );
 }
 
@@ -211,7 +205,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return 2 * r * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
-/** Min distance from point to ring edges (km). */
+// min distance from point to ring edges (km)
 function distToRingKm(lat, lng, ring) {
   if (!ring?.length) return Infinity;
   const localLng = lngNear(lng, ring[0][0]);
@@ -220,7 +214,7 @@ function distToRingKm(lat, lng, ring) {
     const [lngA, latA] = ring[i];
     const [lngB, latB] = ring[(i + 1) % ring.length];
     min = Math.min(min, haversineKm(lat, localLng, latA, lngA));
-    // Sample edge midpoint — catches clicks just offshore of a long edge.
+    // sample edge midpoint — catches clicks just offshore of a long edge
     min = Math.min(
       min,
       haversineKm(lat, localLng, (latA + latB) / 2, (lngA + lngB) / 2),
@@ -245,7 +239,7 @@ function hitFromFeature(collection, feature, partCoordinates, approximate) {
   const geom = feature.geometry;
   return {
     name: featureName(feature.properties),
-    // Whole country. Snap-to-create stores this, not a single island.
+    // whole country. snap-to-create stores this, not a single island
     geometry: cloneGeometry(geom),
     partGeometry: {
       type: "Polygon",
@@ -256,11 +250,9 @@ function hitFromFeature(collection, feature, partCoordinates, approximate) {
   };
 }
 
-/**
- * Find the real-world country under a map click.
- * An exact hit includes the full country plus the clicked part.
- * A near-coast hit is marked approximate and must not be saved.
- */
+// find the real-world country under a map click
+// an exact hit includes the full country plus the clicked part
+// a near-coast hit is marked approximate and must not be saved
 export function findShapeAtLatLng(collection, latlng) {
   if (!collection?.features || !latlng) return null;
   const lat = latlng.lat;

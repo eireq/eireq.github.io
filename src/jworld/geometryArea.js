@@ -1,4 +1,4 @@
-/** WGS84 equatorial radius (m) — same as Mapbox geojson-area. */
+// WGS84 equatorial radius (m) — same as Mapbox geojson-area
 import { normalizeGeometry, unwrapRing } from "./geometry.js";
 
 const EARTH_RADIUS_M = 6378137;
@@ -9,7 +9,7 @@ function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
 
-/** Signed spherical ring area in m² (outer rings positive, holes negative). */
+// signed spherical ring area in m² (outer rings positive, holes negative)
 function ringAreaM2(ring) {
   const open = unwrapRing(ring);
   if (!open || open.length < 3) return 0;
@@ -34,7 +34,7 @@ function polygonAreaM2(coords) {
   return Math.abs(area);
 }
 
-/** Total land area of a Polygon/MultiPolygon in square metres. */
+// total land area of a Polygon/MultiPolygon in square metres
 export function geometryAreaM2(geometry) {
   const geo = normalizeGeometry(geometry);
   if (!geo) return 0;
@@ -54,10 +54,7 @@ function formatNumber(n) {
   return Math.round(n).toLocaleString("en-US");
 }
 
-/**
- * Human-readable land area from borders.
- * @returns {string} e.g. "2,166,086 km² / 836,330 sq mi"
- */
+// land area for the wiki, like "2,166,086 km² / 836,330 sq mi"
 export function formatLandArea(geometry) {
   const m2 = geometryAreaM2(geometry);
   if (!m2) return "";
@@ -66,7 +63,7 @@ export function formatLandArea(geometry) {
   return `${formatNumber(km2)} km² / ${formatNumber(sqMi)} sq mi`;
 }
 
-/** Copy payload and set land_area + geography.area from geometry. */
+// copy payload and set land_area + geography.area from geometry
 export function withCalculatedArea(payload, geometry) {
   const area = formatLandArea(geometry);
   if (!area) return payload;

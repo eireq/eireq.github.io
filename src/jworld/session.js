@@ -10,7 +10,7 @@ export function loadSession() {
       memberId: parsed.memberId,
       token: parsed.token,
       displayName: parsed.displayName,
-      // Missing flag = legacy session; prompt to set a password for multi-device.
+      // missing flag = legacy session; prompt to set a password for multi-device
       hasPassword: Object.prototype.hasOwnProperty.call(parsed, "hasPassword")
         ? Boolean(parsed.hasPassword)
         : false,

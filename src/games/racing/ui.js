@@ -1,3 +1,5 @@
+import { racingPlayerName, setPlayerName } from "../../data/profile.js";
+
 export function createUI() {
   const screens = {
     menu: document.getElementById("menu"),
@@ -18,12 +20,8 @@ export function createUI() {
     screens[name].classList.add("active");
   }
 
-  function playerName() {
-    return (window.localStorage.getItem("eirePlayerName") || localStorage.getItem("laneRunnerName") || "").trim().slice(0, 16) || "a guy";
-  }
-
   function refreshName() {
-    $("savedName").textContent = `player: ${playerName()}`;
+    $("savedName").textContent = `player: ${racingPlayerName()}`;
   }
 
   function startGame() {
@@ -35,16 +33,14 @@ export function createUI() {
   }
 
   function saveName(value) {
-    const name = value.trim().slice(0, 30) || "a guy";
-    localStorage.setItem("eirePlayerName", name);
-    localStorage.setItem("laneRunnerName", name.slice(0, 16));
+    setPlayerName(value);
     refreshName();
   }
 
   function goMenu() {
     window.audio.click();
     window.audio.stopGame();
-    window.game?.abandon?.();
+    window.game.abandon();
     show("menu");
     refreshName();
     window.audio.menu();
@@ -147,7 +143,7 @@ export function createUI() {
 
     const response = await window.db.submitScore({
       ...result,
-      name: playerName(),
+      name: racingPlayerName(),
     });
 
     if (!response.ok && window.db.ready()) {
@@ -245,7 +241,7 @@ export function createUI() {
     show,
     gameOver,
     updateHud,
-    playerName,
+    playerName: racingPlayerName,
     destroy() {
       window.removeEventListener("keydown", onUiKey);
     },

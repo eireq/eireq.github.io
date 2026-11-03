@@ -1,11 +1,7 @@
-/**
- * Best-effort DevTools detection for the flag quiz.
- * Not unbeatable — just enough to spoil casual Element/Vue inspection cheating.
- *
- * Size checks use a baseline from when the quiz starts so normal browser chrome
- * (tabs, toolbar, bookmarks) does not count as DevTools.
- */
-
+// catches people opening devtools during a flag quiz to peek at the answer.
+// anyone determined can get around it, it's just there to ruin the easy cheat.
+// the window size is measured when the quiz starts, so tabs and toolbars
+// don't count as devtools.
 export function createDevtoolsGuard(onDetect) {
   let armed = false;
   let tripped = false;
@@ -28,7 +24,7 @@ export function createDevtoolsGuard(onDetect) {
 
   const sizeGrewLikeDevtools = () => {
     const { widthGap, heightGap } = measureGaps();
-    // Docked DevTools usually adds a large pane; ignore small resize noise.
+    // docked devtools adds a big pane, small resizes are just noise
     const widthGrew = widthGap - baselineWidthGap > 140;
     const heightGrew = heightGap - baselineHeightGap > 140;
     const phone = window.matchMedia("(pointer: coarse)").matches;
@@ -47,7 +43,7 @@ export function createDevtoolsGuard(onDetect) {
 
     const beat = window.setInterval(() => {
       if (!armed || tripped) return;
-      // Opening the console often reifies this getter in Chromium.
+      // chromium reads this getter when the console is open
       // eslint-disable-next-line no-console
       console.log("%c", probe);
       // eslint-disable-next-line no-console
@@ -65,7 +61,7 @@ export function createDevtoolsGuard(onDetect) {
     }
 
     const started = performance.now();
-    // Pauses much longer when a debugger is attached / DevTools breaks on debugger.
+    // with devtools open this line actually stops, so the gap gets long
     // eslint-disable-next-line no-debugger
     debugger;
     if (performance.now() - started > 200) trip();
@@ -81,7 +77,6 @@ export function createDevtoolsGuard(onDetect) {
       removeConsoleTrap();
       installConsoleTrap();
       if (timer) window.clearInterval(timer);
-      // Delay first tick so arming itself never races a layout frame.
       timer = window.setInterval(tick, 1000);
     },
     disarm() {
