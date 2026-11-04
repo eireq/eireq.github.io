@@ -4,7 +4,7 @@ my website. games, a big pile of flags, a politics quiz, and a private map where
 
 **live:** https://eireq.github.io/
 
-it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia` branch (yes, the branch names are countries. no, i won't explain).
+it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia` branch 
 
 ## pages
 
@@ -123,6 +123,7 @@ real ones:
 - german (`deu`), jPol included
 - russian (`rus`), jPol included
 - klingon (`kgn`), roughly, enough to get around
+- slovak ('slk')
 
 everything else is english through a filter: drunk, pirate, uwu, serious, vulgar, brainrot, Jenglish, IPA, emoji, toki-pona-ish, and shortened words. those are jokes.
 
@@ -147,7 +148,7 @@ npm install
 npm run dev
 ```
 
-it's on http://localhost:5173.
+should be on http://localhost:5173
 
 ```bash
 npm run build
