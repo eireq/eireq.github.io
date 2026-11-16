@@ -24,6 +24,7 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/kht` | KHT bracket. anyone can watch, only i can edit |
 | `/tools` | tools |
 | `/tools/pi` | daily pi, one digit lesson per utc day |
+| `/lingo` | name 300 basic words and translate with them |
 | `/flagdb` | flag database |
 | `/flagdb/weeks` | every flag of the week, with the little write-ups |
 | `/flagdb/detail/:flagId` | one flag: colors, dates, wikipedia, similar flags |
@@ -91,6 +92,16 @@ Gliński's hexagonal chess. 91 cells, files a–l without j, three bishops and n
 ## tier list
 
 `/tiers`. drag country flags from S to F (or tap a flag, then a row). it stays in your browser. you can share a link, download it as a PNG, and import that PNG later to get the list back.
+
+## lingo
+
+`/lingo`. a lingojam-style translator for a language you make yourself. the list is 300 basic english words: people, little words, numbers, time, qualities, verbs, and things. type your word next to each one.
+
+`goes`, `went`, and `going` follow `go`, and `am` / `is` / `are` follow `be`, until you add a phrase that says otherwise. plurals follow the noun (`cats` follows `cat`). a dash leaves a word out. contractions such as `don't` and `it's` expand first.
+
+phrases are extra swaps and they win over the word list. the longer phrase wins. english to yours, and yours back to english. if two words share a translation, the way back uses the earlier word in the list.
+
+it stays in this browser as `eireLingo`. download it as json and import it later. "fill the blanks" invents a placeholder for anything you have not named, and leaves the ones you wrote.
 
 ## jPol
 
@@ -222,7 +233,7 @@ src/
   router/index.js
   views/                  one file per page
   components/             header and footer
-  data/                   flags, daily flag, flag of the week, daily pi, tier list, jPol, share cards
+  data/                   flags, daily flag, flag of the week, daily pi, tier list, jPol, lingo, share cards
   assets/master_flags.json
   assets/flag_index.json  the slim copy for the database list
   games/fullscreen.js     the full screen button

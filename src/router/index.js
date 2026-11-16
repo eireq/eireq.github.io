@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { title: "daily pi - eire" },
     },
     {
+      path: "/lingo",
+      name: "lingo",
+      component: () => import("../views/LingoView.vue"),
+      meta: { title: "lingo - eire" },
+    },
+    {
       path: "/art",
       name: "art",
       component: () => import("../views/ArtView.vue"),
