@@ -81,6 +81,7 @@ export const WORDS = [
 ];
 
 export const WORD_COUNT = WORDS.length;
+export const PHRASE_LIMIT = 200;
 
 const WORD_IDS = new Set(WORDS.map((word) => word.id));
 const WORD_BY_ID = new Map(WORDS.map((word) => [word.id, word]));
@@ -415,7 +416,7 @@ export function normalizeLanguage(input) {
   const phrases = [];
   if (Array.isArray(source.phrases)) {
     for (const phrase of source.phrases) {
-      if (phrases.length >= 100) break;
+      if (phrases.length >= PHRASE_LIMIT) break;
       const next = normalizePhrase(phrase, phrases.length);
       if (next) phrases.push(next);
     }

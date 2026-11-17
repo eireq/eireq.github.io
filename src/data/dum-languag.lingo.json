@@ -623,6 +623,296 @@
       "id": "p64",
       "from": "can you help",
       "to": "kann ytu pomog"
+    },
+    {
+      "id": "p65",
+      "from": "zero and one",
+      "to": "nul y eins"
+    },
+    {
+      "id": "p66",
+      "from": "six and seven",
+      "to": "anglicka cislovka y 67"
+    },
+    {
+      "id": "p67",
+      "from": "eight and nine",
+      "to": "acht y NEIN"
+    },
+    {
+      "id": "p68",
+      "from": "i can see",
+      "to": "ay kann vidi"
+    },
+    {
+      "id": "p69",
+      "from": "i will go",
+      "to": "ay bud i"
+    },
+    {
+      "id": "p70",
+      "from": "you must eat",
+      "to": "ytu mus ji"
+    },
+    {
+      "id": "p71",
+      "from": "i say yes",
+      "to": "ay vi ja"
+    },
+    {
+      "id": "p72",
+      "from": "i know you",
+      "to": "ay mozok ytu"
+    },
+    {
+      "id": "p73",
+      "from": "sit here",
+      "to": "sadni tutok"
+    },
+    {
+      "id": "p74",
+      "from": "open the door",
+      "to": "otvori da dwere"
+    },
+    {
+      "id": "p75",
+      "from": "a bird and a fish",
+      "to": "a wtak y a ryba"
+    },
+    {
+      "id": "p76",
+      "from": "the city is big",
+      "to": "da mesto bi slonion"
+    },
+    {
+      "id": "p77",
+      "from": "my hand",
+      "to": "q'ay ruka"
+    },
+    {
+      "id": "p78",
+      "from": "the cat can see the bird",
+      "to": "da kot kann vidi da wtak"
+    },
+    {
+      "id": "p79",
+      "from": "i will not go",
+      "to": "ay bud niort i"
+    },
+    {
+      "id": "p80",
+      "from": "she can help",
+      "to": "an kann pomog"
+    },
+    {
+      "id": "p81",
+      "from": "we must sleep",
+      "to": "aye mus spi"
+    },
+    {
+      "id": "p82",
+      "from": "close the door",
+      "to": "zatvori da dwere"
+    },
+    {
+      "id": "p83",
+      "from": "i hear a song",
+      "to": "ay poci a piesonka"
+    },
+    {
+      "id": "p84",
+      "from": "give me water",
+      "to": "daj ayo wod"
+    },
+    {
+      "id": "p85",
+      "from": "i need food",
+      "to": "ay potri yedl"
+    },
+    {
+      "id": "p86",
+      "from": "the dog can run",
+      "to": "da pes kann i ale rychlo"
+    },
+    {
+      "id": "p87",
+      "from": "i like the cat",
+      "to": "ay palec da kot"
+    },
+    {
+      "id": "p88",
+      "from": "i think so",
+      "to": "ay mozocek tak"
+    },
+    {
+      "id": "p89",
+      "from": "come here",
+      "to": "i tutok"
+    },
+    {
+      "id": "p90",
+      "from": "walk with me",
+      "to": "i z ayo"
+    },
+    {
+      "id": "p91",
+      "from": "the rain is cold",
+      "to": "da dahzd bi lad zima brr"
+    },
+    {
+      "id": "p92",
+      "from": "i see a star",
+      "to": "ay vidi a hvezda"
+    },
+    {
+      "id": "p93",
+      "from": "my eye and my hand",
+      "to": "q'ay ye y q'ay ruka"
+    },
+    {
+      "id": "p94",
+      "from": "the bird can go",
+      "to": "da wtak kann i"
+    },
+    {
+      "id": "p95",
+      "from": "buy the book",
+      "to": "kupi da kniga"
+    },
+    {
+      "id": "p96",
+      "from": "i read a book",
+      "to": "ay citi a kniga"
+    },
+    {
+      "id": "p97",
+      "from": "write my name",
+      "to": "pisi q'ay Nam"
+    },
+    {
+      "id": "p98",
+      "from": "find the cat",
+      "to": "najdi da kot"
+    },
+    {
+      "id": "p99",
+      "from": "i ask you",
+      "to": "ay spyti ytu"
+    },
+    {
+      "id": "p100",
+      "from": "wait here",
+      "to": "cakajte prosim tutok"
+    },
+    {
+      "id": "p101",
+      "from": "the night is dark",
+      "to": "da nacht bi taz"
+    },
+    {
+      "id": "p102",
+      "from": "a big city",
+      "to": "a slonion mesto"
+    },
+    {
+      "id": "p103",
+      "from": "twenty and ten",
+      "to": "ten ten y ten"
+    },
+    {
+      "id": "p104",
+      "from": "i am cold",
+      "to": "ay bi lad zima brr"
+    },
+    {
+      "id": "p105",
+      "from": "she is young",
+      "to": "an bi mladuch"
+    },
+    {
+      "id": "p106",
+      "from": "i love you",
+      "to": "ay srdce velky palec ytu"
+    },
+    {
+      "id": "p107",
+      "from": "where is the city",
+      "to": "?Spendel bi da mesto"
+    },
+    {
+      "id": "p108",
+      "from": "what is your name",
+      "to": "?Dacho bi q'yt Nam"
+    },
+    {
+      "id": "p109",
+      "from": "i have a dog",
+      "to": "ay mi a pes"
+    },
+    {
+      "id": "p110",
+      "from": "they can see us",
+      "to": "ane kann vidi aye"
+    },
+    {
+      "id": "p111",
+      "from": "this is my home",
+      "to": "do bi q'ay dom"
+    },
+    {
+      "id": "p112",
+      "from": "that is good",
+      "to": "dodo bi gut"
+    },
+    {
+      "id": "p113",
+      "from": "i want more",
+      "to": "ay chci vatsey"
+    },
+    {
+      "id": "p114",
+      "from": "the fish is small",
+      "to": "da ryba bi mys dobrej nadeje"
+    },
+    {
+      "id": "p115",
+      "from": "my head",
+      "to": "q'ay hlawa"
+    },
+    {
+      "id": "p116",
+      "from": "a flower",
+      "to": "a kwet"
+    },
+    {
+      "id": "p117",
+      "from": "the wind is cold",
+      "to": "da wetor bi lad zima brr"
+    },
+    {
+      "id": "p118",
+      "from": "i see the river",
+      "to": "ay vidi da woda ide"
+    },
+    {
+      "id": "p119",
+      "from": "play a song",
+      "to": "hri a piesonka"
+    },
+    {
+      "id": "p120",
+      "from": "i want to know",
+      "to": "ay chci do mozok"
+    },
+    {
+      "id": "p121",
+      "from": "he can read",
+      "to": "on kann citi"
+    },
+    {
+      "id": "p122",
+      "from": "we sit and eat",
+      "to": "aye sadni y ji"
     }
   ],
   "missing": "keep"

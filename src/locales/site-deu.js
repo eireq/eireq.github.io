@@ -228,7 +228,7 @@ export const siteDeu = {
   dum: {
     title: "dum languag.",
     intro:
-      "zehn kurze einheiten, zwei lektionen. fünf herzen. ein fehler zeigt die antwort und kostet ein herz. schließt du eine lektion ab, zählt der tag auf diesem gerät.",
+      "elf einheiten. fünf herzen. ein fehler zeigt die antwort und kostet ein herz. schließt du eine lektion ab, zählt der tag auf diesem gerät.",
     streak: "serie",
     xp: "xp",
     hearts: "herzen",
@@ -272,6 +272,7 @@ export const siteDeu = {
       verbs: "verben",
       world: "die welt",
       sentences: "sätze",
+      more: "mehr wörter",
     },
     tips: {
       hello: "hai!! ist hallo. bai!! ist tschüss. niort ist nein und nicht. but ist 🍑 und same ist =, also tippst du die beiden nicht.",
@@ -284,6 +285,7 @@ export const siteDeu = {
       verbs: "go und come sind beide i. going bleibt i.",
       world: "der mond ist mesac, ein monat auch. bread ist selbst schon ein satz.",
       sentences: "die wortstellung bleibt englisch. endungen wie going nehmen trotzdem die grundform.",
+      more: "sieben ist 67 und neun ist NEIN. can ist kann, will ist bud, must ist mus.",
     },
   },
 };

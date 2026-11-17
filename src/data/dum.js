@@ -157,6 +157,36 @@ export const UNITS = [
           "good night",
         ],
       },
+      {
+        words: [],
+        sentences: [
+          "i will not go",
+          "she can help",
+          "close the door",
+          "i hear a song",
+          "give me water",
+          "i need food",
+          "the dog can run",
+          "i love you",
+          "what is your name",
+          "this is my home",
+          "they can see us",
+          "i like the cat",
+        ],
+      },
+    ],
+  },
+  {
+    id: "more",
+    lessons: [
+      {
+        words: ["zero", "six", "seven", "eight", "nine", "can", "will", "must"],
+        sentences: ["zero and one", "six and seven", "eight and nine", "i can see", "i will go", "you must eat"],
+      },
+      {
+        words: ["say", "know", "sit", "open", "bird", "fish", "city", "hand"],
+        sentences: ["i say yes", "i know you", "sit here", "open the door", "a bird and a fish", "the city is big", "my hand"],
+      },
     ],
   },
 ];

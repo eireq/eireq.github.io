@@ -50,8 +50,10 @@ test("the uploaded glosses are unchanged and every phrase fits lingo", () => {
   assert.equal(DUM_LANGUAGE.words.seven, "67");
   assert.equal(DUM_LANGUAGE.words.bread, "BUDE CHLIEB  LACNEJŠÍ? NEMYSLÍM SI.");
   assert.equal(DUM_LANGUAGE.words.if, "IMAGINARY FRIENDS");
-  assert.ok(DUM_LANGUAGE.phrases.length >= 50);
-  assert.ok(DUM_LANGUAGE.phrases.length <= 100);
+  assert.equal(DUM_LANGUAGE.phrases.length, 122);
+  assert.equal(translate("what is your name", DUM_LANGUAGE), "?Dacho bi q'yt Nam");
+  assert.equal(translate("six and seven", DUM_LANGUAGE), "anglicka cislovka y 67");
+  assert.equal(translate("i will not go", DUM_LANGUAGE), "ay bud niort i");
   const bare = normalizeLanguage({ ...DUM_LANGUAGE, phrases: [] });
   for (const phrase of DUM_LANGUAGE.phrases) {
     assert.ok(phrase.from.length <= 120);
