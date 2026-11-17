@@ -108,7 +108,7 @@ dum languag is the featured language on that page. loading it asks first if the 
 
 ## dum languag
 
-`/dum`. a course for that language. ten units, two lessons each, five hearts. you choose, type, match, or tap. a miss shows the answer. running out of hearts ends the lesson without saving it. the streak is the local day you finish a lesson, saved as `eireDum`. english word order stays, endings such as going still use the root gloss, `q'` marks a possessive, and question words start with `?`.
+`/dum`. a course for that language. eleven units, five hearts. you choose, type, match, or tap. a miss shows the answer. running out of hearts ends the lesson without saving it. the streak is the local day you finish a lesson, saved as `eireDum`. english word order stays, endings such as going still use the root gloss, `q'` marks a possessive, and question words start with `?`. the last unit is the extra words, and the sentence unit has a third lesson.
 
 ## jPol
 

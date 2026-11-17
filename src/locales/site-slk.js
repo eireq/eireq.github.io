@@ -166,7 +166,7 @@ export const siteSlk = {
   dum: {
     title: "dum languag.",
     intro:
-      "desať krátkych celkov, po dve lekcie. päť sŕdc. chyba ukáže odpoveď a stojí srdce. dokončená lekcia počíta dnešný deň na tomto zariadení.",
+      "jedenásť celkov. päť sŕdc. chyba ukáže odpoveď a stojí srdce. dokončená lekcia počíta dnešný deň na tomto zariadení.",
     streak: "séria",
     xp: "xp",
     hearts: "srdcia",
@@ -210,6 +210,7 @@ export const siteSlk = {
       verbs: "slovesá",
       world: "svet",
       sentences: "vety",
+      more: "ďalšie slová",
     },
     tips: {
       hello: "hai!! je hello. bai!! je goodbye. niort je no aj not. but je 🍑 a same je =, tie sa nepíšu.",
@@ -222,6 +223,7 @@ export const siteSlk = {
       verbs: "go aj come sú i. going je stále i.",
       world: "mesiac na nebi je mesac, a month tiež. bread je samo osebe veta.",
       sentences: "poradie slov ostáva anglické. koncovka ako going nemení základ.",
+      more: "seven je 67 a nine je NEIN. can je kann, will je bud, must je mus.",
     },
   },
   tiers: {

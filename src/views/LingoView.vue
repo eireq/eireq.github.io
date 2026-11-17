@@ -286,7 +286,7 @@
         </button>
       </div>
       <div class="actions">
-        <button type="button" :disabled="language.phrases.length >= 100" @click="addPhrase">
+        <button type="button" :disabled="language.phrases.length >= PHRASE_LIMIT" @click="addPhrase">
           {{ t("lingo.addPhrase") }}
         </button>
       </div>
@@ -299,6 +299,7 @@ import { computed, onUnmounted, reactive, ref, watch } from "vue";
 import {
   CATEGORIES,
   SAMPLE_TEXT,
+  PHRASE_LIMIT,
   WORD_COUNT,
   WORDS,
   definedCount,
@@ -454,7 +455,7 @@ function loadDum() {
 }
 
 function addPhrase() {
-  if (language.phrases.length >= 100) return;
+  if (language.phrases.length >= PHRASE_LIMIT) return;
   language.phrases.push(newPhrase());
 }
 

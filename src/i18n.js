@@ -223,7 +223,7 @@ const messages = {
     dum: {
       title: "dum languag.",
       intro:
-        "ten short units, two lessons each. five hearts. a miss shows the answer and costs one. finish a lesson and the streak counts today on this device.",
+        "eleven units. five hearts. a miss shows the answer and costs one. finish a lesson and the streak counts today on this device.",
       streak: "streak",
       xp: "xp",
       hearts: "hearts",
@@ -267,6 +267,7 @@ const messages = {
         verbs: "verbs",
         world: "the world",
         sentences: "sentences",
+        more: "more words",
       },
       tips: {
         hello: "hai!! is hello. bai!! is goodbye. niort is no and not. but is 🍑 and same is =, so those two are choices, not typing.",
@@ -279,6 +280,7 @@ const messages = {
         verbs: "go and come are both i. going is still i.",
         world: "the moon is mesac, and so is a month. bread is a sentence of its own.",
         sentences: "word order stays english. an ending such as going still uses the root.",
+        more: "seven is 67 and nine is NEIN. can is kann, will is bud, must is mus.",
       },
     },
     tiers: {
