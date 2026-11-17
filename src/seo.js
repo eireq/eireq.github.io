@@ -137,6 +137,7 @@ export const pages = [
       <h1>tools.</h1>
       <p>browse flags, pick random places, build a tiny language, and poke around the data.</p>
       <nav>
+        <a href="/dum">dum languag</a>
         <a href="/lingo">lingo</a>
         <a href="/flagdb">flag database</a>
         <a href="/tiers">country tier list</a>
@@ -150,8 +151,15 @@ export const pages = [
     path: "/lingo",
     title: "lingo — eire",
     description:
-      "Name 300 basic English words and translate with them. A LingoJam-style translator that stays in this browser.",
-    fallback: `<h1>lingo.</h1><p>name three hundred basic words, then translate english with them.</p>`,
+      "Name 300 basic English words and translate with them. A LingoJam-style translator that stays in this browser. Dum Languag can be loaded as a finished language.",
+    fallback: `<h1>lingo.</h1><p>name three hundred basic words, then translate english with them. dum languag is one language you can load.</p>`,
+  },
+  {
+    path: "/dum",
+    title: "dum languag — eire",
+    description:
+      "Learn Dum Languag lesson by lesson. Five hearts, a streak on this device, and the same words as the Lingo translator.",
+    fallback: `<h1>dum languag.</h1><p>ten units. learn the words, then the sentences. progress stays in this browser.</p>`,
   },
   {
     path: "/tools/pi",

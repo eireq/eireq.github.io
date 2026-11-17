@@ -39,6 +39,24 @@
         />
       </div>
       <p v-if="status" class="status" role="status">{{ status }}</p>
+
+      <aside class="feature">
+        <div>
+          <p class="feature-title">{{ t("dum.featureTitle") }}</p>
+          <p class="hint">{{ t("dum.featureText") }}</p>
+        </div>
+        <div class="feature-actions">
+          <button type="button" @click="askDum">{{ t("dum.load") }}</button>
+          <router-link class="ghost" to="/dum">{{ t("dum.learn") }}</router-link>
+        </div>
+        <p v-if="dumAsk" class="confirm">
+          {{ t("dum.loadAsk") }}
+          <button type="button" @click="loadDum">{{ t("lingo.yes") }}</button>
+          <button type="button" class="ghost" @click="dumAsk = false">
+            {{ t("lingo.no") }}
+          </button>
+        </p>
+      </aside>
     </header>
 
     <div class="tabs" role="tablist">
@@ -293,6 +311,7 @@ import {
   saveLanguage,
   translate,
 } from "../data/lingo.js";
+import { DUM_LANGUAGE } from "../data/dum.js";
 import { useI18n } from "../i18n.js";
 
 const { t } = useI18n();
@@ -318,6 +337,7 @@ const cat = ref("all");
 const shown = ref("all");
 const status = ref("");
 const pending = ref("");
+const dumAsk = ref(false);
 const fileInput = ref(null);
 
 let statusTimer = 0;
@@ -417,6 +437,20 @@ function applyLanguage(next) {
 function fill() {
   applyLanguage(fillEmpty(language));
   flash(t("lingo.filled"));
+}
+
+function askDum() {
+  if (!dirty.value) {
+    loadDum();
+    return;
+  }
+  dumAsk.value = true;
+}
+
+function loadDum() {
+  applyLanguage(DUM_LANGUAGE);
+  dumAsk.value = false;
+  flash(t("dum.loaded"));
 }
 
 function addPhrase() {
@@ -705,6 +739,7 @@ textarea::placeholder {
 
 .actions button,
 .file-row button,
+.feature-actions button,
 .confirm button {
   padding: 12px 16px;
   border: 1px solid #fff;
@@ -812,6 +847,43 @@ button:disabled {
 
 .intro-tight {
   margin-top: 0;
+}
+
+.feature {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 18px;
+  margin: 8px 0 4px;
+  padding: 16px 0 4px;
+  border-top: 1px solid #222;
+}
+
+.feature .confirm {
+  flex-basis: 100%;
+}
+
+.feature-title {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 22px;
+}
+
+.feature-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.feature-actions a {
+  display: inline-block;
+  padding: 12px 16px;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
 }
 
 .banner {

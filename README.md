@@ -25,6 +25,7 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/tools` | tools |
 | `/tools/pi` | daily pi, one digit lesson per utc day |
 | `/lingo` | name 300 basic words and translate with them |
+| `/dum` | learn dum languag, lesson by lesson |
 | `/flagdb` | flag database |
 | `/flagdb/weeks` | every flag of the week, with the little write-ups |
 | `/flagdb/detail/:flagId` | one flag: colors, dates, wikipedia, similar flags |
@@ -102,6 +103,12 @@ Gliński's hexagonal chess. 91 cells, files a–l without j, three bishops and n
 phrases are extra swaps and they win over the word list. the longer phrase wins. english to yours, and yours back to english. if two words share a translation, the way back uses the earlier word in the list.
 
 it stays in this browser as `eireLingo`. download it as json and import it later. "fill the blanks" invents a placeholder for anything you have not named, and leaves the ones you wrote.
+
+dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json).
+
+## dum languag
+
+`/dum`. a course for that language. ten units, two lessons each, five hearts. you choose, type, match, or tap. a miss shows the answer. running out of hearts ends the lesson without saving it. the streak is the local day you finish a lesson, saved as `eireDum`. english word order stays, endings such as going still use the root gloss, `q'` marks a possessive, and question words start with `?`.
 
 ## jPol
 

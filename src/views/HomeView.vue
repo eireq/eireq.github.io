@@ -80,7 +80,7 @@ const flags = ref([]);
 const weekly = ref(null);
 const weekImage = ref("");
 
-const fresh = new Set(["/games/daily", "/games/connect", "/compare", "/tiers", "/lingo"]);
+const fresh = new Set(["/games/daily", "/games/connect", "/compare", "/tiers", "/lingo", "/dum"]);
 
 const groups = [
   {
@@ -106,6 +106,7 @@ const groups = [
   {
     title: "home.groupExplore",
     items: [
+      { to: "/dum", title: "tools.dum", text: "tools.dumText" },
       { to: "/lingo", title: "tools.lingo", text: "tools.lingoText" },
       { to: "/flagdb", title: "tools.flagDatabase", text: "tools.flagDatabaseText" },
       { to: "/compare", title: "tools.compare", text: "tools.compareText" },
