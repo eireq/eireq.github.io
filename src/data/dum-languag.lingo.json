@@ -1,0 +1,629 @@
+{
+  "version": 1,
+  "name": "dum languag",
+  "words": {
+    "i": "ay",
+    "you": "ytu",
+    "he": "on",
+    "she": "an",
+    "it": "in",
+    "we": "aye",
+    "they": "ane",
+    "me": "ayo",
+    "him": "ono",
+    "her": "ano",
+    "us": "aye",
+    "them": "ane",
+    "my": "q'ay",
+    "your": "q'yt",
+    "his": "q'on",
+    "its": "q'in",
+    "our": "q'aey",
+    "their": "q'aen",
+    "person": "Bob",
+    "people": "Bobe",
+    "man": "Bob",
+    "woman": "Berta",
+    "child": "Shyet",
+    "baby": "Babol",
+    "friend": "Gryl",
+    "family": "Mili",
+    "mother": "Ama",
+    "father": "Ata",
+    "name": "Nam",
+    "body": "holy sigma rizz 💀😭 is bro fr??? no cap 💀😭",
+    "a": "a",
+    "an": "a",
+    "the": "da",
+    "this": "do",
+    "that": "dodo",
+    "these": "doe",
+    "those": "dodoe",
+    "some": "sum",
+    "any": "huh",
+    "no": "niort",
+    "not": "niort",
+    "all": "alles",
+    "every": "alles",
+    "many": "veomi veoa",
+    "much": "veoa",
+    "few": "maoo",
+    "more": "vatsey",
+    "most": "nay vats",
+    "other": "otter",
+    "same": "=",
+    "who": "?Bob",
+    "what": "?Dacho",
+    "where": "?Spendel",
+    "when": "?Chasik",
+    "why": "?Reson",
+    "how": "?Kak",
+    "which": "?Kery",
+    "and": "y",
+    "or": "o",
+    "but": "🍑",
+    "if": "IMAGINARY FRIENDS",
+    "because": "bo",
+    "so": "tak",
+    "then": "ðen",
+    "yes": "ja",
+    "hello": "hai!!",
+    "goodbye": "bai!!",
+    "please": "plox plox",
+    "thanks": "danke janke",
+    "sorry": "sorac kamo",
+    "ok": "okak",
+    "in": "w",
+    "on": "na",
+    "at": "at",
+    "to": "do",
+    "from": "z",
+    "of": "g",
+    "with": "z",
+    "without": "behrooz",
+    "for": "for",
+    "by": "by",
+    "about": "o",
+    "into": "do",
+    "over": "ower",
+    "under": "pod",
+    "between": "wiw",
+    "before": "bifor",
+    "after": "aftr",
+    "near": "nir",
+    "through": "sipka cez",
+    "will": "bud",
+    "would": "wud",
+    "can": "kann",
+    "could": "kud",
+    "should": "shud",
+    "must": "mus",
+    "here": "tutok",
+    "there": "tamtok",
+    "up": "hor",
+    "down": "dol",
+    "out": "won",
+    "back": "spat chrbat",
+    "zero": "nul",
+    "one": "eins",
+    "two": "zwei",
+    "three": "rit mi vytri",
+    "four": "bili na hodiny",
+    "five": "pyat'",
+    "six": "anglicka cislovka",
+    "seven": "67",
+    "eight": "acht",
+    "nine": "NEIN",
+    "ten": "ten",
+    "twenty": "ten ten",
+    "hundred": "100 emoj",
+    "thousand": "pyech desont",
+    "first": "pierwshy",
+    "second": "druh",
+    "now": "teraz",
+    "today": "den teraz",
+    "tomorrow": "den nie teraz",
+    "yesterday": "vecer v sobotu",
+    "day": "dag",
+    "night": "nacht",
+    "morning": "morgen frimen",
+    "evening": "vcera v sobotu",
+    "week": "tydn",
+    "month": "mesac",
+    "year": "rocik",
+    "time": "Chasik",
+    "always": "ked idu maturantky mestom",
+    "never": "ŇYGDY",
+    "again": "raz a zas",
+    "soon": "👀",
+    "good": "gut",
+    "bad": "fuj",
+    "big": "slonion",
+    "small": "mys dobrej nadeje",
+    "long": "ling lang",
+    "short": "two foot three",
+    "new": "neu",
+    "old": "alt",
+    "young": "mladuch",
+    "hot": "hot",
+    "cold": "lad zima brr",
+    "hard": "tvrdacik",
+    "soft": "vankus mekud",
+    "fast": "rych",
+    "slow": "pom",
+    "high": "vys",
+    "low": "niz",
+    "right": "palec",
+    "wrong": "nyet sprawnaya odpoed",
+    "true": "fact checked by real morborgian patriots",
+    "happy": "hapi hapi meme",
+    "sad": "meow meow cat sotry",
+    "angry": "GRR",
+    "beautiful": "priti",
+    "clean": "cillit bang",
+    "dirty": "spina",
+    "full": "lpn",
+    "empty": "praz",
+    "strong": "sil",
+    "weak": "slab",
+    "easy": "lah",
+    "dark": "taz",
+    "early": "skor",
+    "late": "neskor",
+    "real": "rectangle",
+    "only": "of",
+    "free": "o say can you see",
+    "whole": "1/1 = 1",
+    "different": "inny",
+    "kind": "typ",
+    "be": "bi",
+    "have": "mi",
+    "do": "ri",
+    "go": "i",
+    "come": "i",
+    "get": "di",
+    "make": "ri",
+    "take": "bri",
+    "give": "daj",
+    "see": "vidi",
+    "look": "vidi",
+    "hear": "poci",
+    "say": "vi",
+    "tell": "vi",
+    "speak": "vi",
+    "know": "mozok",
+    "think": "mozocek",
+    "want": "chci",
+    "need": "potri",
+    "like": "palec",
+    "love": "srdce velky palec",
+    "hate": "fuj dolny palec",
+    "eat": "ji",
+    "drink": "pi",
+    "sleep": "spi",
+    "walk": "i",
+    "run": "i ale rychlo",
+    "sit": "sadni",
+    "stand": "elton john",
+    "live": "bi",
+    "die": "zomri",
+    "work": "praci",
+    "play": "hri",
+    "read": "citi",
+    "write": "pisi",
+    "learn": "uci",
+    "teach": "uci",
+    "buy": "kupi",
+    "sell": "dat za peniazj",
+    "find": "najdi",
+    "lose": "strati",
+    "open": "otvori",
+    "close": "zatvori",
+    "start": "zaci",
+    "stop": "skonci",
+    "help": "pomog",
+    "use": "pozi",
+    "try": "skusi",
+    "ask": "spyti",
+    "answer": "spyti spat",
+    "call": "ring rin",
+    "wait": "cakajte prosim",
+    "leave": "i prec",
+    "stay": "ne i zostan",
+    "put": "dai",
+    "keep": "nechai",
+    "bring": "dones",
+    "send": "posli",
+    "show": "ukazi",
+    "feel": "citi",
+    "become": "stati",
+    "let": "nechati",
+    "remember": "cmukat kamienky",
+    "forget": "9/11",
+    "understand": "dole stat",
+    "believe": "veri",
+    "hope": "veri",
+    "happen": "stane sa",
+    "begin": "zaci",
+    "world": "swet",
+    "earth": "zem",
+    "sun": "slko",
+    "moon": "mesac",
+    "star": "hvezda",
+    "sky": "neb",
+    "water": "wod",
+    "fire": "oh",
+    "air": "h2o2",
+    "land": "zem",
+    "sea": "more",
+    "river": "woda ide",
+    "mountain": "gorilaz 2026",
+    "tree": "oliver",
+    "plant": "rastli",
+    "flower": "kwet",
+    "stone": "kamien",
+    "rain": "dahzd",
+    "snow": "sneh",
+    "wind": "wetor",
+    "light": "swwetlo",
+    "house": "dom",
+    "home": "dom",
+    "room": "izbietka",
+    "door": "dwere",
+    "city": "mesto",
+    "country": "krayin",
+    "place": "Spendel",
+    "road": "cesta",
+    "school": "skol",
+    "food": "yedl",
+    "bread": "BUDE CHLIEB  LACNEJŠÍ? NEMYSLÍM SI.",
+    "meat": "mesko",
+    "fruit": "owoc",
+    "money": "pienazek",
+    "book": "kniga",
+    "word": "slowo",
+    "language": "jazyk",
+    "story": "storka facbuk",
+    "thing": "dacho",
+    "way": "cetsa",
+    "hand": "ruka",
+    "head": "hlawa",
+    "eye": "ye",
+    "mouth": "papula",
+    "heart": "srce",
+    "life": "byt",
+    "animal": "zwira",
+    "dog": "pes",
+    "cat": "kot",
+    "bird": "wtak",
+    "fish": "ryba",
+    "ground": "zem",
+    "ice": "lad",
+    "salt": "sol",
+    "wood": "drewo",
+    "song": "piesonka"
+  },
+  "phrases": [
+    {
+      "id": "p01",
+      "from": "hello",
+      "to": "hai!!"
+    },
+    {
+      "id": "p02",
+      "from": "goodbye",
+      "to": "bai!!"
+    },
+    {
+      "id": "p03",
+      "from": "yes please",
+      "to": "ja plox plox"
+    },
+    {
+      "id": "p04",
+      "from": "no",
+      "to": "niort"
+    },
+    {
+      "id": "p05",
+      "from": "thanks",
+      "to": "danke janke"
+    },
+    {
+      "id": "p06",
+      "from": "sorry",
+      "to": "sorac kamo"
+    },
+    {
+      "id": "p07",
+      "from": "ok",
+      "to": "okak"
+    },
+    {
+      "id": "p08",
+      "from": "hello friend",
+      "to": "hai!! Gryl"
+    },
+    {
+      "id": "p09",
+      "from": "my name",
+      "to": "q'ay Nam"
+    },
+    {
+      "id": "p10",
+      "from": "i and you",
+      "to": "ay y ytu"
+    },
+    {
+      "id": "p11",
+      "from": "we and they",
+      "to": "aye y ane"
+    },
+    {
+      "id": "p12",
+      "from": "my friend",
+      "to": "q'ay Gryl"
+    },
+    {
+      "id": "p13",
+      "from": "his name",
+      "to": "q'on Nam"
+    },
+    {
+      "id": "p14",
+      "from": "our family",
+      "to": "q'aey Mili"
+    },
+    {
+      "id": "p15",
+      "from": "who",
+      "to": "?Bob"
+    },
+    {
+      "id": "p16",
+      "from": "what is that",
+      "to": "?Dacho bi dodo"
+    },
+    {
+      "id": "p17",
+      "from": "where is my friend",
+      "to": "?Spendel bi q'ay Gryl"
+    },
+    {
+      "id": "p18",
+      "from": "when",
+      "to": "?Chasik"
+    },
+    {
+      "id": "p19",
+      "from": "why",
+      "to": "?Reson"
+    },
+    {
+      "id": "p20",
+      "from": "how",
+      "to": "?Kak"
+    },
+    {
+      "id": "p21",
+      "from": "which",
+      "to": "?Kery"
+    },
+    {
+      "id": "p22",
+      "from": "my mother and my father",
+      "to": "q'ay Ama y q'ay Ata"
+    },
+    {
+      "id": "p23",
+      "from": "the child and the baby",
+      "to": "da Shyet y da Babol"
+    },
+    {
+      "id": "p24",
+      "from": "a man and a woman",
+      "to": "a Bob y a Berta"
+    },
+    {
+      "id": "p25",
+      "from": "my home",
+      "to": "q'ay dom"
+    },
+    {
+      "id": "p26",
+      "from": "the door",
+      "to": "da dwere"
+    },
+    {
+      "id": "p27",
+      "from": "my family is good",
+      "to": "q'ay Mili bi gut"
+    },
+    {
+      "id": "p28",
+      "from": "one and two",
+      "to": "eins y zwei"
+    },
+    {
+      "id": "p29",
+      "from": "five and ten",
+      "to": "pyat' y ten"
+    },
+    {
+      "id": "p30",
+      "from": "today and tomorrow",
+      "to": "den teraz y den nie teraz"
+    },
+    {
+      "id": "p31",
+      "from": "good night",
+      "to": "gut nacht"
+    },
+    {
+      "id": "p32",
+      "from": "now",
+      "to": "teraz"
+    },
+    {
+      "id": "p33",
+      "from": "the first day",
+      "to": "da pierwshy dag"
+    },
+    {
+      "id": "p34",
+      "from": "here and there",
+      "to": "tutok y tamtok"
+    },
+    {
+      "id": "p35",
+      "from": "in my home",
+      "to": "w q'ay dom"
+    },
+    {
+      "id": "p36",
+      "from": "to school",
+      "to": "do skol"
+    },
+    {
+      "id": "p37",
+      "from": "with my friend",
+      "to": "z q'ay Gryl"
+    },
+    {
+      "id": "p38",
+      "from": "on the road",
+      "to": "na da cesta"
+    },
+    {
+      "id": "p39",
+      "from": "good and bad",
+      "to": "gut y fuj"
+    },
+    {
+      "id": "p40",
+      "from": "the sun is hot",
+      "to": "da slko bi hot"
+    },
+    {
+      "id": "p41",
+      "from": "i am happy",
+      "to": "ay bi hapi hapi meme"
+    },
+    {
+      "id": "p42",
+      "from": "new and old",
+      "to": "neu y alt"
+    },
+    {
+      "id": "p43",
+      "from": "a big dog",
+      "to": "a slonion pes"
+    },
+    {
+      "id": "p44",
+      "from": "i eat",
+      "to": "ay ji"
+    },
+    {
+      "id": "p45",
+      "from": "i drink water",
+      "to": "ay pi wod"
+    },
+    {
+      "id": "p46",
+      "from": "i want food",
+      "to": "ay chci yedl"
+    },
+    {
+      "id": "p47",
+      "from": "we sleep",
+      "to": "aye spi"
+    },
+    {
+      "id": "p48",
+      "from": "i go home",
+      "to": "ay i dom"
+    },
+    {
+      "id": "p49",
+      "from": "please help",
+      "to": "plox plox pomog"
+    },
+    {
+      "id": "p50",
+      "from": "the sun and the moon",
+      "to": "da slko y da mesac"
+    },
+    {
+      "id": "p51",
+      "from": "water and fire",
+      "to": "wod y oh"
+    },
+    {
+      "id": "p52",
+      "from": "my dog and my cat",
+      "to": "q'ay pes y q'ay kot"
+    },
+    {
+      "id": "p53",
+      "from": "a song",
+      "to": "a piesonka"
+    },
+    {
+      "id": "p54",
+      "from": "the language",
+      "to": "da jazyk"
+    },
+    {
+      "id": "p55",
+      "from": "bread is good",
+      "to": "BUDE CHLIEB LACNEJŠÍ? NEMYSLÍM SI. bi gut"
+    },
+    {
+      "id": "p56",
+      "from": "i live in a small house",
+      "to": "ay bi w a mys dobrej nadeje dom"
+    },
+    {
+      "id": "p57",
+      "from": "my name is good",
+      "to": "q'ay Nam bi gut"
+    },
+    {
+      "id": "p58",
+      "from": "i want to learn this language",
+      "to": "ay chci do uci do jazyk"
+    },
+    {
+      "id": "p59",
+      "from": "the sun is hot today",
+      "to": "da slko bi hot den teraz"
+    },
+    {
+      "id": "p60",
+      "from": "we eat bread and drink water",
+      "to": "aye ji BUDE CHLIEB LACNEJŠÍ? NEMYSLÍM SI. y pi wod"
+    },
+    {
+      "id": "p61",
+      "from": "hello my name is ada",
+      "to": "hai!! q'ay Nam bi ada"
+    },
+    {
+      "id": "p62",
+      "from": "i see the moon",
+      "to": "ay vidi da mesac"
+    },
+    {
+      "id": "p63",
+      "from": "where is the school",
+      "to": "?Spendel bi da skol"
+    },
+    {
+      "id": "p64",
+      "from": "can you help",
+      "to": "kann ytu pomog"
+    }
+  ],
+  "missing": "keep"
+}

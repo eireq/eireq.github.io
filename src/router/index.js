@@ -41,6 +41,12 @@ const router = createRouter({
       meta: { title: "lingo - eire" },
     },
     {
+      path: "/dum",
+      name: "dum",
+      component: () => import("../views/DumView.vue"),
+      meta: { title: "dum languag - eire" },
+    },
+    {
       path: "/art",
       name: "art",
       component: () => import("../views/ArtView.vue"),
