@@ -1,4 +1,4 @@
-// 300 basic english words, plus a lingojam-style swap translator.
+// 500 basic english words, plus a lingojam-style swap translator.
 // inflections (goes, went, cats, bigger) follow the word you name,
 // until a phrase says otherwise.
 
@@ -25,6 +25,9 @@ export const WORDS = [
     "my", "your", "his", "its", "our", "their",
     "person", "people", "man", "woman", "child", "baby",
     "friend", "family", "mother", "father", "name", "body",
+    "boy", "girl", "brother", "sister", "son", "daughter", "husband", "wife",
+    "parent", "king", "queen", "teacher", "student", "doctor", "neighbor",
+    "guest", "enemy", "god", "uncle", "aunt",
   ]),
   ...words("grammar", [
     "a", "an", "the", "this", "that", "these", "those",
@@ -38,17 +41,22 @@ export const WORDS = [
     "between", "before", "after", "near", "through",
     "will", "would", "can", "could", "should", "must",
     "here", "there", "up", "down", "out", "back",
+    "very", "too", "also", "still", "already", "even", "just", "maybe",
+    "enough", "both", "each", "than",
   ]),
   ...words("numbers", [
     "zero", "one", "two", "three", "four", "five", "six",
     "seven", "eight", "nine", "ten", "twenty", "hundred",
     "thousand", "first", "second",
+    "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+    "million", "third", "half", "pair", "dozen",
   ]),
   ...words("time", [
     "now", "today", "tomorrow", "yesterday",
     "day", "night", "morning", "evening",
     "week", "month", "year", "time",
     "always", "never", "again", "soon",
+    "hour", "minute", "spring", "summer", "autumn", "winter", "noon", "midnight",
   ]),
   ...words("qualities", [
     "good", "bad", "big", "small", "long", "short",
@@ -58,6 +66,10 @@ export const WORDS = [
     "full", "empty", "strong", "weak", "easy", "dark",
     "early", "late", "real", "only", "free", "whole",
     "different", "kind",
+    "red", "blue", "green", "yellow", "black", "white", "brown", "orange",
+    "pink", "purple", "gray", "loud", "quiet", "wet", "dry", "heavy", "sweet",
+    "sour", "round", "sharp", "safe", "sick", "healthy", "tired", "hungry",
+    "thirsty", "rich", "poor", "ready", "important", "possible", "special",
   ]),
   ...words("verbs", [
     "be", "have", "do", "go", "come", "get", "make", "take", "give", "see",
@@ -67,6 +79,11 @@ export const WORDS = [
     "lose", "open", "close", "start", "stop", "help", "use", "try", "ask", "answer",
     "call", "wait", "leave", "stay", "put", "keep", "bring", "send", "show", "feel",
     "become", "let", "remember", "forget", "understand", "believe", "hope", "happen", "begin",
+    "cook", "wash", "wear", "cut", "hold", "pull", "push", "throw", "catch", "fly",
+    "swim", "sing", "dance", "laugh", "cry", "smile", "meet", "follow", "grow", "break",
+    "fix", "build", "carry", "drop", "touch", "smell", "taste", "count", "pay", "drive",
+    "turn", "change", "choose", "win", "fight", "marry", "jump", "climb", "draw", "watch",
+    "listen", "talk", "agree", "study", "mean", "share", "spend", "cover", "move", "kill",
   ]),
   ...words("things", [
     "world", "earth", "sun", "moon", "star", "sky",
@@ -77,6 +94,13 @@ export const WORDS = [
     "thing", "way", "hand", "head", "eye", "mouth", "heart", "life",
     "animal", "dog", "cat", "bird", "fish",
     "ground", "ice", "salt", "wood", "song",
+    "foot", "leg", "arm", "finger", "ear", "nose", "hair", "tooth", "neck", "skin",
+    "bone", "blood", "face", "clothing", "shirt", "shoe", "hat", "coat", "dress", "music",
+    "egg", "milk", "rice", "apple", "sugar", "cheese", "soup", "cup", "plate", "knife",
+    "paper", "pen", "horse", "cow", "pig", "mouse", "sheep", "chicken", "bug", "bear",
+    "grass", "leaf", "forest", "hill", "lake", "island", "field", "sand", "cloud", "storm",
+    "window", "wall", "floor", "bed", "table", "chair", "key", "box", "bag", "clock",
+    "car", "boat", "plane", "shop", "bridge", "phone",
   ]),
 ];
 
@@ -127,6 +151,26 @@ const IRREGULAR = {
   put: ["puts", "putting"],
   let: ["lets", "letting"],
   lose: ["loses", "lost", "losing"],
+  cut: ["cuts", "cutting"],
+  hold: ["holds", "held", "holding"],
+  throw: ["throws", "threw", "throwing", "thrown"],
+  catch: ["catches", "caught", "catching"],
+  fly: ["flies", "flew", "flying", "flown"],
+  swim: ["swims", "swam", "swimming", "swum"],
+  sing: ["sings", "sang", "singing", "sung"],
+  meet: ["meets", "met", "meeting"],
+  grow: ["grows", "grew", "growing", "grown"],
+  break: ["breaks", "broke", "breaking", "broken"],
+  drive: ["drives", "drove", "driving", "driven"],
+  choose: ["chooses", "chose", "choosing", "chosen"],
+  win: ["wins", "won", "winning"],
+  fight: ["fights", "fought", "fighting"],
+  draw: ["draws", "drew", "drawing", "drawn"],
+  wear: ["wears", "wore", "wearing", "worn"],
+  mean: ["means", "meant", "meaning"],
+  spend: ["spends", "spent", "spending"],
+  build: ["builds", "built", "building"],
+  pay: ["pays", "paid", "paying"],
 };
 
 const COMPARE = {
@@ -141,13 +185,22 @@ const NO_COMPARE = new Set([
 const PLURAL_IDS = new Set([
   "person", "man", "woman", "child", "friend", "family",
   "mother", "father", "name", "baby", "body",
+  "boy", "girl", "brother", "sister", "son", "daughter", "husband", "wife",
+  "parent", "king", "queen", "teacher", "student", "doctor", "neighbor",
+  "guest", "enemy", "god", "uncle", "aunt",
   "day", "night", "morning", "evening", "week", "month", "year", "time",
+  "hour", "minute", "spring", "summer", "autumn", "winter", "noon", "midnight",
 ]);
 
 const PLURAL = {
   man: ["men"],
   woman: ["women"],
   child: ["children"],
+  foot: ["feet"],
+  tooth: ["teeth"],
+  mouse: ["mice"],
+  sheep: ["sheep"],
+  knife: ["knives"],
 };
 
 const DIGITS = {
