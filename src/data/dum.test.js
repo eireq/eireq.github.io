@@ -26,7 +26,7 @@ import {
   saveProgress,
 } from "./dum.js";
 
-const WORD_HASH = "ae87786f97fe1b06ee54d7ab13c66655aa75d20096cadccebf5feb594a14254a";
+const WORD_HASH = "18304f38bd224f1d0aea19b29150c05ea246c3019ca232b673533bed5ecc8374";
 
 function memory() {
   const store = new Map();
@@ -43,19 +43,16 @@ test("the dum glosses stay put and every phrase fits lingo", () => {
   assert.equal(createHash("sha256").update(canon).digest("hex"), WORD_HASH);
   assert.equal(DUM_LANGUAGE.name, "dum languag");
   assert.equal(Object.keys(DUM_LANGUAGE.words).length, 500);
-  assert.equal(DUM_LANGUAGE.words.to, "ku");
-  assert.equal(DUM_LANGUAGE.words.into, "ku w");
-  assert.equal(DUM_LANGUAGE.words.with, "s");
-  assert.equal(DUM_LANGUAGE.words.without, "niort s");
-  assert.equal(DUM_LANGUAGE.words.or, "abo");
-  assert.equal(DUM_LANGUAGE.words.our, "q'aye");
-  assert.equal(DUM_LANGUAGE.words.their, "q'ane");
-  assert.equal(DUM_LANGUAGE.words.come, "i tutok");
-  assert.equal(DUM_LANGUAGE.words.man, "Bob on");
-  assert.equal(DUM_LANGUAGE.words.love, "srdce slonion palec");
-  assert.equal(DUM_LANGUAGE.words.month, "mesac Chasik");
-  assert.match(DUM_LANGUAGE.words.red, /^[a-z]+$/);
-  assert.match(DUM_LANGUAGE.words.cook, /^[a-z]+i$/);
+  assert.equal(DUM_LANGUAGE.missing, "mark");
+  assert.equal(DUM_LANGUAGE.words.to, "do");
+  assert.equal(DUM_LANGUAGE.words.with, "z");
+  assert.equal(DUM_LANGUAGE.words.our, "q'aey");
+  assert.equal(DUM_LANGUAGE.words.their, "q'aen");
+  assert.equal(DUM_LANGUAGE.words.man, "Bob");
+  assert.equal(DUM_LANGUAGE.words.love, "srdce velky palec");
+  assert.equal(DUM_LANGUAGE.words.red, "Rot");
+  assert.equal(DUM_LANGUAGE.words.boy, "Boi");
+  assert.equal(DUM_LANGUAGE.words.cook, "wari");
   assert.equal(DUM_LANGUAGE.words.body, "holy sigma rizz 💀😭 is bro fr??? no cap 💀😭");
   assert.equal(DUM_LANGUAGE.words.but, "🍑");
   assert.equal(DUM_LANGUAGE.words.same, "=");
@@ -67,9 +64,10 @@ test("the dum glosses stay put and every phrase fits lingo", () => {
   assert.equal(translate("what is your name", DUM_LANGUAGE), "?Dacho bi q'yt Nam");
   assert.equal(translate("six and seven", DUM_LANGUAGE), "anglicka cislovka y 67");
   assert.equal(translate("i will not go", DUM_LANGUAGE), "ay bud niort i");
-  assert.equal(translate("i love you", DUM_LANGUAGE), "ay srdce slonion palec ytu");
-  assert.equal(translate("to school", DUM_LANGUAGE), "ku skol");
-  assert.equal(translate("with my friend", DUM_LANGUAGE), "s q'ay Gryl");
+  assert.equal(translate("i love you", DUM_LANGUAGE), "ay srdce velky palec ytu");
+  assert.equal(translate("to school", DUM_LANGUAGE), "do skol");
+  assert.equal(translate("with my friend", DUM_LANGUAGE), "z q'ay Gryl");
+  assert.equal(translate("the red boat", DUM_LANGUAGE), "da Rot bote ried");
   const bare = normalizeLanguage({ ...DUM_LANGUAGE, phrases: [] });
   for (const phrase of DUM_LANGUAGE.phrases) {
     assert.ok(phrase.from.length <= 120);
