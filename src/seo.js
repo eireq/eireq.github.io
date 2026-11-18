@@ -132,7 +132,7 @@ export const pages = [
     path: "/tools",
     title: "tools — eire",
     description:
-      "Tools on eire's site: a 300-word language builder, flag database, country tier list, random country, daily flag, daily pi, and flag compare.",
+      "Tools on eire's site: a 500-word language builder, flag database, country tier list, random country, daily flag, daily pi, and flag compare.",
     fallback: `
       <h1>tools.</h1>
       <p>browse flags, pick random places, build a tiny language, and poke around the data.</p>
@@ -151,8 +151,8 @@ export const pages = [
     path: "/lingo",
     title: "lingo — eire",
     description:
-      "Name 300 basic English words and translate with them. A LingoJam-style translator that stays in this browser. Dum Languag can be loaded as a finished language.",
-    fallback: `<h1>lingo.</h1><p>name three hundred basic words, then translate english with them. dum languag is one language you can load.</p>`,
+      "Name 500 basic English words and translate with them. A LingoJam-style translator that stays in this browser. Dum Languag can be loaded as a finished language.",
+    fallback: `<h1>lingo.</h1><p>name five hundred basic words, then translate english with them. dum languag is one language you can load.</p>`,
   },
   {
     path: "/dum",

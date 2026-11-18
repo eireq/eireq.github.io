@@ -24,7 +24,7 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/kht` | KHT bracket. anyone can watch, only i can edit |
 | `/tools` | tools |
 | `/tools/pi` | daily pi, one digit lesson per utc day |
-| `/lingo` | name 300 basic words and translate with them |
+| `/lingo` | name 500 basic words and translate with them |
 | `/dum` | learn dum languag, lesson by lesson |
 | `/flagdb` | flag database |
 | `/flagdb/weeks` | every flag of the week, with the little write-ups |
@@ -96,7 +96,7 @@ Gliński's hexagonal chess. 91 cells, files a–l without j, three bishops and n
 
 ## lingo
 
-`/lingo`. a lingojam-style translator for a language you make yourself. the list is 300 basic english words: people, little words, numbers, time, qualities, verbs, and things. type your word next to each one.
+`/lingo`. a lingojam-style translator for a language you make yourself. the list is 500 basic english words: people, little words, numbers, time, qualities, verbs, and things. type your word next to each one.
 
 `goes`, `went`, and `going` follow `go`, and `am` / `is` / `are` follow `be`, until you add a phrase that says otherwise. plurals follow the noun (`cats` follows `cat`). a dash leaves a word out. contractions such as `don't` and `it's` expand first.
 
@@ -104,7 +104,7 @@ phrases are extra swaps and they win over the word list. the longer phrase wins.
 
 it stays in this browser as `eireLingo`. download it as json and import it later. "fill the blanks" invents a placeholder for anything you have not named, and leaves the ones you wrote.
 
-dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json).
+dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json). two hundred of the glosses are placeholders in syllable order, ready to be replaced.
 
 ## dum languag
 

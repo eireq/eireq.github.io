@@ -34,11 +34,11 @@ function lang(words, extra = {}) {
   return normalizeLanguage({ words, ...extra });
 }
 
-test("the list is 300 unique basic words", () => {
-  assert.equal(WORD_COUNT, 300);
-  assert.equal(WORDS.length, 300);
+test("the list is 500 unique basic words", () => {
+  assert.equal(WORD_COUNT, 500);
+  assert.equal(WORDS.length, 500);
   const ids = WORDS.map((word) => word.id);
-  assert.equal(new Set(ids).size, 300);
+  assert.equal(new Set(ids).size, 500);
   for (const word of WORDS) {
     assert.match(word.id, /^[a-z]+$/);
     assert.ok(CATEGORIES.includes(word.cat));
@@ -78,6 +78,10 @@ test("inflections follow the root and never steal another listed word", () => {
   assert.equal(lemmaOf("1"), "one");
   assert.equal(lemmaOf("2nd"), "second");
   assert.equal(lemmaOf("people"), "people");
+  assert.equal(lemmaOf("flew"), "fly");
+  assert.equal(lemmaOf("feet"), "foot");
+  assert.equal(lemmaOf("mice"), "mouse");
+  assert.equal(lemmaOf("meant"), "mean");
   assert.equal(lemmaOf("will"), "will");
   assert.equal(lemmaOf("most"), "most");
   assert.equal(lemmaOf("back"), "back");
@@ -170,9 +174,9 @@ test("fill the blanks keeps words you already named", () => {
   const filled = fillEmpty(lang({ i: "mi", the: "-" }));
   assert.equal(filled.words.i, "mi");
   assert.equal(filled.words.the, "-");
-  assert.equal(definedCount(filled), 300);
+  assert.equal(definedCount(filled), WORD_COUNT);
   const spoken = new Set(Object.values(filled.words).map((value) => value.toLowerCase()));
-  assert.equal(spoken.size, 300);
+  assert.equal(spoken.size, WORD_COUNT);
 });
 
 test("save and load round-trip, and a bad file is refused", () => {
