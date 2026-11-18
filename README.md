@@ -104,7 +104,7 @@ phrases are extra swaps and they win over the word list. the longer phrase wins.
 
 it stays in this browser as `eireLingo`. download it as json and import it later. "fill the blanks" invents a placeholder for anything you have not named, and leaves the ones you wrote.
 
-dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json). two hundred of the glosses are placeholders in syllable order, ready to be replaced.
+dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json).
 
 ## dum languag
 
