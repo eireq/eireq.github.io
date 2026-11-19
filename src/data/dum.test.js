@@ -26,7 +26,7 @@ import {
   saveProgress,
 } from "./dum.js";
 
-const WORD_HASH = "18304f38bd224f1d0aea19b29150c05ea246c3019ca232b673533bed5ecc8374";
+const WORD_HASH = "01d94dacafa9e2712fdea389d15358eaef88b5f913d9223f3e5c7c2e365d9eb7";
 
 function memory() {
   const store = new Map();
@@ -53,7 +53,7 @@ test("the dum glosses stay put and every phrase fits lingo", () => {
   assert.equal(DUM_LANGUAGE.words.red, "Rot");
   assert.equal(DUM_LANGUAGE.words.boy, "Boi");
   assert.equal(DUM_LANGUAGE.words.cook, "wari");
-  assert.equal(DUM_LANGUAGE.words.body, "holy sigma rizz 💀😭 is bro fr??? no cap 💀😭");
+  assert.equal(DUM_LANGUAGE.words.body, "Holy sigma rizz 💀😭 is bro fr??? no cap 💀😭");
   assert.equal(DUM_LANGUAGE.words.but, "🍑");
   assert.equal(DUM_LANGUAGE.words.same, "=");
   assert.equal(DUM_LANGUAGE.words.soon, "👀");
@@ -65,15 +65,50 @@ test("the dum glosses stay put and every phrase fits lingo", () => {
   assert.equal(translate("six and seven", DUM_LANGUAGE), "anglicka cislovka y 67");
   assert.equal(translate("i will not go", DUM_LANGUAGE), "ay bud niort i");
   assert.equal(translate("i love you", DUM_LANGUAGE), "ay srdce velky palec ytu");
-  assert.equal(translate("to school", DUM_LANGUAGE), "do skol");
+  assert.equal(translate("to school", DUM_LANGUAGE), "do Skol");
   assert.equal(translate("with my friend", DUM_LANGUAGE), "z q'ay Gryl");
-  assert.equal(translate("the red boat", DUM_LANGUAGE), "da Rot bote ried");
+  assert.equal(translate("the red boat", DUM_LANGUAGE), "da Rot Bote ried");
+  assert.equal(DUM_LANGUAGE.words.dog, "Pes");
+  assert.equal(DUM_LANGUAGE.words.home, "Dom");
   const bare = normalizeLanguage({ ...DUM_LANGUAGE, phrases: [] });
   for (const phrase of DUM_LANGUAGE.phrases) {
     assert.ok(phrase.from.length <= 120);
     assert.ok(phrase.to.length <= 120);
     assert.equal(phrase.to, translate(phrase.from, bare));
     assert.equal(translate(phrase.from, DUM_LANGUAGE), phrase.to);
+  }
+});
+
+test("the new words are taught and nouns start with a capital", () => {
+  const fresh = new Set(["kin", "bits", "counting", "seasons", "colors", "actions", "stuff"]);
+  const taught = [];
+  const older = new Set();
+  for (const unit of UNITS) {
+    for (const lesson of unit.lessons) {
+      for (const id of lesson.words) {
+        if (fresh.has(unit.id)) taught.push(id);
+        else older.add(id);
+      }
+    }
+  }
+  assert.equal(taught.length, 200);
+  assert.equal(new Set(taught).size, 200);
+  const known = new Set(WORDS.map((word) => word.id));
+  for (const id of taught) {
+    assert.ok(known.has(id), id);
+    assert.equal(older.has(id), false, id);
+  }
+  const pronouns = new Set("i you he she it we they me him her us them my your his its our their".split(" "));
+  const timeOther = new Set("now today tomorrow yesterday always never again soon".split(" "));
+  for (const word of WORDS) {
+    const noun =
+      word.cat === "things" ||
+      (word.cat === "people" && !pronouns.has(word.id)) ||
+      (word.cat === "time" && !timeOther.has(word.id));
+    if (!noun) continue;
+    const gloss = DUM_LANGUAGE.words[word.id];
+    const first = [...gloss].find((char) => /\p{L}/u.test(char));
+    if (first) assert.equal(first, first.toLocaleUpperCase("en"), `${word.id} ${gloss}`);
   }
 });
 

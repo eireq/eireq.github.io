@@ -159,7 +159,7 @@ export const pages = [
     title: "dum languag — eire",
     description:
       "Learn Dum Languag lesson by lesson. Five hearts, a streak on this device, and the same words as the Lingo translator.",
-    fallback: `<h1>dum languag.</h1><p>ten units. learn the words, then the sentences. progress stays in this browser.</p>`,
+    fallback: `<h1>dum languag.</h1><p>eighteen units. learn the words, then the sentences. progress stays in this browser.</p>`,
   },
   {
     path: "/tools/pi",

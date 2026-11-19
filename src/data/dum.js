@@ -189,6 +189,153 @@ export const UNITS = [
       },
     ],
   },
+  {
+    id: "kin",
+    lessons: [
+      {
+        words: ["boy", "girl", "brother", "sister", "son", "daughter", "husband", "wife"],
+        sentences: ["the boy and the girl", "my brother and my sister"],
+      },
+      {
+        words: ["parent", "king", "queen", "teacher", "student", "doctor", "neighbor", "guest"],
+        sentences: ["the king and the queen", "my teacher"],
+      },
+      {
+        words: ["enemy", "god", "uncle", "aunt"],
+        sentences: ["my uncle and my aunt", "the enemy"],
+      },
+    ],
+  },
+  {
+    id: "bits",
+    lessons: [
+      {
+        words: ["very", "too", "also", "still", "already", "even", "just", "maybe"],
+        sentences: ["very good", "maybe tomorrow"],
+      },
+      {
+        words: ["enough", "both", "each", "than"],
+        sentences: ["enough water", "each day"],
+      },
+    ],
+  },
+  {
+    id: "counting",
+    lessons: [
+      {
+        words: ["thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "million"],
+        sentences: ["thirty and forty", "fifty and sixty"],
+      },
+      {
+        words: ["third", "half", "pair", "dozen"],
+        sentences: ["a dozen", "the third day"],
+      },
+    ],
+  },
+  {
+    id: "seasons",
+    lessons: [
+      {
+        words: ["hour", "minute", "spring", "summer", "autumn", "winter", "noon", "midnight"],
+        sentences: ["one hour", "spring and summer"],
+      },
+    ],
+  },
+  {
+    id: "colors",
+    lessons: [
+      {
+        words: ["red", "blue", "green", "yellow", "black", "white", "brown", "orange"],
+        sentences: ["red and blue", "the black cat"],
+      },
+      {
+        words: ["pink", "purple", "gray", "loud", "quiet", "wet", "dry", "heavy"],
+        sentences: ["pink and purple", "a heavy stone"],
+      },
+      {
+        words: ["sweet", "sour", "round", "sharp", "safe", "sick", "healthy", "tired"],
+        sentences: ["sweet and sour", "i am tired"],
+      },
+      {
+        words: ["hungry", "thirsty", "rich", "poor", "ready", "important", "possible", "special"],
+        sentences: ["i am hungry", "i am ready"],
+      },
+    ],
+  },
+  {
+    id: "actions",
+    lessons: [
+      {
+        words: ["cook", "wash", "wear", "cut", "hold", "pull", "push", "throw"],
+        sentences: ["i cook", "i wash"],
+      },
+      {
+        words: ["catch", "fly", "swim", "sing", "dance", "laugh", "cry", "smile"],
+        sentences: ["i sing", "i laugh"],
+      },
+      {
+        words: ["meet", "follow", "grow", "break", "fix", "build", "carry", "drop"],
+        sentences: ["i build", "i follow you"],
+      },
+      {
+        words: ["touch", "smell", "taste", "count", "pay", "drive", "turn", "change"],
+        sentences: ["i drive", "i pay"],
+      },
+      {
+        words: ["choose", "win", "fight", "marry", "jump", "climb", "draw", "watch"],
+        sentences: ["i jump", "i watch"],
+      },
+      {
+        words: ["listen", "talk", "agree", "study", "mean", "share", "spend", "cover"],
+        sentences: ["i listen", "i study"],
+      },
+      {
+        words: ["move", "kill"],
+        sentences: ["i move", "you move"],
+      },
+    ],
+  },
+  {
+    id: "stuff",
+    lessons: [
+      {
+        words: ["foot", "leg", "arm", "finger", "ear", "nose", "hair", "tooth"],
+        sentences: ["my foot", "my ear"],
+      },
+      {
+        words: ["neck", "skin", "bone", "blood", "face", "clothing", "shirt", "shoe"],
+        sentences: ["my face", "a shirt and a shoe"],
+      },
+      {
+        words: ["hat", "coat", "dress", "music", "egg", "milk", "rice", "apple"],
+        sentences: ["a hat", "milk and rice"],
+      },
+      {
+        words: ["sugar", "cheese", "soup", "cup", "plate", "knife", "paper", "pen"],
+        sentences: ["a cup", "paper and pen"],
+      },
+      {
+        words: ["horse", "cow", "pig", "mouse", "sheep", "chicken", "bug", "bear"],
+        sentences: ["a horse and a cow", "the cat and the mouse"],
+      },
+      {
+        words: ["grass", "leaf", "forest", "hill", "lake", "island", "field", "sand"],
+        sentences: ["the lake", "a green forest"],
+      },
+      {
+        words: ["cloud", "storm", "window", "wall", "floor", "bed", "table", "chair"],
+        sentences: ["the window", "a bed and a chair"],
+      },
+      {
+        words: ["key", "box", "bag", "clock", "car", "boat", "plane", "shop"],
+        sentences: ["a car and a boat", "the key"],
+      },
+      {
+        words: ["bridge", "phone"],
+        sentences: ["the bridge", "my phone"],
+      },
+    ],
+  },
 ];
 
 const glossOwners = new Map();
