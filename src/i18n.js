@@ -112,6 +112,10 @@ const messages = {
       random: "random game",
       racing: "racing",
       racingText: "lane changing game. with leaderboards!!",
+      cave: "cave flyer",
+      caveText: "hold to climb through a cave that closes in. distance goes on the board.",
+      roof: "roof run",
+      roofText: "sprint the rooftops. tap to jump. distance goes on the board.",
       flagQuiz: "flag quiz",
       flagQuizText:
         "identify flags from around the world. how many can you get right?",
@@ -971,6 +975,10 @@ const messages = {
         "eine Sammlung von Spielen, die ich erstellt habe. meistens kleine Projekte, Experimente und Dinge, die lustig schienen.",
       racing: "racing",
       racingText: "spiel zum Spurwechseln, mit Bestenlisten!!",
+      cave: "höhlenflug",
+      caveText: "halten zum steigen. die höhle wird enger. die strecke landet auf der liste.",
+      roof: "dächerlauf",
+      roofText: "über die dächer. tippen zum springen. die strecke landet auf der liste.",
       flagQuiz: "flaggenquiz",
       flagQuizText:
         "erkenne Flaggen aus aller Welt. wie viele schaffst du richtig?",
@@ -1733,6 +1741,10 @@ messages.rus = mergeMessages(messages.eng, {
       "коллекция игр, которые я создал. в основном небольшие проекты, эксперименты и забавные идеи.",
     racing: "гонки",
     racingText: "игра со сменой полос. с таблицей лидеров!!",
+    cave: "полёт в пещере",
+    caveText: "держи, чтобы подниматься. пещера сужается. дистанция попадает в таблицу.",
+    roof: "бег по крышам",
+    roofText: "крыши не ждут. нажми, чтобы прыгнуть. дистанция попадает в таблицу.",
     flagQuiz: "викторина о флагах",
     flagQuizText:
       "узнай флаги со всего мира. сколько ответов будет правильными?",

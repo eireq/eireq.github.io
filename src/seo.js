@@ -67,12 +67,14 @@ export const pages = [
     path: "/games",
     title: "games — eire",
     description:
-      "Browser games by eire: Lane Runner, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
+      "Browser games by eire: Lane Runner, Cave Flyer, Roof Run, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
     fallback: `
       <h1>games.</h1>
       <p>a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.</p>
       <nav>
         <a href="/games/racing">lane runner</a>
+        <a href="/games/cave">cave flyer</a>
+        <a href="/games/roof">roof run</a>
         <a href="/games/flagquiz">flag quiz</a>
         <a href="/games/daily">daily flag</a>
         <a href="/games/hexo">HeXO</a>
@@ -87,6 +89,20 @@ export const pages = [
     description:
       "Endless 4-lane dodge game by eire. Change lanes, score distance and overtakes, and chase the leaderboard.",
     fallback: `<h1>eiracing :: lane runner</h1><p>lane changing game. with leaderboards.</p>`,
+  },
+  {
+    path: "/games/cave",
+    title: "cave flyer — eire",
+    description:
+      "Hold to climb and release to drop through a cave that closes in. Distance lands on a global and weekly leaderboard.",
+    fallback: `<h1>cave flyer</h1><p>hold to climb. let go to drop. the rock closes in.</p>`,
+  },
+  {
+    path: "/games/roof",
+    title: "roof run — eire",
+    description:
+      "Sprint across rooftops and tap to jump the gaps. Distance lands on a global and weekly leaderboard.",
+    fallback: `<h1>roof run</h1><p>the roofs get shorter. jump the gaps.</p>`,
   },
   {
     path: "/games/flagquiz",

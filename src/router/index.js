@@ -187,6 +187,26 @@ const router = createRouter({
       },
     },
     {
+      path: "/games/cave",
+      name: "game-cave",
+      component: () => import("../views/GameRunView.vue"),
+      props: { game: "cave" },
+      meta: {
+        title: "cave flyer — eire",
+        hideChrome: true,
+      },
+    },
+    {
+      path: "/games/roof",
+      name: "game-roof",
+      component: () => import("../views/GameRunView.vue"),
+      props: { game: "roof" },
+      meta: {
+        title: "roof run — eire",
+        hideChrome: true,
+      },
+    },
+    {
       path: "/games/flagquiz",
       name: "game-flagquiz",
       component: () => import("../views/FlagQuizView.vue"),

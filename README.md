@@ -14,6 +14,8 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/me` | about me |
 | `/games` | all the games, plus a random game button if you can't decide |
 | `/games/racing` | lane runner |
+| `/games/cave` | cave flyer |
+| `/games/roof` | roof run |
 | `/games/flagquiz` | flag quiz |
 | `/games/daily` | daily flag |
 | `/games/hexo` | HeXO |
@@ -40,7 +42,7 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/contact` | contact, with an email draft |
 | `/modes` | goes to https://eireq.github.io/modes |
 
-lane runner, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. go, Otrio, HeXO, connect, and hex chess have a full screen button.
+lane runner, cave flyer, roof run, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. go, Otrio, HeXO, connect, and hex chess have a full screen button.
 
 ## flags
 
@@ -61,6 +63,14 @@ everything flag-related reads `src/assets/master_flags.json`: 1,755 records of c
 ### lane runner
 
 endless 4-lane dodging on a canvas. arrows or A/D to switch lanes, `p` to pause, esc to leave. score is distance, overtakes, and top speed. global and weekly top 50. the optional audio is in `public/games/racing/assets/`, and setup notes are in [`src/games/racing/README.md`](src/games/racing/README.md).
+
+### cave flyer
+
+`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. global and weekly top 50, same name as the other games.
+
+### roof run
+
+`/games/roof`. the roofs scroll toward you. space, click, or tap to jump. gaps get wider and the landings get shorter. a higher roof has a lip, so jumping late means you hit it. score is distance. same leaderboards as cave flyer. run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) once if the boards should save.
 
 ### Otrio
 
@@ -202,6 +212,7 @@ run these in the supabase SQL editor:
 | what | script |
 | --- | --- |
 | lane runner and flag quiz scores | `src/games/racing/supabase.sql` |
+| cave flyer and roof run scores | `src/games/run/supabase.sql` |
 | KHT bracket | `src/games/kht/supabase.sql` |
 | jWorld | `src/jworld/supabase.sql`, then `src/jworld/supabase_improve.sql` |
 
@@ -245,6 +256,7 @@ src/
   assets/flag_index.json  the slim copy for the database list
   games/fullscreen.js     the full screen button
   games/racing/           lane runner, audio, leaderboard
+  games/run/              cave flyer and roof run, shared board
   games/go/               board, captures, scoring
   games/otrio/            ring rules
   games/hexo/             rules, grids, bot, together mode
