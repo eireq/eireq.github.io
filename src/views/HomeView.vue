@@ -80,7 +80,16 @@ const flags = ref([]);
 const weekly = ref(null);
 const weekImage = ref("");
 
-const fresh = new Set(["/games/daily", "/games/connect", "/compare", "/tiers"]);
+const fresh = new Set([
+  "/games/daily",
+  "/games/connect",
+  "/games/cave",
+  "/games/roof",
+  "/compare",
+  "/tiers",
+  "/lingo",
+  "/dum",
+]);
 
 const groups = [
   {
@@ -100,12 +109,16 @@ const groups = [
       { to: "/games/hexchess", title: "games.hexchess", text: "games.hexchessText" },
       { to: "/games/otrio", title: "games.otrio", text: "games.otrioText" },
       { to: "/games/racing", title: "games.racing", text: "games.racingText" },
+      { to: "/games/cave", title: "games.cave", text: "games.caveText" },
+      { to: "/games/roof", title: "games.roof", text: "games.roofText" },
       { to: "/kht", title: "games.kht", text: "games.khtText" },
     ],
   },
   {
     title: "home.groupExplore",
     items: [
+      { to: "/dum", title: "tools.dum", text: "tools.dumText" },
+      { to: "/lingo", title: "tools.lingo", text: "tools.lingoText" },
       { to: "/flagdb", title: "tools.flagDatabase", text: "tools.flagDatabaseText" },
       { to: "/compare", title: "tools.compare", text: "tools.compareText" },
       { to: "/tiers", title: "tools.tierList", text: "tools.tierListText" },

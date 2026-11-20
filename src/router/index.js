@@ -35,6 +35,18 @@ const router = createRouter({
       meta: { title: "daily pi - eire" },
     },
     {
+      path: "/lingo",
+      name: "lingo",
+      component: () => import("../views/LingoView.vue"),
+      meta: { title: "lingo - eire" },
+    },
+    {
+      path: "/dum",
+      name: "dum",
+      component: () => import("../views/DumView.vue"),
+      meta: { title: "dum languag - eire" },
+    },
+    {
       path: "/art",
       name: "art",
       component: () => import("../views/ArtView.vue"),
@@ -171,6 +183,26 @@ const router = createRouter({
       component: () => import("../views/GameRacingView.vue"),
       meta: {
         title: "eiracing :: lane runner",
+        hideChrome: true,
+      },
+    },
+    {
+      path: "/games/cave",
+      name: "game-cave",
+      component: () => import("../views/GameRunView.vue"),
+      props: { game: "cave" },
+      meta: {
+        title: "cave flyer — eire",
+        hideChrome: true,
+      },
+    },
+    {
+      path: "/games/roof",
+      name: "game-roof",
+      component: () => import("../views/GameRunView.vue"),
+      props: { game: "roof" },
+      meta: {
+        title: "roof run — eire",
         hideChrome: true,
       },
     },

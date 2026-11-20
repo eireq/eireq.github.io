@@ -67,12 +67,14 @@ export const pages = [
     path: "/games",
     title: "games — eire",
     description:
-      "Browser games by eire: Lane Runner, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
+      "Browser games by eire: Lane Runner, Cave Flyer, Roof Run, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
     fallback: `
       <h1>games.</h1>
       <p>a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.</p>
       <nav>
         <a href="/games/racing">lane runner</a>
+        <a href="/games/cave">cave flyer</a>
+        <a href="/games/roof">roof run</a>
         <a href="/games/flagquiz">flag quiz</a>
         <a href="/games/daily">daily flag</a>
         <a href="/games/hexo">HeXO</a>
@@ -87,6 +89,20 @@ export const pages = [
     description:
       "Endless 4-lane dodge game by eire. Change lanes, score distance and overtakes, and chase the leaderboard.",
     fallback: `<h1>eiracing :: lane runner</h1><p>lane changing game. with leaderboards.</p>`,
+  },
+  {
+    path: "/games/cave",
+    title: "cave flyer — eire",
+    description:
+      "Hold to climb and release to drop through a cave that closes in. Distance lands on a global and weekly leaderboard.",
+    fallback: `<h1>cave flyer</h1><p>hold to climb. let go to drop. the rock closes in.</p>`,
+  },
+  {
+    path: "/games/roof",
+    title: "roof run — eire",
+    description:
+      "Sprint across rooftops and tap to jump the gaps. Distance lands on a global and weekly leaderboard.",
+    fallback: `<h1>roof run</h1><p>the roofs get shorter. jump the gaps.</p>`,
   },
   {
     path: "/games/flagquiz",
@@ -132,11 +148,13 @@ export const pages = [
     path: "/tools",
     title: "tools — eire",
     description:
-      "Tools on eire's site: flag database, country tier list, random country, daily flag, daily pi, and flag compare.",
+      "Tools on eire's site: a 500-word language builder, flag database, country tier list, random country, daily flag, daily pi, and flag compare.",
     fallback: `
       <h1>tools.</h1>
-      <p>browse flags, pick random places, and poke around the data.</p>
+      <p>browse flags, pick random places, build a tiny language, and poke around the data.</p>
       <nav>
+        <a href="/dum">dum languag</a>
+        <a href="/lingo">lingo</a>
         <a href="/flagdb">flag database</a>
         <a href="/tiers">country tier list</a>
         <a href="/rc">random country</a>
@@ -144,6 +162,20 @@ export const pages = [
         <a href="/tools/pi">daily pi</a>
         <a href="/compare">compare flags</a>
       </nav>`,
+  },
+  {
+    path: "/lingo",
+    title: "lingo — eire",
+    description:
+      "Name 500 basic English words and translate with them. A LingoJam-style translator that stays in this browser. Dum Languag can be loaded as a finished language.",
+    fallback: `<h1>lingo.</h1><p>name five hundred basic words, then translate english with them. dum languag is one language you can load.</p>`,
+  },
+  {
+    path: "/dum",
+    title: "dum languag — eire",
+    description:
+      "Learn Dum Languag lesson by lesson. Five hearts, a streak on this device, and the same words as the Lingo translator.",
+    fallback: `<h1>dum languag.</h1><p>eighteen units. learn the words, then the sentences. progress stays in this browser.</p>`,
   },
   {
     path: "/tools/pi",

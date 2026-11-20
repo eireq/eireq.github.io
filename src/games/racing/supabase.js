@@ -12,6 +12,19 @@ function quizMode(mode) {
   return QUIZ_MODE_VALUES.includes(mode) ? mode : "countries";
 }
 
+function runGame(game) {
+  return game === "roof" ? "roof" : "cave";
+}
+
+function weekStartIso() {
+  // weeks start on monday, utc
+  const weekStart = new Date();
+  const day = weekStart.getUTCDay();
+  weekStart.setUTCDate(weekStart.getUTCDate() - (day === 0 ? 6 : day - 1));
+  weekStart.setUTCHours(0, 0, 0, 0);
+  return weekStart.toISOString();
+}
+
 // lane runner and flag quiz scores. without a real supabase url in the config
 // everything here just answers "database not configured" and the games still run
 export function createDb() {
@@ -60,12 +73,7 @@ export function createDb() {
         .limit(50);
 
       if (period === "weekly") {
-        // weeks start on monday, utc
-        const weekStart = new Date();
-        const day = weekStart.getUTCDay();
-        weekStart.setUTCDate(weekStart.getUTCDate() - (day === 0 ? 6 : day - 1));
-        weekStart.setUTCHours(0, 0, 0, 0);
-        query = query.gte("created_at", weekStart.toISOString());
+        query = query.gte("created_at", weekStartIso());
       }
 
       const { data, error } = await query;
@@ -113,6 +121,34 @@ export function createDb() {
 
       if (error) return { ok: false, error: error.message, rows: [] };
       return { ok: true, rows: rankFlagQuizScores(data || [], cap) };
+    },
+
+    async submitRunScore(score) {
+      if (!this.ready()) return OFFLINE;
+      const { error } = await this.client.from("run_scores").insert({
+        game: runGame(score.game),
+        name: cleanName(score.name, 16),
+        score: Math.max(0, Math.floor(score.score)),
+        distance: Math.max(0, Math.floor(score.distance)),
+      });
+      return error ? { ok: false, error: error.message } : { ok: true };
+    },
+
+    async getRunScores(game, period = "global") {
+      if (!this.ready()) return OFFLINE;
+
+      let query = this.client
+        .from("run_scores")
+        .select("id,name,score,distance,created_at")
+        .eq("game", runGame(game))
+        .order("score", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(50);
+
+      if (period === "weekly") query = query.gte("created_at", weekStartIso());
+
+      const { data, error } = await query;
+      return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
     },
   };
 

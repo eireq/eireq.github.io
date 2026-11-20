@@ -1,0 +1,368 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+.run-game {
+  --ink: #11131a;
+  --white: #f4f4e8;
+  --yellow: #ffd84a;
+  --panel: rgba(10, 13, 20, 0.94);
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  background: #05070b;
+  color: var(--white);
+  font-family: "Press Start 2P", monospace;
+  overflow: hidden;
+}
+
+body.run-page {
+  overflow: hidden;
+  background: #05070b;
+}
+
+.run-game > main {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: block;
+  line-height: normal;
+}
+
+.run-game button,
+.run-game input {
+  font: inherit;
+}
+
+.run-game button {
+  border: 3px solid var(--white);
+  background: var(--ink);
+  color: var(--white);
+  padding: 15px 18px;
+  cursor: pointer;
+  text-transform: lowercase;
+  box-shadow: 5px 5px 0 #000;
+}
+
+.run-game button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #000;
+}
+
+.run-game button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.run-game button.primary {
+  background: var(--yellow);
+  color: #111;
+  border-color: #111;
+}
+
+.run-game .screen {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  position: absolute;
+  inset: 0;
+}
+
+.run-game .screen.active {
+  display: grid;
+}
+
+.run-game .menu {
+  place-items: center;
+  background: #1a1024;
+}
+
+.run-game[data-kind="roof"] .menu {
+  background: linear-gradient(#24315f, #e07a4c 78%);
+}
+
+.run-game .cabinet {
+  width: min(650px, 92vw);
+  padding: 42px;
+  text-align: center;
+  background: var(--panel);
+  border: 6px solid #fff;
+  box-shadow: 12px 12px 0 #000;
+}
+
+.run-game h1 {
+  margin: 0;
+  font-size: clamp(28px, 7vw, 52px);
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-shadow: 6px 6px 0 #000;
+}
+
+.run-game h2 {
+  margin: 0 0 26px;
+  font-size: clamp(16px, 4vw, 24px);
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.run-game .tagline,
+.run-game .hint,
+.run-game .saved-name,
+.run-game .status,
+.run-game .best-note {
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.run-game .tagline {
+  margin: 20px auto 32px;
+  max-width: 460px;
+}
+
+.run-game .menu-buttons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.run-game .hint,
+.run-game .saved-name {
+  font-size: 8px;
+  opacity: 0.8;
+  margin: 22px 0 0;
+}
+
+.run-game .saved-name {
+  color: var(--yellow);
+}
+
+.run-game a {
+  color: var(--white);
+}
+
+.run-game a:hover {
+  color: var(--yellow);
+}
+
+.run-game .play {
+  background: #111;
+  place-items: center;
+}
+
+.run-game .stage {
+  position: relative;
+  width: min(100vw, calc(100dvh * 2 / 3), 480px);
+  aspect-ratio: 2 / 3;
+  max-height: 100dvh;
+  touch-action: none;
+}
+
+.run-game canvas {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+  user-select: none;
+  background: #120c16;
+}
+
+.run-game .hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(360px, 92%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.run-game .hud div,
+.run-game .results div {
+  background: rgba(0, 0, 0, 0.78);
+  border: 2px solid var(--white);
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.run-game .hud span,
+.run-game .results span {
+  display: block;
+  font-size: 7px;
+  margin-bottom: 8px;
+  color: #ddd;
+}
+
+.run-game .hud strong,
+.run-game .results strong {
+  font-size: 11px;
+}
+
+.run-game .quit-btn,
+.run-game .pause-hint,
+.run-game .paused {
+  position: absolute;
+  z-index: 2;
+  font-size: 8px;
+}
+
+.run-game .quit-btn {
+  left: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+}
+
+.run-game .pause-hint {
+  right: 12px;
+  bottom: 16px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 2px solid rgba(244, 244, 232, 0.7);
+}
+
+.run-game .paused {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #000;
+  border: 3px solid var(--white);
+  padding: 16px 18px;
+  pointer-events: none;
+}
+
+.run-game .overlay {
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.run-game .panel {
+  width: min(680px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 34px;
+  background: var(--panel);
+  border: 5px solid var(--white);
+  box-shadow: 10px 10px 0 #000;
+}
+
+.run-game .small-panel {
+  width: min(500px, 92vw);
+  text-align: center;
+}
+
+.run-game .results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 8px 0 22px;
+}
+
+.run-game .results div {
+  background: transparent;
+}
+
+.run-game .best-note {
+  color: var(--yellow);
+  margin: 0 0 18px;
+}
+
+.run-game .name-prompt {
+  border: 2px solid var(--yellow);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.run-game .name-prompt label {
+  display: block;
+  font-size: 8px;
+  margin-bottom: 12px;
+}
+
+.run-game input {
+  width: 100%;
+  border: 3px solid var(--white);
+  background: #090b10;
+  color: var(--white);
+  padding: 14px;
+  outline: none;
+  margin-bottom: 14px;
+}
+
+.run-game input:focus {
+  border-color: var(--yellow);
+}
+
+.run-game .leaderboard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.run-game .leaderboard-head button,
+.run-game .tabs button {
+  font-size: 8px;
+  padding: 10px 12px;
+}
+
+.run-game .tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.run-game .tabs button.active {
+  background: var(--white);
+  color: #111;
+}
+
+.run-game .status {
+  color: #aaa;
+  margin: 0 0 12px;
+}
+
+.run-game .scores {
+  margin: 0;
+  padding-left: 28px;
+}
+
+.run-game .scores li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #333;
+  font-size: 8px;
+  line-height: 1.8;
+}
+
+.run-game .scores li::marker {
+  color: var(--yellow);
+}
+
+.run-game .score-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-game .score-number {
+  color: var(--yellow);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .run-game .cabinet,
+  .run-game .panel {
+    padding: 24px 16px;
+  }
+
+  .run-game .hud strong {
+    font-size: 9px;
+  }
+}

@@ -41,6 +41,16 @@
         <p>{{ t("games.racingText") }}</p>
       </router-link>
 
+      <router-link class="game" to="/games/cave">
+        <h2>{{ t("games.cave") }}</h2>
+        <p>{{ t("games.caveText") }}</p>
+      </router-link>
+
+      <router-link class="game" to="/games/roof">
+        <h2>{{ t("games.roof") }}</h2>
+        <p>{{ t("games.roofText") }}</p>
+      </router-link>
+
       <router-link class="game" to="/games/flagquiz">
         <h2>{{ t("games.flagQuiz") }}</h2>
         <p>{{ t("games.flagQuizText") }}</p>
@@ -72,6 +82,8 @@ const picks = [
   "/games/connect",
   "/games/hexchess",
   "/games/racing",
+  "/games/cave",
+  "/games/roof",
   "/games/flagquiz",
   "/games/daily",
   "/kht",

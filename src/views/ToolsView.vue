@@ -7,6 +7,16 @@
     </p>
 
     <section class="tools">
+      <router-link class="tool" to="/dum">
+        <h2>{{ t("tools.dum") }}</h2>
+        <p>{{ t("tools.dumText") }}</p>
+      </router-link>
+
+      <router-link class="tool" to="/lingo">
+        <h2>{{ t("tools.lingo") }}</h2>
+        <p>{{ t("tools.lingoText") }}</p>
+      </router-link>
+
       <router-link class="tool" to="/flagdb">
         <h2>{{ t("tools.flagDatabase") }}</h2>
         <p>{{ t("tools.flagDatabaseText") }}</p>

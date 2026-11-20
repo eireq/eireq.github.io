@@ -4,7 +4,7 @@ my website. games, a big pile of flags, a politics quiz, and a private map where
 
 **live:** https://eireq.github.io/
 
-it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia` branch (yes, the branch names are countries. no, i won't explain).
+it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia` branch 
 
 ## pages
 
@@ -14,6 +14,8 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/me` | about me |
 | `/games` | all the games, plus a random game button if you can't decide |
 | `/games/racing` | lane runner |
+| `/games/cave` | cave flyer |
+| `/games/roof` | roof run |
 | `/games/flagquiz` | flag quiz |
 | `/games/daily` | daily flag |
 | `/games/hexo` | HeXO |
@@ -24,6 +26,8 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/kht` | KHT bracket. anyone can watch, only i can edit |
 | `/tools` | tools |
 | `/tools/pi` | daily pi, one digit lesson per utc day |
+| `/lingo` | name 500 basic words and translate with them |
+| `/dum` | learn dum languag, lesson by lesson |
 | `/flagdb` | flag database |
 | `/flagdb/weeks` | every flag of the week, with the little write-ups |
 | `/flagdb/detail/:flagId` | one flag: colors, dates, wikipedia, similar flags |
@@ -38,7 +42,7 @@ it's a vue 3 app built with vite. github pages deploys it from the `zapadoslavia
 | `/contact` | contact, with an email draft |
 | `/modes` | goes to https://eireq.github.io/modes |
 
-lane runner, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. go, Otrio, HeXO, connect, and hex chess have a full screen button.
+lane runner, cave flyer, roof run, the flag quiz, HeXO, connect, hex chess, and jWorld hide the site header and footer. go, Otrio, HeXO, connect, and hex chess have a full screen button.
 
 ## flags
 
@@ -59,6 +63,14 @@ everything flag-related reads `src/assets/master_flags.json`: 1,755 records of c
 ### lane runner
 
 endless 4-lane dodging on a canvas. arrows or A/D to switch lanes, `p` to pause, esc to leave. score is distance, overtakes, and top speed. global and weekly top 50. the optional audio is in `public/games/racing/assets/`, and setup notes are in [`src/games/racing/README.md`](src/games/racing/README.md).
+
+### cave flyer
+
+`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. global and weekly top 50, same name as the other games.
+
+### roof run
+
+`/games/roof`. the roofs scroll toward you. space, click, or tap to jump. gaps get wider and the landings get shorter. a higher roof has a lip, so jumping late means you hit it. score is distance. same leaderboards as cave flyer. run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) once if the boards should save.
 
 ### Otrio
 
@@ -92,6 +104,22 @@ Gliński's hexagonal chess. 91 cells, files a–l without j, three bishops and n
 
 `/tiers`. drag country flags from S to F (or tap a flag, then a row). it stays in your browser. you can share a link, download it as a PNG, and import that PNG later to get the list back.
 
+## lingo
+
+`/lingo`. a lingojam-style translator for a language you make yourself. the list is 500 basic english words: people, little words, numbers, time, qualities, verbs, and things. type your word next to each one.
+
+`goes`, `went`, and `going` follow `go`, and `am` / `is` / `are` follow `be`, until you add a phrase that says otherwise. plurals follow the noun (`cats` follows `cat`). a dash leaves a word out. contractions such as `don't` and `it's` expand first.
+
+phrases are extra swaps and they win over the word list. the longer phrase wins. english to yours, and yours back to english. if two words share a translation, the way back uses the earlier word in the list.
+
+it stays in this browser as `eireLingo`. download it as json and import it later. "fill the blanks" invents a placeholder for anything you have not named, and leaves the ones you wrote.
+
+dum languag is the featured language on that page. loading it asks first if the browser already has one. the words and sentences are [`src/data/dum-languag.lingo.json`](src/data/dum-languag.lingo.json).
+
+## dum languag
+
+`/dum`. a course for that language. eighteen units, five hearts. you choose, type, match, or tap. a miss shows the answer. running out of hearts ends the lesson without saving it. the streak is the local day you finish a lesson, saved as `eireDum`. english word order stays, endings such as going still use the root gloss, `q'` marks a possessive, question words start with `?`, and a noun starts with a capital. the sentence unit has a third lesson. the units after the extra words teach the newer words.
+
 ## jPol
 
 a values quiz like the political compass, 8values, and sapplyvalues. full is 60 questions, express is 18. five-point answers, no right ones. you get a compass dot, six axes (equality, economy, authority, freedom, identity, progress), the topics that pulled you hardest, and a note if you answered mostly neutral or mostly extreme. download a PNG, copy a result link, keep old runs on this device, or paste a friend's code onto the same compass.
@@ -123,6 +151,7 @@ real ones:
 - german (`deu`), jPol included
 - russian (`rus`), jPol included
 - klingon (`kgn`), roughly, enough to get around
+- slovak ('slk')
 
 everything else is english through a filter: drunk, pirate, uwu, serious, vulgar, brainrot, Jenglish, IPA, emoji, toki-pona-ish, and shortened words. those are jokes.
 
@@ -147,7 +176,7 @@ npm install
 npm run dev
 ```
 
-it's on http://localhost:5173.
+should be on http://localhost:5173
 
 ```bash
 npm run build
@@ -183,6 +212,7 @@ run these in the supabase SQL editor:
 | what | script |
 | --- | --- |
 | lane runner and flag quiz scores | `src/games/racing/supabase.sql` |
+| cave flyer and roof run scores | `src/games/run/supabase.sql` |
 | KHT bracket | `src/games/kht/supabase.sql` |
 | jWorld | `src/jworld/supabase.sql`, then `src/jworld/supabase_improve.sql` |
 
@@ -221,11 +251,12 @@ src/
   router/index.js
   views/                  one file per page
   components/             header and footer
-  data/                   flags, daily flag, flag of the week, daily pi, tier list, jPol, share cards
+  data/                   flags, daily flag, flag of the week, daily pi, tier list, jPol, lingo, share cards
   assets/master_flags.json
   assets/flag_index.json  the slim copy for the database list
   games/fullscreen.js     the full screen button
   games/racing/           lane runner, audio, leaderboard
+  games/run/              cave flyer and roof run, shared board
   games/go/               board, captures, scoring
   games/otrio/            ring rules
   games/hexo/             rules, grids, bot, together mode
