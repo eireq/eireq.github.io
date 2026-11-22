@@ -4,7 +4,18 @@
       <section class="screen menu" :class="{ active: screen === 'menu' }">
         <div class="cabinet">
           <h1>{{ meta.title }}</h1>
-          <p class="tagline">{{ meta.tagline }}</p>
+          <p class="tagline">{{ tagline }}</p>
+          <div v-if="kind === 'cave'" class="mode-row">
+            <button
+              v-for="mode in caveModes"
+              :key="mode.id"
+              type="button"
+              :class="{ active: caveMode === mode.id }"
+              @click="pickMode(mode.id)"
+            >
+              {{ mode.label }}
+            </button>
+          </div>
           <div class="menu-buttons">
             <button class="primary" type="button" @click="start">start</button>
             <button type="button" @click="openBoard('global')">leaderboard</button>
@@ -75,7 +86,7 @@
       <section class="screen overlay" :class="{ active: screen === 'board' }">
         <div class="panel">
           <div class="leaderboard-head">
-            <h2>leaderboard</h2>
+            <h2>{{ boardTitle }}</h2>
             <button type="button" @click="closeBoard">x</button>
           </div>
           <div class="tabs">
@@ -128,7 +139,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { racingPlayerName, setPlayerName } from "@/data/profile.js";
-import { caveWalls, deathTitle, runMeta } from "@/games/run/logic.js";
+import { CAVE_MODES, caveScoreGame, caveWalls, deathTitle, runMeta } from "@/games/run/logic.js";
 import { createRunLoop } from "@/games/run/loop.js";
 import { ensureGameDb } from "@/games/ensureDb.js";
 import "@/games/run/style.css";
@@ -139,6 +150,19 @@ const props = defineProps({
 
 const kind = computed(() => (props.game === "roof" ? "roof" : "cave"));
 const meta = computed(() => runMeta(kind.value));
+const caveModes = CAVE_MODES;
+const caveMode = ref("normal");
+const tagline = computed(() => {
+  if (kind.value !== "cave") return meta.value.tagline;
+  if (caveMode.value === "slow") return "same cave. the gap closes later.";
+  if (caveMode.value === "random") return "a new cave every run. the gap still closes.";
+  return meta.value.tagline;
+});
+const boardTitle = computed(() => {
+  if (kind.value !== "cave") return "leaderboard";
+  const label = CAVE_MODES.find((mode) => caveScoreGame(mode.id) === boardGame())?.label;
+  return label ? `${label} leaderboard` : "leaderboard";
+});
 
 const screen = ref("menu");
 const paused = ref(false);
@@ -174,7 +198,20 @@ function refreshName() {
 }
 
 function bestKey() {
-  return `eireRunBest:${kind.value}`;
+  if (kind.value !== "cave") return "eireRunBest:roof";
+  if (caveMode.value === "normal") return "eireRunBest:cave";
+  return `eireRunBest:cave:${caveMode.value}`;
+}
+
+function pickMode(mode) {
+  caveMode.value = mode;
+  refreshName();
+}
+
+function boardGame() {
+  if (kind.value !== "cave") return "roof";
+  if (boardFrom.value === "over" && result.value?.game) return result.value.game;
+  return caveScoreGame(caveMode.value);
 }
 
 function hasStoredName() {
@@ -189,7 +226,7 @@ function bind() {
       waiting.value = Boolean(state.waiting);
       hud.score = state.score;
       hud.extra =
-        kind.value === "roof" ? state.jumps : Math.round(caveWalls(state.distance).gap);
+        kind.value === "roof" ? state.jumps : Math.round(caveWalls(state.distance, state).gap);
     },
     onEnd(run) {
       finish(run);
@@ -205,7 +242,7 @@ function start() {
   hud.score = 0;
   hud.extra = 0;
   screen.value = "play";
-  loop.start();
+  loop.start(caveMode.value);
   syncHold();
 }
 
@@ -242,7 +279,7 @@ async function submit(run) {
   sent = true;
   const response = await ensureGameDb().submitRunScore({
     ...run,
-    game: kind.value,
+    game: run.game || (kind.value === "cave" ? caveScoreGame(caveMode.value) : "roof"),
     name: racingPlayerName(),
   });
   if (!response.ok && ensureGameDb().ready()) {
@@ -278,7 +315,7 @@ async function openBoard(nextPeriod) {
   boardStatus.value = "loading...";
   rows.value = [];
   const ticket = ++boardTicket;
-  const response = await ensureGameDb().getRunScores(kind.value, nextPeriod);
+  const response = await ensureGameDb().getRunScores(boardGame(), nextPeriod);
   if (ticket !== boardTicket) return;
 
   if (!response.ok) {
@@ -296,8 +333,8 @@ async function openBoard(nextPeriod) {
 
 function boardError(error) {
   const text = String(error || "database error");
-  if (/run_scores|schema cache|relation/i.test(text)) {
-    return `${text}. run src/games/run/supabase.sql in the supabase sql editor.`;
+  if (/run_scores|schema cache|relation|check constraint|cave-slow|cave-random/i.test(text)) {
+    return `${text}. run src/games/run/supabase.sql again so each cave mode can save.`;
   }
   return `database error: ${text}`;
 }

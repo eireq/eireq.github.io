@@ -119,11 +119,27 @@ body.run-page {
   max-width: 460px;
 }
 
+.run-game .mode-row,
 .run-game .menu-buttons {
   display: flex;
   gap: 14px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.run-game .mode-row {
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.run-game .mode-row button {
+  font-size: 8px;
+  padding: 10px 12px;
+}
+
+.run-game .mode-row button.active {
+  background: var(--white);
+  color: #111;
 }
 
 .run-game .hint,

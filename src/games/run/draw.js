@@ -18,7 +18,7 @@ function drawCave(ctx, state) {
   ctx.beginPath();
   ctx.moveTo(0, 0);
   for (let x = 0; x <= RUN_W; x += 4) {
-    const wall = caveWalls(state.distance + (x - CAVE.playerX));
+    const wall = caveWalls(state.distance + (x - CAVE.playerX), state);
     ctx.lineTo(x, wall.top);
   }
   ctx.lineTo(RUN_W, 0);
@@ -28,7 +28,7 @@ function drawCave(ctx, state) {
   ctx.beginPath();
   ctx.moveTo(0, RUN_H);
   for (let x = 0; x <= RUN_W; x += 4) {
-    const wall = caveWalls(state.distance + (x - CAVE.playerX));
+    const wall = caveWalls(state.distance + (x - CAVE.playerX), state);
     ctx.lineTo(x, wall.bottom);
   }
   ctx.lineTo(RUN_W, RUN_H);
@@ -50,7 +50,7 @@ function drawCave(ctx, state) {
 function strokeCave(ctx, state, edge) {
   ctx.beginPath();
   for (let x = 0; x <= RUN_W; x += 4) {
-    const wall = caveWalls(state.distance + (x - CAVE.playerX));
+    const wall = caveWalls(state.distance + (x - CAVE.playerX), state);
     const y = edge === "top" ? wall.top : wall.bottom;
     if (x === 0) ctx.moveTo(0, y);
     else ctx.lineTo(x, y);

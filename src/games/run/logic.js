@@ -66,8 +66,29 @@ function slices(dt) {
   return { total, count, h: total / count };
 }
 
-export function caveWalls(distance) {
-  const gap = Math.max(118, 500 - distance * 0.028);
+export const CAVE_MODES = [
+  { id: "normal", label: "normal" },
+  { id: "slow", label: "slow" },
+  { id: "random", label: "random" },
+];
+
+export function caveMode(mode) {
+  return mode === "slow" || mode === "random" ? mode : "normal";
+}
+
+export function caveScoreGame(mode) {
+  const safe = caveMode(mode);
+  if (safe === "slow") return "cave-slow";
+  if (safe === "random") return "cave-random";
+  return "cave";
+}
+
+function caveGap(distance, mode) {
+  const shrink = mode === "slow" ? 0.011 : 0.028;
+  return Math.max(118, 500 - distance * shrink);
+}
+
+function sineCenter(distance, gap) {
   const margin = 32;
   const travel = Math.max(0, RUN_H - margin * 2 - gap);
   const sharp = Math.min(1.6, Math.max(0, (distance - 3600) / 10000));
@@ -75,34 +96,92 @@ export function caveWalls(distance) {
     Math.sin(distance * (0.0022 + sharp * 0.0024)) * 0.7 +
     Math.sin(distance * (0.0048 + sharp * 0.0046) + 1.2) * (0.22 + sharp * 0.18);
   const mix = 0.5 + 0.5 * Math.max(-1, Math.min(1, wobble));
-  const top = margin + mix * travel;
-  return { top, bottom: top + gap, gap };
+  return margin + gap / 2 + mix * travel;
 }
 
-export function caveHits(y, distance) {
+function centerAt(knots, distance) {
+  if (!knots?.length) return RUN_H / 2;
+  if (distance <= knots[0].d) return knots[0].center;
+  let index = 0;
+  while (index < knots.length - 2 && knots[index + 1].d <= distance) index += 1;
+  const from = knots[index];
+  const to = knots[index + 1] || from;
+  const span = to.d - from.d;
+  const t = span <= 0 ? 1 : Math.max(0, Math.min(1, (distance - from.d) / span));
+  const smooth = t * t * (3 - 2 * t);
+  return from.center + (to.center - from.center) * smooth;
+}
+
+function fillCaveKnots(state) {
+  let last = state.knots[state.knots.length - 1];
+  while (last.d < state.distance + 1600) {
+    const span = 210 + state.rng() * 170;
+    const d = last.d + span;
+    const gap = caveGap(d, "random");
+    const margin = 32;
+    const minCenter = margin + gap / 2;
+    const maxCenter = RUN_H - margin - gap / 2;
+    const harsh = state.rng() < 0.35;
+    const swing = Math.min(maxCenter - minCenter, (harsh ? 130 : 70) + d * 0.0025);
+    let center = last.center + (state.rng() * 2 - 1) * swing;
+    const maxStep = span * 0.34;
+    center = last.center + Math.max(-maxStep, Math.min(maxStep, center - last.center));
+    center = Math.max(minCenter, Math.min(maxCenter, center));
+    state.knots.push({ d, center });
+    last = state.knots[state.knots.length - 1];
+  }
+  while (state.knots.length > 3 && state.knots[1].d < state.distance - 500) {
+    state.knots.shift();
+  }
+}
+
+export function caveWalls(distance, cave) {
+  const mode = caveMode(cave?.mode);
+  const gap = caveGap(distance, mode);
+  const margin = 32;
+  const minCenter = margin + gap / 2;
+  const maxCenter = RUN_H - margin - gap / 2;
+  const raw = mode === "random" ? centerAt(cave?.knots, distance) : sineCenter(distance, gap);
+  const center = Math.max(minCenter, Math.min(maxCenter, raw));
+  return { top: center - gap / 2, bottom: center + gap / 2, gap };
+}
+
+export function caveHits(y, distance, cave) {
   const r = CAVE.radius;
   for (const ahead of [-r, 0, r]) {
-    const wall = caveWalls(distance + ahead);
+    const wall = caveWalls(distance + ahead, cave);
     if (y - r < wall.top || y + r > wall.bottom) return true;
   }
   return false;
 }
 
-export function createCave() {
-  const wall = caveWalls(0);
-  return {
+export function createCave(mode = "normal", seed = 1) {
+  const safe = caveMode(mode);
+  const state = {
     kind: "cave",
+    mode: safe,
     alive: true,
     reason: "",
     distance: 0,
     score: 0,
     speed: CAVE.startSpeed,
     bestSpeed: CAVE.startSpeed,
-    y: (wall.top + wall.bottom) / 2,
+    y: RUN_H / 2,
     vy: 0,
     elapsed: 0,
     jumps: 0,
+    seed: seed >>> 0,
+    rng: null,
+    knots: null,
   };
+  if (safe === "random") {
+    state.rng = mulberry32(seed);
+    state.knots = [{ d: 0, center: RUN_H / 2 }];
+    fillCaveKnots(state);
+  }
+  const wall = caveWalls(0, state);
+  state.y = (wall.top + wall.bottom) / 2;
+  return state;
 }
 
 function stepCaveOnce(state, input, dt) {
@@ -114,7 +193,8 @@ function stepCaveOnce(state, input, dt) {
   if (state.speed > state.bestSpeed) state.bestSpeed = state.speed;
   state.distance += state.speed * dt;
   state.elapsed += dt;
-  if (caveHits(state.y, state.distance)) {
+  if (state.mode === "random") fillCaveKnots(state);
+  if (caveHits(state.y, state.distance, state)) {
     state.alive = false;
     state.reason = "rock";
   }
