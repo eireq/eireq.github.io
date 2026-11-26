@@ -43,3 +43,6 @@ with check (
     or (board = 'mistake' and mistakes > 0)
   )
 );
+
+grant select, insert on public.onion_scores to anon, authenticated;
+grant usage, select on sequence public.onion_scores_id_seq to anon, authenticated;

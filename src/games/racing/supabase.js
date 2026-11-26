@@ -189,6 +189,34 @@ export function createDb() {
 
       return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
     },
+
+    async onionCounts(board, wpm) {
+      if (!this.ready()) return OFFLINE;
+      const which = board === "mistake" ? "mistake" : "onion";
+      const safeWpm = Math.max(0, Math.min(400, Math.floor(Number(wpm) || 0)));
+      const count = (filter) => {
+        let query = this.client
+          .from("onion_scores")
+          .select("id", { count: "exact", head: true })
+          .eq("board", which);
+        if (filter) query = filter(query);
+        return query;
+      };
+
+      const [total, better, worse] = await Promise.all([
+        count(),
+        count((query) => query.gt("wpm", safeWpm)),
+        count((query) => query.lt("wpm", safeWpm)),
+      ]);
+      const error = total.error || better.error || worse.error;
+      if (error) return { ok: false, error: error.message };
+      return {
+        ok: true,
+        total: total.count || 0,
+        better: better.count || 0,
+        worse: worse.count || 0,
+      };
+    },
   };
 
   db.init();

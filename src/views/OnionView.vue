@@ -5,6 +5,7 @@
       <p class="intro">
         type the word onion for 30 seconds. a clean run goes on the onion board.
         one wrong letter, and that run goes on the mistake board instead.
+        yes, this IS a copy / inspiration of 6-7.com ... havent changed design much yet
       </p>
       <div class="ready-actions">
         <button class="primary" type="button" @click="start">start</button>
@@ -21,7 +22,7 @@
           @blur="saveName"
         />
       </label>
-      <p class="hint">lowercase. the space between onions counts. backspace can undo a letter.</p>
+      <p class="hint">lowercase. the space counts. backspace can undo a letter. scripts stay off the boards.</p>
       <p class="back"><router-link to="/games">← games</router-link></p>
     </section>
 
@@ -56,33 +57,40 @@
       />
     </section>
 
-    <section v-else-if="screen === 'result' && result && place" class="result">
+    <section v-else-if="screen === 'result' && result" class="result">
       <p class="eyebrow">result</p>
-      <h1 class="score">{{ result.wpm }}</h1>
-      <p class="unit">wpm</p>
-      <p class="rank-name">{{ title.name }}<span v-if="title.flame" class="flame"> 🔥</span></p>
-      <p class="place">you rank <span class="hash">#{{ place.rank }}</span> all-time</p>
-      <p class="which">{{ result.board }} board · {{ onionLabel(result.onions) }}</p>
-      <p class="climb">keep climbing —</p>
-      <p class="beat">you beat {{ place.beat }}%</p>
-      <p class="of">of {{ players }}</p>
+      <h1 class="score" :class="{ 'score-void': result.blocked }">{{ result.blocked ? "no" : result.wpm }}</h1>
+      <p class="unit">{{ result.blocked ? "board" : "wpm" }}</p>
+      <p class="rank-name">
+        {{ result.blocked ? "void" : title.name }}<span v-if="!result.blocked && title.flame" class="flame"> 🔥</span>
+      </p>
+      <template v-if="place">
+        <p class="place">you rank <span class="hash">#{{ place.rank }}</span> all-time</p>
+        <p class="which">{{ result.board }} board · {{ onionLabel(result.onions) }}</p>
+        <p class="climb">keep climbing —</p>
+        <p class="beat">you beat {{ place.beat }}%</p>
+        <p class="of">of {{ players }}</p>
 
-      <div class="hist" aria-hidden="true">
-        <div
-          v-for="(bar, index) in place.histogram.bars"
-          :key="index"
-          class="bar"
-          :class="{ mine: bar.mine, empty: bar.count === 0 }"
-          :style="bar.count ? { height: `${Math.round(bar.height * 112)}px` } : null"
-        >
-          <span v-if="bar.mine" class="pin"></span>
+        <div class="hist" aria-hidden="true">
+          <div
+            v-for="(bar, index) in place.histogram.bars"
+            :key="index"
+            class="bar"
+            :class="{ mine: bar.mine, empty: bar.count === 0 }"
+            :style="bar.count ? { height: `${Math.round(bar.height * 112)}px` } : null"
+          >
+            <span v-if="bar.mine" class="pin"></span>
+          </div>
         </div>
-      </div>
-      <div class="axis" aria-hidden="true">
-        <span>0</span>
-        <span>{{ place.histogram.mid }}</span>
-        <span>{{ place.histogram.cap === 130 ? "130+" : place.histogram.cap }}</span>
-      </div>
+        <div class="axis" aria-hidden="true">
+          <span>0</span>
+          <span>{{ place.histogram.mid }}</span>
+          <span>{{ place.histogram.cap === 130 ? "130+" : place.histogram.cap }}</span>
+        </div>
+      </template>
+      <p v-else class="blocked">
+        {{ result.blocked ? "a script typed this. it stays off both boards." : savedNote }}
+      </p>
 
       <div class="slip">
         <h2>{{ result.mistakes ? "where you made a mistake" : "what you typed" }}</h2>
@@ -102,7 +110,8 @@
           </p>
           <p v-if="extraSlips" class="slip-line">and {{ extraSlips }} more in the text above.</p>
         </template>
-        <p v-else-if="result.tape.length" class="slip-line">
+        <p v-if="result.blocked" class="slip-line">this run stays off the boards.</p>
+        <p v-else-if="result.tape.length && !result.slips.length" class="slip-line">
           no mistakes. this run stays on the onion board.
         </p>
       </div>
@@ -112,11 +121,11 @@
         <button type="button" @click="openBoard(result.board)">leaderboard</button>
         <button class="again" type="button" @click="start">play again</button>
       </div>
-      <p class="saved">{{ savedNote }}</p>
+      <p v-if="savedNote && place" class="saved">{{ savedNote }}</p>
       <p class="back"><router-link to="/games">← games</router-link></p>
     </section>
 
-    <section v-else class="board">
+    <section v-else-if="screen === 'board'" class="board">
       <button class="textish back-btn" type="button" @click="closeBoard">← back</button>
       <h1>{{ boardName }} board.</h1>
       <div class="tabs">
@@ -154,6 +163,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { copyShareCard } from "../data/shareCard.js";
 import { getPlayerName, setPlayerName } from "../data/profile.js";
 import { ensureGameDb } from "../games/ensureDb.js";
+import { createTrace, pushDown, pushHold } from "../games/onion/fair.js";
 import {
   CYCLE,
   createRun,
@@ -164,7 +174,7 @@ import {
   windowCells,
 } from "../games/onion/logic.js";
 import { playerCount, ranked, standings, titleFor } from "../games/onion/ranks.js";
-import { fromRemote, loadScores, rememberScore } from "../games/onion/storage.js";
+import { fromRemote } from "../games/onion/storage.js";
 
 const screen = ref("ready");
 const name = ref(getPlayerName());
@@ -188,6 +198,9 @@ let locking = false;
 let alive = true;
 let typedFromKey = false;
 let deletedFromKey = false;
+let trace = createTrace();
+let hiddenKeys = 0;
+const downAt = new Map();
 
 const cells = computed(() => windowCells(run.value));
 const slipped = computed(() => run.value.tape.some((cell) => !cell.ok));
@@ -250,11 +263,31 @@ function keepCaret() {
   }
 }
 
+function clockNow() {
+  return performance.now();
+}
+
+function boardProblem(error) {
+  const text = String(error || "");
+  if (/onion_scores|schema cache|PGRST205|relation/i.test(text)) {
+    return "the global board isn't set up yet.";
+  }
+  return "the global board isn't reachable.";
+}
+
 function hit(key) {
-  if (screen.value !== "play" || run.value.finished) return;
-  press(run.value, key, Date.now());
+  if (screen.value !== "play" || run.value.finished || trace.voided) return;
+  press(run.value, key, clockNow());
   nextTick(keepCaret);
   if (run.value.finished) complete();
+}
+
+function voidScript() {
+  if (trace.voided !== "script") trace.voided = "script";
+  if (run.value.finished) return;
+  run.value.finished = true;
+  run.value.elapsed = ROUND_MS;
+  complete();
 }
 
 function start() {
@@ -264,6 +297,10 @@ function start() {
   result.value = null;
   place.value = null;
   shareNote.value = "";
+  savedNote.value = "";
+  trace = createTrace();
+  hiddenKeys = 0;
+  downAt.clear();
   run.value = createRun();
   screen.value = "play";
   nextTick(() => {
@@ -271,7 +308,7 @@ function start() {
     focused.value = true;
   });
   timer = setInterval(() => {
-    tick(run.value, Date.now());
+    tick(run.value, clockNow());
     if (run.value.finished) complete();
   }, 50);
 }
@@ -287,46 +324,90 @@ async function complete() {
   clearInterval(timer);
 
   const summary = summarize(run.value);
-  const localRow = rememberScore({ ...summary, name: getPlayerName() });
-  let scores = loadScores();
-  let row = localRow;
-  let savedOn = "saved on this browser";
+  summary.blocked = trace.voided === "script";
+  result.value = summary;
 
+  if (summary.blocked) {
+    place.value = null;
+    savedNote.value = "";
+    mineId.value = "";
+    screen.value = "result";
+    return;
+  }
+
+  const name = getPlayerName();
+  let savedOn = "the global board didn't save this run.";
   try {
     const db = ensureGameDb();
-    if (db?.ready?.()) {
-      const sent = await db.submitOnionScore({ ...summary, name: getPlayerName() });
+    if (!db?.ready?.()) {
+      savedOn = "the global board isn't reachable.";
+    } else {
+      const sent = await db.submitOnionScore({ ...summary, name });
       if (sent?.ok && sent.row) {
-        const remote = await db.getOnionScores(summary.board);
+        const [remote, counts] = await Promise.all([
+          db.getOnionScores(summary.board),
+          db.onionCounts(summary.board, summary.wpm),
+        ]);
         if (remote?.ok) {
-          scores = remote.rows.map(fromRemote).filter(Boolean);
-          row = fromRemote(sent.row) || row;
-          savedOn = "saved to the leaderboard";
+          const scores = remote.rows.map(fromRemote).filter(Boolean);
+          const row = fromRemote(sent.row);
+          if (row && alive) {
+            place.value = standings(scores, row, counts?.ok ? counts : null);
+            mineId.value = row.id;
+            savedOn = "saved to the global board.";
+            savedNote.value = savedOn;
+            screen.value = "result";
+            return;
+          }
         }
+        savedOn = boardProblem(remote?.error);
+      } else {
+        savedOn = boardProblem(sent?.error);
       }
     }
   } catch {
-    // the browser copy is enough when the board is offline
+    savedOn = "the global board didn't save this run.";
   }
 
-  if (!alive || !row) return;
-  result.value = summary;
-  place.value = standings(scores, row);
-  mineId.value = row.id;
+  if (!alive) return;
+  place.value = null;
+  mineId.value = "";
   savedNote.value = savedOn;
   screen.value = "result";
 }
 
 function onKeyDown(event) {
-  if (screen.value !== "play") return;
+  if (screen.value !== "play" || run.value.finished) return;
   if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!event.isTrusted) {
+    event.preventDefault();
+    voidScript();
+    return;
+  }
+  if (document.hidden) {
+    hiddenKeys += 1;
+    if (hiddenKeys >= 3) voidScript();
+    return;
+  }
   if (event.key === "Escape") {
     event.preventDefault();
     giveUp();
     return;
   }
-  if (event.key === "Backspace") {
+  if (event.repeat || event.key === "Unidentified" || event.key === "Process") return;
+  if (event.key !== "Backspace" && event.key.length !== 1) return;
+
+  const at = clockNow();
+  pushDown(trace, at);
+  downAt.set(event.key, at);
+  if (trace.voided) {
     event.preventDefault();
+    voidScript();
+    return;
+  }
+
+  event.preventDefault();
+  if (event.key === "Backspace") {
     deletedFromKey = true;
     hit("Backspace");
     requestAnimationFrame(() => {
@@ -334,32 +415,48 @@ function onKeyDown(event) {
     });
     return;
   }
-  if (event.key.length === 1) {
-    event.preventDefault();
-    typedFromKey = true;
-    hit(event.key);
-    requestAnimationFrame(() => {
-      typedFromKey = false;
-    });
-  }
+  typedFromKey = true;
+  hit(event.key);
+  requestAnimationFrame(() => {
+    typedFromKey = false;
+  });
+}
+
+function onKeyUp(event) {
+  if (screen.value !== "play" || !event.isTrusted || event.repeat) return;
+  const started = downAt.get(event.key);
+  if (started == null) return;
+  downAt.delete(event.key);
+  pushHold(trace, clockNow() - started);
+  if (trace.voided) voidScript();
 }
 
 function onBeforeInput(event) {
-  if (screen.value !== "play") return;
-  if (event.inputType === "insertText" && event.data) {
+  if (screen.value !== "play" || run.value.finished) return;
+  if (typedFromKey && event.inputType === "insertText") return;
+  if (deletedFromKey && event.inputType === "deleteContentBackward") return;
+  const pasted =
+    event.inputType === "insertFromPaste" ||
+    event.inputType === "insertFromDrop" ||
+    (event.data && event.data.length > 1);
+  if (!event.isTrusted || pasted) {
     event.preventDefault();
-    if (typedFromKey) return;
-    for (const char of event.data) hit(char);
+    voidScript();
     return;
   }
-  if (event.inputType === "insertFromPaste" && event.data) {
+  if (event.inputType === "insertText" && event.data) {
     event.preventDefault();
+    const at = clockNow();
+    pushDown(trace, at);
+    if (trace.voided) {
+      voidScript();
+      return;
+    }
     for (const char of event.data) hit(char);
     return;
   }
   if (event.inputType === "deleteContentBackward") {
     event.preventDefault();
-    if (deletedFromKey) return;
     hit("Backspace");
   }
 }
@@ -369,16 +466,18 @@ function onInput(event) {
 }
 
 async function shareScore() {
-  if (!result.value || !place.value) return;
+  if (!result.value || (!place.value && !result.value.blocked)) return;
   try {
     const status = await copyShareCard({
-      title: `${result.value.wpm} wpm`,
-      lines: [
-        title.value.name,
-        `${result.value.board} board`,
-        `rank #${place.value.rank}`,
-        onionLabel(result.value.onions),
-      ],
+      title: result.value.blocked ? "void" : `${result.value.wpm} wpm`,
+      lines: result.value.blocked
+        ? ["script", "not on the board"]
+        : [
+            title.value.name,
+            `${result.value.board} board`,
+            `rank #${place.value.rank}`,
+            onionLabel(result.value.onions),
+          ],
     });
     shareNote.value = status === "copied" ? "copied" : "saved";
   } catch {
@@ -396,19 +495,24 @@ async function openBoard(which) {
   boardStatus.value = "loading...";
   rows.value = [];
 
-  let listed = ranked(loadScores(), boardName.value);
-  let source = "this browser";
+  let listed = [];
+  let source = "global";
   try {
     const db = ensureGameDb();
-    if (db?.ready?.()) {
-      const remote = await db.getOnionScores(boardName.value);
-      if (remote?.ok) {
-        listed = ranked(remote.rows.map(fromRemote).filter(Boolean), boardName.value);
-        source = "everyone";
-      }
+    if (!db?.ready?.()) {
+      boardStatus.value = "the global board isn't reachable.";
+      return;
     }
+    const remote = await db.getOnionScores(boardName.value);
+    if (!remote?.ok) {
+      boardStatus.value = boardProblem(remote?.error);
+      return;
+    }
+    listed = ranked(remote.rows.map(fromRemote).filter(Boolean), boardName.value);
   } catch {
-    // keep the scores from this browser
+    if (!alive) return;
+    boardStatus.value = "the global board isn't reachable.";
+    return;
   }
 
   if (!alive) return;
@@ -431,12 +535,16 @@ function rowRank(index) {
   return rows.value.findIndex((row) => row.wpm === wpm) + 1;
 }
 
-onMounted(() => window.addEventListener("keydown", onKeyDown));
+onMounted(() => {
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
+});
 
 onBeforeUnmount(() => {
   alive = false;
   clearInterval(timer);
   window.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener("keyup", onKeyUp);
 });
 </script>
 
@@ -649,6 +757,14 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
+.blocked {
+  max-width: 420px;
+  margin: 28px auto 0;
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
 .score {
   margin: 10px 0 0;
   color: #f5cf3d;
@@ -657,6 +773,10 @@ onBeforeUnmount(() => {
   font-weight: 900;
   line-height: 0.82;
   letter-spacing: -6px;
+}
+
+.score-void {
+  font-size: clamp(72px, 14vw, 120px);
 }
 
 .unit {

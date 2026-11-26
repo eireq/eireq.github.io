@@ -26,15 +26,16 @@ export function ranked(scores, board) {
     );
 }
 
-export function standings(scores, row) {
+export function standings(scores, row, counts) {
   const pool = scores.filter((score) => score.board === row.board);
   const all = pool.some((score) => score.id === row.id) ? pool : [...pool, row];
-  const better = all.filter((score) => score.wpm > row.wpm).length;
-  const worse = all.filter((score) => score.wpm < row.wpm).length;
-  const others = all.length - 1;
+  const better = counts ? counts.better : all.filter((score) => score.wpm > row.wpm).length;
+  const worse = counts ? counts.worse : all.filter((score) => score.wpm < row.wpm).length;
+  const total = counts ? counts.total : all.length;
+  const others = total - 1;
   return {
     rank: better + 1,
-    total: all.length,
+    total,
     beat: others <= 0 ? 100 : Math.round((100 * worse) / others),
     histogram: histogram(all, row),
   };
