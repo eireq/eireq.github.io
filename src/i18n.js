@@ -111,7 +111,7 @@ const messages = {
         "a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.",
       random: "random game",
       onion: "onion",
-      onionText: "type onion for 30 seconds. one mistake and you leave the onion board.",
+      onionText: "type onion for 15 seconds. one mistake and you leave the onion board.",
       racing: "racing",
       racingText: "lane changing game. with leaderboards!!",
       cave: "cave flyer",
@@ -976,7 +976,7 @@ const messages = {
       intro:
         "eine Sammlung von Spielen, die ich erstellt habe. meistens kleine Projekte, Experimente und Dinge, die lustig schienen.",
       onion: "onion",
-      onionText: "30 sekunden lang onion tippen. ein fehler, und du landest auf der fehlerliste.",
+      onionText: "15 sekunden lang onion tippen. ein fehler, und du landest auf der fehlerliste.",
       racing: "racing",
       racingText: "spiel zum Spurwechseln, mit Bestenlisten!!",
       cave: "höhlenflug",
@@ -1744,7 +1744,7 @@ messages.rus = mergeMessages(messages.eng, {
     intro:
       "коллекция игр, которые я создал. в основном небольшие проекты, эксперименты и забавные идеи.",
     onion: "onion",
-    onionText: "печатай onion 30 секунд. одна ошибка — и ты в таблице ошибок.",
+    onionText: "печатай onion 15 секунд. одна ошибка — и ты в таблице ошибок.",
     racing: "гонки",
     racingText: "игра со сменой полос. с таблицей лидеров!!",
     cave: "полёт в пещере",

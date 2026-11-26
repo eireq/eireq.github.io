@@ -3,7 +3,7 @@
     <section v-if="screen === 'ready'" class="ready">
       <h1>onion.</h1>
       <p class="intro">
-        type the word onion for 30 seconds. a clean run goes on the onion board.
+        type the word onion for 15 seconds. a clean run goes on the onion board.
         one wrong letter, and that run goes on the mistake board instead.
         yes, this IS a copy / inspiration of 6-7.com ... havent changed design much yet
       </p>

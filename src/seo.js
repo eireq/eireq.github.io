@@ -88,8 +88,8 @@ export const pages = [
     path: "/games/onion",
     title: "onion — eire",
     description:
-      "Type the word onion for 30 seconds. A clean run goes on the onion board. One wrong letter sends that run to the mistake board.",
-    fallback: `<h1>onion.</h1><p>type onion for 30 seconds. one mistake and you leave the onion board.</p>`,
+      "Type the word onion for 15 seconds. A clean run goes on the onion board. One wrong letter sends that run to the mistake board.",
+    fallback: `<h1>onion.</h1><p>type onion for 15 seconds. one mistake and you leave the onion board.</p>`,
   },
   {
     path: "/games/racing",

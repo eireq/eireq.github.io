@@ -77,7 +77,7 @@ test("wrong letters in a row count as one slip", () => {
   assert.equal(result.slips[0].expectedLabel, "iii");
 });
 
-test("the clock starts on the first letter and ignores keys after 30s", () => {
+test("the clock starts on the first letter and ignores keys after the round", () => {
   const run = createRun();
   press(run, "Backspace", 1_000);
   assert.equal(run.startedAt, null);

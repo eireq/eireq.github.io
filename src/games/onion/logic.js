@@ -1,6 +1,6 @@
 export const WORD = "onion";
 export const CYCLE = WORD.length + 1;
-export const ROUND_MS = 30_000;
+export const ROUND_MS = 15_000;
 
 export function createRun() {
   return {

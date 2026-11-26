@@ -56,7 +56,7 @@ export const siteSlk = {
       "zbierka hier, ktoré som spravil. väčšinou malé projekty, experimenty a veci, o ktorých som si myslel, že bude sranda ich spraviť.",
     random: "náhodná hra",
     onion: "onion",
-    onionText: "píš onion 30 sekúnd. jedna chyba a ideš na rebríček chýb.",
+    onionText: "píš onion 15 sekúnd. jedna chyba a ideš na rebríček chýb.",
     racing: "racing",
     racingText: "hra o menení pruhov. s rebríčkami!!",
     cave: "let jaskyňou",
