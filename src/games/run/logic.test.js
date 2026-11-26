@@ -19,7 +19,7 @@ function flyCave(seconds, steer) {
 }
 
 function centerHold(state) {
-  const wall = caveWalls(state.distance + 70);
+  const wall = caveWalls(state.distance + 70, state);
   return state.y > (wall.top + wall.bottom) / 2;
 }
 
@@ -74,7 +74,39 @@ test("a flyer who aims for the middle survives the opening", () => {
   const state = flyCave(12, centerHold);
   assert.equal(state.alive, true);
   assert.ok(state.score > 1800);
-  assert.equal(caveHits(state.y, state.distance), false);
+  assert.equal(caveHits(state.y, state.distance, state), false);
+});
+
+test("slow mode closes the gap later than normal", () => {
+  const slow = { mode: "slow" };
+  assert.ok(caveWalls(0, slow).gap > 280);
+  assert.ok(caveWalls(12000, slow).gap > caveWalls(12000).gap + 40);
+  assert.ok(caveWalls(30000, slow).gap < caveWalls(0, slow).gap);
+  const state = createCave("slow");
+  for (let i = 0; i < 12 * 60 && state.alive; i += 1) {
+    stepCave(state, { hold: centerHold(state) }, 1 / 60);
+  }
+  assert.equal(state.alive, true);
+  assert.equal(state.mode, "slow");
+});
+
+test("a random cave is a new set of turns, and the gap still closes", () => {
+  const one = createCave("random", 4);
+  const again = createCave("random", 4);
+  const other = createCave("random", 9);
+  const sample = (cave) => [200, 700, 1400].map((distance) => Math.round(caveWalls(distance, cave).top));
+  assert.deepEqual(sample(one), sample(again));
+  assert.notDeepEqual(sample(one), sample(other));
+  assert.ok(caveWalls(16000, one).gap < caveWalls(0, one).gap);
+
+  for (const seed of [1, 4, 9]) {
+    const state = createCave("random", seed);
+    for (let i = 0; i < 12 * 60 && state.alive; i += 1) {
+      stepCave(state, { hold: centerHold(state) }, 1 / 60);
+    }
+    assert.equal(state.alive, true, `seed ${seed} died at ${Math.floor(state.distance)}`);
+    assert.ok(state.score > 1800);
+  }
 });
 
 test("roof layout is the same for the same seed", () => {

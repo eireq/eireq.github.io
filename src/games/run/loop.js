@@ -1,5 +1,5 @@
 import { drawRun } from "./draw.js";
-import { createCave, createRoof, stepCave, stepRoof } from "./logic.js";
+import { caveScoreGame, createCave, createRoof, stepCave, stepRoof } from "./logic.js";
 
 export function createRunLoop(canvas, kind, hooks = {}) {
   const ctx = canvas.getContext("2d");
@@ -43,7 +43,8 @@ export function createRunLoop(canvas, kind, hooks = {}) {
         hooks.onFrame?.(state);
         stop();
         hooks.onEnd?.({
-          game: kind,
+          game: kind === "roof" ? "roof" : caveScoreGame(state.mode),
+          mode: state.mode,
           score: state.score,
           distance: state.score,
           jumps: state.jumps,
@@ -62,8 +63,9 @@ export function createRunLoop(canvas, kind, hooks = {}) {
   }
 
   return {
-    start() {
-      state = kind === "roof" ? createRoof((Math.random() * 1e9) >>> 0) : createCave();
+    start(mode) {
+      const seed = (Math.random() * 1e9) >>> 0;
+      state = kind === "roof" ? createRoof(seed) : createCave(mode, seed);
       state.hold = false;
       state.waiting = kind === "cave";
       running = true;
