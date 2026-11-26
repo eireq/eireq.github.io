@@ -11,6 +11,11 @@
     </button>
 
     <section class="games">
+      <router-link class="game" to="/games/onion">
+        <h2>{{ t("games.onion") }}</h2>
+        <p>{{ t("games.onionText") }}</p>
+      </router-link>
+
       <router-link class="game" to="/games/go">
         <h2>{{ t("games.go") }}</h2>
         <p>{{ t("games.goText") }}</p>
@@ -76,6 +81,7 @@ import { useI18n } from "../i18n.js";
 const { t } = useI18n();
 const router = useRouter();
 const picks = [
+  "/games/onion",
   "/games/go",
   "/games/otrio",
   "/games/hexo",

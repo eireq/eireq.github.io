@@ -81,6 +81,7 @@ const weekly = ref(null);
 const weekImage = ref("");
 
 const fresh = new Set([
+  "/games/onion",
   "/games/daily",
   "/games/connect",
   "/games/cave",
@@ -95,6 +96,7 @@ const groups = [
   {
     title: "home.groupQuick",
     items: [
+      { to: "/games/onion", title: "games.onion", text: "games.onionText" },
       { to: "/games/daily", title: "games.dailyFlag", text: "games.dailyFlagText" },
       { to: "/tools/pi", title: "tools.pi", text: "tools.piText" },
       { to: "/games/flagquiz", title: "games.flagQuiz", text: "games.flagQuizText" },

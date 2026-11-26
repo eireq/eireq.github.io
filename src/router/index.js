@@ -178,6 +178,12 @@ const router = createRouter({
       },
     },
     {
+      path: "/games/onion",
+      name: "game-onion",
+      component: () => import("../views/OnionView.vue"),
+      meta: { title: "onion - eire" },
+    },
+    {
       path: "/games/racing",
       name: "game-racing",
       component: () => import("../views/GameRacingView.vue"),

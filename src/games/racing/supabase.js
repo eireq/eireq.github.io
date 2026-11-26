@@ -150,6 +150,43 @@ export function createDb() {
       const { data, error } = await query;
       return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
     },
+
+    async submitOnionScore(score) {
+      if (!this.ready()) return OFFLINE;
+      const board = score.board === "mistake" ? "mistake" : "onion";
+      const mistakes = Math.max(0, Math.min(999, Math.floor(Number(score.mistakes) || 0)));
+      if ((board === "onion" && mistakes !== 0) || (board === "mistake" && mistakes < 1)) {
+        return { ok: false, error: "wrong board" };
+      }
+
+      const { data, error } = await this.client
+        .from("onion_scores")
+        .insert({
+          name: cleanName(score.name, 30),
+          wpm: Math.max(0, Math.min(400, Math.floor(Number(score.wpm) || 0))),
+          onions: Math.max(0, Math.min(200, Math.floor(Number(score.onions) || 0))),
+          mistakes,
+          board,
+        })
+        .select("id,name,wpm,onions,mistakes,board,created_at")
+        .single();
+
+      return error ? { ok: false, error: error.message } : { ok: true, row: data };
+    },
+
+    async getOnionScores(board) {
+      if (!this.ready()) return OFFLINE;
+      const which = board === "mistake" ? "mistake" : "onion";
+      const { data, error } = await this.client
+        .from("onion_scores")
+        .select("id,name,wpm,onions,mistakes,board,created_at")
+        .eq("board", which)
+        .order("wpm", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(1000);
+
+      return error ? { ok: false, error: error.message, rows: [] } : { ok: true, rows: data || [] };
+    },
   };
 
   db.init();

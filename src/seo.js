@@ -67,11 +67,12 @@ export const pages = [
     path: "/games",
     title: "games — eire",
     description:
-      "Browser games by eire: Lane Runner, Cave Flyer, Roof Run, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
+      "Browser games by eire: Onion, Lane Runner, Cave Flyer, Roof Run, a flag quiz, daily flag, HeXO, Otrio, Go, and hex chess.",
     fallback: `
       <h1>games.</h1>
       <p>a collection of games i've made. mostly small projects, experiments, and things i thought would be funny to make.</p>
       <nav>
+        <a href="/games/onion">onion</a>
         <a href="/games/racing">lane runner</a>
         <a href="/games/cave">cave flyer</a>
         <a href="/games/roof">roof run</a>
@@ -82,6 +83,13 @@ export const pages = [
         <a href="/games/go">go</a>
         <a href="/games/hexchess">hex chess</a>
       </nav>`,
+  },
+  {
+    path: "/games/onion",
+    title: "onion — eire",
+    description:
+      "Type the word onion for 30 seconds. A clean run goes on the onion board. One wrong letter sends that run to the mistake board.",
+    fallback: `<h1>onion.</h1><p>type onion for 30 seconds. one mistake and you leave the onion board.</p>`,
   },
   {
     path: "/games/racing",
