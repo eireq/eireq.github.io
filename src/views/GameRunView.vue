@@ -155,6 +155,7 @@ const caveMode = ref("normal");
 const tagline = computed(() => {
   if (kind.value !== "cave") return meta.value.tagline;
   if (caveMode.value === "slow") return "same cave. the gap closes later.";
+  if (caveMode.value === "glide") return "the gap closes like normal. you fly slower.";
   if (caveMode.value === "random") return "a new cave every run. the gap still closes.";
   return meta.value.tagline;
 });
@@ -333,7 +334,7 @@ async function openBoard(nextPeriod) {
 
 function boardError(error) {
   const text = String(error || "database error");
-  if (/run_scores|schema cache|relation|check constraint|cave-slow|cave-random/i.test(text)) {
+  if (/run_scores|schema cache|relation|check constraint|cave-slow|cave-glide|cave-random/i.test(text)) {
     return `${text}. run src/games/run/supabase.sql again so each cave mode can save.`;
   }
   return `database error: ${text}`;

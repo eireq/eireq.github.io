@@ -12,7 +12,7 @@ function quizMode(mode) {
   return QUIZ_MODE_VALUES.includes(mode) ? mode : "countries";
 }
 
-const RUN_GAMES = new Set(["roof", "cave", "cave-slow", "cave-random"]);
+const RUN_GAMES = new Set(["roof", "cave", "cave-slow", "cave-glide", "cave-random"]);
 
 function runGame(game) {
   return RUN_GAMES.has(game) ? game : "cave";

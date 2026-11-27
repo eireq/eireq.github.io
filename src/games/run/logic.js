@@ -69,18 +69,28 @@ function slices(dt) {
 export const CAVE_MODES = [
   { id: "normal", label: "normal" },
   { id: "slow", label: "slow" },
+  { id: "glide", label: "glide" },
   { id: "random", label: "random" },
 ];
 
+const CAVE_PACE = {
+  glide: 0.6,
+};
+
 export function caveMode(mode) {
-  return mode === "slow" || mode === "random" ? mode : "normal";
+  return mode === "slow" || mode === "glide" || mode === "random" ? mode : "normal";
 }
 
 export function caveScoreGame(mode) {
   const safe = caveMode(mode);
   if (safe === "slow") return "cave-slow";
+  if (safe === "glide") return "cave-glide";
   if (safe === "random") return "cave-random";
   return "cave";
+}
+
+function cavePace(mode) {
+  return CAVE_PACE[mode] || 1;
 }
 
 function caveGap(distance, mode) {
@@ -157,6 +167,7 @@ export function caveHits(y, distance, cave) {
 
 export function createCave(mode = "normal", seed = 1) {
   const safe = caveMode(mode);
+  const pace = cavePace(safe);
   const state = {
     kind: "cave",
     mode: safe,
@@ -164,8 +175,8 @@ export function createCave(mode = "normal", seed = 1) {
     reason: "",
     distance: 0,
     score: 0,
-    speed: CAVE.startSpeed,
-    bestSpeed: CAVE.startSpeed,
+    speed: CAVE.startSpeed * pace,
+    bestSpeed: CAVE.startSpeed * pace,
     y: RUN_H / 2,
     vy: 0,
     elapsed: 0,
@@ -185,11 +196,13 @@ export function createCave(mode = "normal", seed = 1) {
 }
 
 function stepCaveOnce(state, input, dt) {
-  const thrust = input.hold ? CAVE.thrust : 0;
-  state.vy += (CAVE.gravity - thrust) * dt;
-  state.vy = Math.max(CAVE.maxRise, Math.min(CAVE.maxFall, state.vy));
+  const pace = cavePace(state.mode);
+  const thrust = input.hold ? CAVE.thrust * pace : 0;
+  state.vy += (CAVE.gravity * pace - thrust) * dt;
+  state.vy = Math.max(CAVE.maxRise * pace, Math.min(CAVE.maxFall * pace, state.vy));
   state.y += state.vy * dt;
-  state.speed = Math.min(CAVE.maxSpeed, CAVE.startSpeed + state.distance * CAVE.accel);
+  const cruise = Math.min(CAVE.maxSpeed, CAVE.startSpeed + state.distance * CAVE.accel);
+  state.speed = cruise * pace;
   if (state.speed > state.bestSpeed) state.bestSpeed = state.speed;
   state.distance += state.speed * dt;
   state.elapsed += dt;
@@ -225,26 +238,31 @@ function mulberry32(seed) {
   };
 }
 
-function roofShape(distance) {
+function nextRoof(last, rng) {
+  const along = Math.max(0, last.x);
+  const t = Math.min(1, along / 8000);
+  const roll = rng();
+  const gapJitter = rng();
+  const widthJitter = rng();
+  const stepJitter = rng();
+  const gap = Math.max(40, Math.min(78, 46 + t * 24 + (gapJitter - 0.62) * (10 + t * 14)));
+  const width = Math.max(180, Math.min(340, 300 - t * 80 + (widthJitter - 0.4) * (28 + t * 36)));
+  const step = 8 + t * 16;
+  let dy;
+  if (roll < 0.62) dy = (stepJitter - 0.5) * step * 0.5;
+  else if (roll < 0.88) dy = stepJitter * step;
+  else dy = -stepJitter * step * 0.4;
   return {
-    gap: Math.min(104, 56 + distance * 0.007),
-    width: Math.max(146, 280 - distance * 0.01),
-    swing: Math.min(52, 28 + distance * 0.002),
+    x: last.x + last.w + gap,
+    w: width,
+    y: Math.max(360, Math.min(530, last.y + dy)),
   };
 }
 
 function fillRoofs(state) {
   let last = state.platforms[state.platforms.length - 1];
   while (last.x + last.w < state.x + 1200) {
-    const along = Math.max(0, last.x);
-    const shape = roofShape(along);
-    const swing = (state.rng() * 2 - 1) * shape.swing;
-    const y = Math.max(320, Math.min(560, last.y + swing));
-    const next = {
-      x: last.x + last.w + shape.gap,
-      w: shape.width,
-      y,
-    };
+    const next = nextRoof(last, state.rng);
     state.platforms.push(next);
     last = next;
   }

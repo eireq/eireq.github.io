@@ -90,6 +90,36 @@ test("slow mode closes the gap later than normal", () => {
   assert.equal(state.mode, "slow");
 });
 
+test("glide closes the gap like normal, and the arrow flies slower", () => {
+  assert.equal(caveWalls(8000, { mode: "glide" }).gap, caveWalls(8000).gap);
+  assert.ok(caveWalls(8000, { mode: "glide" }).gap < caveWalls(0, { mode: "glide" }).gap);
+
+  function fly(mode) {
+    const state = createCave(mode, 1);
+    for (let i = 0; i < 8 * 60 && state.alive; i += 1) {
+      stepCave(state, { hold: centerHold(state) }, 1 / 60);
+    }
+    return state;
+  }
+
+  const normal = fly("normal");
+  const glide = fly("glide");
+  assert.equal(normal.alive, true);
+  assert.equal(glide.alive, true);
+  assert.equal(glide.mode, "glide");
+  assert.ok(glide.distance < normal.distance * 0.75);
+  assert.ok(glide.distance > normal.distance * 0.45);
+  assert.ok(glide.bestSpeed < normal.bestSpeed);
+
+  const climbed = createCave();
+  const drifted = createCave("glide");
+  const start = climbed.y;
+  frames(stepCave, climbed, { hold: true }, 0.4);
+  frames(stepCave, drifted, { hold: true }, 0.4);
+  assert.ok(climbed.y < start - 30);
+  assert.ok(drifted.y > climbed.y + 12);
+});
+
 test("a random cave is a new set of turns, and the gap still closes", () => {
   const one = createCave("random", 4);
   const again = createCave("random", 4);

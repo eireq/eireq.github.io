@@ -66,11 +66,11 @@ endless 4-lane dodging on a canvas. arrows or A/D to switch lanes, `p` to pause,
 
 ### cave flyer
 
-`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. three modes, each with its own global and weekly top 50: normal, slow (same cave, the gap closes later), and random (a new set of turns every run, and the gap still closes). same name as the other games. if the boards already exist, run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) again so slow and random scores are allowed.
+`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. four modes, each with its own global and weekly top 50: normal, slow (same cave, the gap closes later), glide (the gap closes like normal, and you fly slower), and random (a new set of turns every run, and the gap still closes). same name as the other games. if the boards already exist, run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) again so slow, glide, and random scores are allowed.
 
 ### roof run
 
-`/games/roof`. the roofs scroll toward you. space, click, or tap to jump. gaps get wider and the landings get shorter. a higher roof has a lip, so jumping late means you hit it. score is distance. same leaderboards as cave flyer. run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) once if the boards should save.
+`/games/roof`. the roofs scroll toward you. space, click, or tap to jump. gaps and landings wander, and they get a little meaner the farther you go. most roofs sit level or lower. a higher roof still has a lip, so jumping late means you hit it. score is distance. same leaderboards as cave flyer. run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) once if the boards should save.
 
 ### Otrio
 
