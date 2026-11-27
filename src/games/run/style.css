@@ -372,6 +372,48 @@ body.run-page {
   white-space: nowrap;
 }
 
+.run-game .compare-panel {
+  width: min(1080px, 96vw);
+}
+
+.run-game .compare-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.run-game .compare-col {
+  min-width: 140px;
+}
+
+.run-game .compare-col h3,
+.run-game .you-line {
+  margin: 0 0 8px;
+  font-size: 8px;
+  text-align: center;
+}
+
+.run-game .you-line {
+  color: var(--yellow);
+}
+
+.run-game .compare-col .scores {
+  max-height: min(52vh, 480px);
+  overflow: auto;
+  padding-left: 18px;
+}
+
+.run-game .scores li.you {
+  background: var(--yellow);
+  color: #111;
+}
+
+.run-game .scores li.you .score-number,
+.run-game .scores li.you::marker {
+  color: #111;
+}
+
 @media (max-width: 560px) {
   .run-game .cabinet,
   .run-game .panel {

@@ -19,6 +19,7 @@
           <div class="menu-buttons">
             <button class="primary" type="button" @click="start">start</button>
             <button type="button" @click="openBoard('global')">leaderboard</button>
+            <button v-if="kind === 'cave'" type="button" @click="openCompare('global')">compare</button>
             <button type="button" @click="openName">set name</button>
           </div>
           <p class="hint">{{ meta.hint }}</p>
@@ -79,6 +80,7 @@
             <button class="primary" type="button" @click="retry">retry</button>
             <button type="button" @click="goMenu">menu</button>
             <button type="button" @click="openBoard('global')">leaderboard</button>
+            <button v-if="kind === 'cave'" type="button" @click="openCompare('global')">compare</button>
           </div>
         </div>
       </section>
@@ -104,6 +106,7 @@
             >
               weekly
             </button>
+            <button v-if="kind === 'cave'" type="button" @click="openCompare(period)">compare</button>
           </div>
           <p class="status">{{ boardStatus }}</p>
           <ol class="scores">
@@ -112,6 +115,45 @@
               <span class="score-number">{{ format(row.score) }}</span>
             </li>
           </ol>
+        </div>
+      </section>
+
+      <section class="screen overlay" :class="{ active: screen === 'compare' }">
+        <div class="panel compare-panel">
+          <div class="leaderboard-head">
+            <h2>all six</h2>
+            <button type="button" @click="closeCompare">x</button>
+          </div>
+          <div class="tabs">
+            <button
+              type="button"
+              :class="{ active: period === 'global' }"
+              @click="openCompare('global')"
+            >
+              global
+            </button>
+            <button
+              type="button"
+              :class="{ active: period === 'weekly' }"
+              @click="openCompare('weekly')"
+            >
+              weekly
+            </button>
+          </div>
+          <p class="status">{{ compareStatus }}</p>
+          <div class="compare-grid">
+            <section v-for="col in compareCols" :key="col.id" class="compare-col">
+              <h3>{{ col.label }}</h3>
+              <p class="you-line">you {{ col.you ? format(col.you) : "—" }}</p>
+              <ol class="scores">
+                <li v-for="row in col.rows" :key="row.id" :class="{ you: row.you }">
+                  <span class="score-name">{{ row.name || "a guy" }}</span>
+                  <span class="score-number">{{ format(row.score) }}</span>
+                </li>
+              </ol>
+              <p v-if="!col.rows.length" class="status">none yet</p>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -180,6 +222,9 @@ const rows = ref([]);
 const boardStatus = ref("loading...");
 const period = ref("global");
 const boardFrom = ref("menu");
+const compareFrom = ref("menu");
+const compareStatus = ref("loading...");
+const compareCols = ref([]);
 const canvas = ref(null);
 const nameInput = ref(null);
 const menuNameInput = ref(null);
@@ -215,6 +260,25 @@ function boardGame() {
   if (kind.value !== "cave") return "roof";
   if (boardFrom.value === "over" && result.value?.game) return result.value.game;
   return caveScoreGame(caveMode.value);
+}
+
+function playerKey(name) {
+  return String(name || "a guy").trim().toLowerCase();
+}
+
+function localBest(modeId) {
+  const key = modeId === "normal" ? "eireRunBest:cave" : `eireRunBest:cave:${modeId}`;
+  return Number(localStorage.getItem(key) || 0);
+}
+
+function markYourBest(list) {
+  const you = playerKey(playerName.value);
+  let marked = false;
+  return (list || []).map((row) => {
+    const yours = playerKey(row.name) === you && !marked;
+    if (yours) marked = true;
+    return { ...row, you: yours };
+  });
 }
 
 function hasStoredName() {
@@ -347,6 +411,49 @@ function closeBoard() {
   if (screen.value === "menu") refreshName();
 }
 
+async function openCompare(nextPeriod) {
+  if (kind.value !== "cave") return;
+  if (screen.value !== "compare") {
+    compareFrom.value = screen.value === "board" ? boardFrom.value : screen.value;
+  }
+  period.value = nextPeriod;
+  screen.value = "compare";
+  compareStatus.value = "loading...";
+  refreshName();
+  const ticket = ++boardTicket;
+  const responses = await Promise.all(
+    CAVE_MODES.map((mode) => ensureGameDb().getRunScores(caveScoreGame(mode.id), nextPeriod)),
+  );
+  if (ticket !== boardTicket || screen.value !== "compare") return;
+
+  const failed = responses.find((response) => !response.ok);
+  if (failed) {
+    compareStatus.value = ensureGameDb().ready()
+      ? boardError(failed.error)
+      : "supabase is not configured. set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.";
+  } else {
+    compareStatus.value = `${nextPeriod} top 50. your best is marked.`;
+  }
+
+  compareCols.value = CAVE_MODES.map((mode, index) => {
+    const response = responses[index];
+    const list = markYourBest(response.ok ? response.rows : []);
+    const listed = list.find((row) => row.you);
+    const saved = nextPeriod === "global" ? localBest(mode.id) : 0;
+    return {
+      id: mode.id,
+      label: mode.label,
+      rows: list,
+      you: Math.max(listed ? listed.score : 0, saved),
+    };
+  });
+}
+
+function closeCompare() {
+  screen.value = compareFrom.value === "compare" ? "menu" : compareFrom.value;
+  if (screen.value === "menu") refreshName();
+}
+
 function syncHold() {
   loop?.setHold(pointerHeld || heldKeys.size > 0);
 }
@@ -359,6 +466,7 @@ function onKeyDown(event) {
     event.preventDefault();
     if (screen.value === "play") goMenu();
     else if (screen.value === "board") closeBoard();
+    else if (screen.value === "compare") closeCompare();
     else if (screen.value === "name") screen.value = "menu";
     else if (screen.value === "over") goMenu();
     return;
