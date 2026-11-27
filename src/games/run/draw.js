@@ -44,7 +44,8 @@ function drawCave(ctx, state) {
   strokeCave(ctx, state, "top");
   strokeCave(ctx, state, "bottom");
 
-  drawShip(ctx, CAVE.playerX, state.y, state.hold, state.elapsed);
+  const climbing = state.mode === "flip" ? !state.hold : state.hold;
+  drawShip(ctx, CAVE.playerX, state.y, climbing && !state.waiting, state.elapsed);
 }
 
 function strokeCave(ctx, state, edge) {

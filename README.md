@@ -66,7 +66,7 @@ endless 4-lane dodging on a canvas. arrows or A/D to switch lanes, `p` to pause,
 
 ### cave flyer
 
-`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. four modes, each with its own global and weekly top 50: normal, slow (same cave, the gap closes later), glide (the gap closes like normal, and you fly slower), and random (a new set of turns every run, and the gap still closes). same name as the other games. if the boards already exist, run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) again so slow, glide, and random scores are allowed.
+`/games/cave`. hold to climb, let go to drop, and stay off the rock. the cave gets narrower and the turns get sharper. score is distance. six modes, each with its own global and weekly top 50: normal, slow (same cave, the gap closes later), glide (the gap closes like normal, and you fly slower), flip (hold to drop, let go to climb), narrow (the gap starts tight and stays there), and random (a new set of turns every run, and the gap still closes). same name as the other games. if the boards already exist, run [`src/games/run/supabase.sql`](src/games/run/supabase.sql) again so the extra modes can save.
 
 ### roof run
 

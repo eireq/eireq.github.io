@@ -70,6 +70,8 @@ export const CAVE_MODES = [
   { id: "normal", label: "normal" },
   { id: "slow", label: "slow" },
   { id: "glide", label: "glide" },
+  { id: "flip", label: "flip" },
+  { id: "narrow", label: "narrow" },
   { id: "random", label: "random" },
 ];
 
@@ -77,16 +79,20 @@ const CAVE_PACE = {
   glide: 0.6,
 };
 
+const CAVE_SCORE_GAME = {
+  slow: "cave-slow",
+  glide: "cave-glide",
+  flip: "cave-flip",
+  narrow: "cave-narrow",
+  random: "cave-random",
+};
+
 export function caveMode(mode) {
-  return mode === "slow" || mode === "glide" || mode === "random" ? mode : "normal";
+  return CAVE_MODES.some((item) => item.id === mode) ? mode : "normal";
 }
 
 export function caveScoreGame(mode) {
-  const safe = caveMode(mode);
-  if (safe === "slow") return "cave-slow";
-  if (safe === "glide") return "cave-glide";
-  if (safe === "random") return "cave-random";
-  return "cave";
+  return CAVE_SCORE_GAME[caveMode(mode)] || "cave";
 }
 
 function cavePace(mode) {
@@ -94,6 +100,7 @@ function cavePace(mode) {
 }
 
 function caveGap(distance, mode) {
+  if (mode === "narrow") return 168;
   const shrink = mode === "slow" ? 0.011 : 0.028;
   return Math.max(118, 500 - distance * shrink);
 }
@@ -197,7 +204,8 @@ export function createCave(mode = "normal", seed = 1) {
 
 function stepCaveOnce(state, input, dt) {
   const pace = cavePace(state.mode);
-  const thrust = input.hold ? CAVE.thrust * pace : 0;
+  const climbing = state.mode === "flip" ? !input.hold : input.hold;
+  const thrust = climbing ? CAVE.thrust * pace : 0;
   state.vy += (CAVE.gravity * pace - thrust) * dt;
   state.vy = Math.max(CAVE.maxRise * pace, Math.min(CAVE.maxFall * pace, state.vy));
   state.y += state.vy * dt;

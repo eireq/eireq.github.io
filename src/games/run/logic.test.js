@@ -120,6 +120,43 @@ test("glide closes the gap like normal, and the arrow flies slower", () => {
   assert.ok(drifted.y > climbed.y + 12);
 });
 
+test("flip drops while you hold and climbs when you let go", () => {
+  const dropped = createCave("flip");
+  const start = dropped.y;
+  frames(stepCave, dropped, { hold: true }, 0.45);
+  assert.ok(dropped.y > start + 40);
+
+  const climbed = createCave("flip");
+  frames(stepCave, climbed, { hold: false }, 0.45);
+  assert.ok(climbed.y < start - 40);
+  assert.equal(caveWalls(4000, { mode: "flip" }).gap, caveWalls(4000).gap);
+
+  const state = createCave("flip");
+  for (let i = 0; i < 12 * 60 && state.alive; i += 1) {
+    const wall = caveWalls(state.distance + 70, state);
+    const below = state.y > (wall.top + wall.bottom) / 2;
+    stepCave(state, { hold: !below }, 1 / 60);
+  }
+  assert.equal(state.alive, true);
+  assert.equal(state.mode, "flip");
+  assert.ok(state.score > 1800);
+});
+
+test("narrow starts tight and the gap stays there", () => {
+  const gap = caveWalls(0, { mode: "narrow" }).gap;
+  assert.ok(gap < 200);
+  assert.ok(gap < caveWalls(0).gap - 200);
+  assert.equal(caveWalls(12000, { mode: "narrow" }).gap, gap);
+
+  const state = createCave("narrow");
+  for (let i = 0; i < 8 * 60 && state.alive; i += 1) {
+    stepCave(state, { hold: centerHold(state) }, 1 / 60);
+  }
+  assert.equal(state.alive, true);
+  assert.equal(state.mode, "narrow");
+  assert.ok(state.score > 1000);
+});
+
 test("a random cave is a new set of turns, and the gap still closes", () => {
   const one = createCave("random", 4);
   const again = createCave("random", 4);
